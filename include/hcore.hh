@@ -194,7 +194,7 @@ void syrk(
 template <typename T>
 void syrk(
     T alpha,      DenseTile<T> const&& A,
-    T beta,  CompressedTile<T>      && C);
+    T beta,  CompressedTile<T>      && C)
 {
     // forward
     hcore::syrk(alpha, A, beta, C);
