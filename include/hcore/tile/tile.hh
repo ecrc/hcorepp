@@ -1,0 +1,140 @@
+// Copyright (c) 2017-2021,
+// King Abdullah University of Science and Technology (KAUST)
+// All rights reserved.
+// SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+
+#ifndef HCORE_TILE_TILE_HH
+#define HCORE_TILE_TILE_HH
+
+#include "hcore/exception.hh"
+
+#include "blas.hh"
+
+#include <cstdint>
+
+namespace hcore {
+
+/// Tile C++ superclass.
+/// A tile is an m-by-n matrix, with a leading dimension.
+/// @tparam T
+///     Data type: float, double, std::complex<float>, or std::complex<double>.
+template <typename T>
+class Tile
+{
+protected:
+    /// Empty tile.
+    Tile() : m_(0), n_(0), data_(nullptr), ld_(0), op_(blas::Op::NoTrans),
+        uplo_(blas::Uplo::General), layout_(blas::Layout::ColMajor)
+    {
+    }
+
+    /// Tile that wraps existing (preallocated) memory buffer.
+    /// @param[in] m
+    ///     Number of rows of the tile. m >= 0.
+    /// @param[in] n
+    ///     Number of columns of the tile. b >= 0.
+    /// @param[in,out] A
+    ///     The m-by-n matrix, stored in an array data buffer of size:
+    ///     ld-by-n: if layout = blas::Layout::ColMajor, or
+    ///     ld-by-m: if layout = blas::Layout::RowMajor.
+    /// @param[in] ld
+    ///     Leading dimension of the data array buffer.
+    ///     ld >= m: if layout = blas::Layout::ColMajor, or
+    ///     ld >= n: if layout = blas::Layout::RowMajor.
+    /// @param[in] layout
+    ///     The physical ordering of matrix elements in the data array buffer.
+    ///     blas::Layout::ColMajor: column elements are 1-strided, or
+    ///     blas::Layout::RowMajor: row elements are 1-strided.
+    Tile(int64_t m, int64_t n, T* A, int64_t ld, blas::Layout layout) : m_(m),
+        n_(n), data_(A), ld_(ld), op_(blas::Op::NoTrans),
+        uplo_(blas::Uplo::General), layout_(layout)
+    {
+        hcore_throw_std_invalid_argument_if(m < 0);
+        hcore_throw_std_invalid_argument_if(n < 0);
+        hcore_throw_std_invalid_argument_if(A == nullptr);
+        hcore_throw_std_invalid_argument_if(
+            layout == blas::Layout::ColMajor && ld < m);
+        hcore_throw_std_invalid_argument_if(
+            layout == blas::Layout::RowMajor && ld < n);
+    }
+
+public:
+    /// @return number of rows of this tile.
+    int64_t m() const
+    {
+        return (op_ == blas::Op::NoTrans ? m_ : n_);
+    }
+
+    /// @return number of columns of this tile.
+    int64_t n() const
+    {
+        return (op_ == blas::Op::NoTrans ? n_ : m_);
+    }
+
+    /// @return transposition operation of this tile.
+    blas::Op op() const
+    {
+        return op_;
+    }
+
+    /// Set transposition operation of this tile.
+    void op(blas::Op op)
+    {
+        hcore_throw_std_invalid_argument_if(
+            op != blas::Op::Trans   &&
+            op != blas::Op::NoTrans &&
+            op != blas::Op::ConjTrans);
+        op_ = op;
+    }
+
+    /// @param[in] logical
+    ///     If true (default), @return the logical packed storage type of this
+    ///     tile; see @uplo_logical, otherwise @return the physical packed
+    ///     storage type of this tile; see @uplo_physical.
+    blas::Uplo uplo(bool logical = true) const
+    {
+        if (logical)
+            return uplo_logical();
+        else
+            return uplo_physical();
+    }
+
+    /// @return the physical packed storage type of this tile.
+    blas::Uplo uplo_physical() const
+    {
+        return uplo_;
+    }
+
+    /// @return the logical packed storage type of this tile.
+    blas::Uplo uplo_logical() const
+    {
+        if (uplo_ == blas::Uplo::General)
+            return blas::Uplo::General;
+        else if ((uplo_ == blas::Uplo::Lower) == (op_ == blas::Op::NoTrans))
+            return blas::Uplo::Lower;
+        else
+            return blas::Uplo::Upper;
+    }
+
+    /// @return the physical ordering of the matrix elements in the data array
+    /// buffer of this tile.
+    blas::Layout layout() const
+    {
+        return layout_;
+    }
+
+private:
+    int64_t m_; ///> Number of rows.
+    int64_t n_; ///> Number of columns.
+    blas::Op op_; ///> Transposition operation.
+    blas::Uplo uplo_; ///> Physical packed storage type.
+    blas::Layout layout_; ///> Physical ordering of the matrix elements.
+
+protected:
+    T* data_; ///> Data array buffer.
+    int64_t ld_; ///> Leading dimension.
+
+}; // class Tile
+} // namespace hcore
+
+#endif // HCORE_TILE_TILE_HH
