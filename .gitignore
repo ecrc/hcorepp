@@ -1,3 +1,9 @@
+# macOS files
+.DS_Store
+
+# CMake build directory
+build*
+
 # Prerequisites
 *.d
 
