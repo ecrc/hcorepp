@@ -160,6 +160,20 @@ void gemm(
 
 template <typename T>
 void syrk(
+    T alpha, DenseTile<T> const& A,
+    T beta,  DenseTile<T>      & C);
+// converts rvalue references to lvalue references
+template <typename T>
+void syrk(
+    T alpha, DenseTile<T> const&& A,
+    T beta,  DenseTile<T>      && C)
+{
+    // forward
+    hcore::syrk(alpha, A, beta, C);
+}
+
+template <typename T>
+void syrk(
     T alpha, CompressedTile<T> const& A,
     T beta,      DenseTile<T>       & C);
 // converts rvalue references to lvalue references
@@ -167,6 +181,20 @@ template <typename T>
 void syrk(
     T alpha, CompressedTile<T> const&& A,
     T beta,      DenseTile<T>       && C)
+{
+    // forward
+    hcore::syrk(alpha, A, beta, C);
+}
+
+template <typename T>
+void syrk(
+    T alpha,      DenseTile<T> const& A,
+    T beta,  CompressedTile<T>      & C);
+// converts rvalue references to lvalue references
+template <typename T>
+void syrk(
+    T alpha,      DenseTile<T> const&& A,
+    T beta,  CompressedTile<T>      && C);
 {
     // forward
     hcore::syrk(alpha, A, beta, C);

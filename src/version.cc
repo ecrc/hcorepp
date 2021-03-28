@@ -7,7 +7,7 @@
 
 // version is updated by release.py; DO NOT EDIT.
 #ifndef HCORE_VERSION
-#define HCORE_VERSION "000" // major.minor.patch
+#define HCORE_VERSION "0.0.0" // major.minor.patch
 #endif
 
 // HCORE_ID is the git commit hash ID, defined by `git rev-parse --short HEAD`

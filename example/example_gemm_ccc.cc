@@ -6,9 +6,9 @@
 #include "hcore.hh"
 
 #include <vector>
-#include <cstdint>
-#include <stdio.h>
-#include <algorithm>
+#include <cstdint> // int64_t
+#include <stdio.h> // printf
+#include <algorithm> // std::min
 
 template <typename T>
 void execute(int64_t m, int64_t n, int64_t k)

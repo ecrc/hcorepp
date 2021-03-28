@@ -1,4 +1,4 @@
-// Copyright (c) 2017,
+// Copyright (c) 2017-2021,
 // King Abdullah University of Science and Technology (KAUST)
 // All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
@@ -12,8 +12,8 @@
 #include "blas.hh"
 
 #include <string>
+#include <cstdio>
 #include <cstdint>
-#include <stdio.h>
 
 template <typename T>
 void pretty_print(
@@ -33,21 +33,21 @@ void pretty_print(
             const T a = A[i+j*lda];
             if (a == T(int64_t(real(a)))) {
                 if (blas::is_complex<T>::value) {
-                    snprintf(buffer, sizeof(buffer), " %#*.0f%*s   %*s ",
+                    std::snprintf(buffer, sizeof(buffer), " %#*.0f%*s   %*s ",
                         width - precision, real(a), precision, "", width, "");
                 }
                 else {
-                    snprintf(buffer, sizeof(buffer), " %#*.0f%*s",
+                    std::snprintf(buffer, sizeof(buffer), " %#*.0f%*s",
                         width - precision, real(a), precision, "");
                 }
             }
             else {
                 if (blas::is_complex<T>::value) {
-                    snprintf(buffer, sizeof(buffer), " %*.*f + %*.*fi",
+                    std::snprintf(buffer, sizeof(buffer), " %*.*f + %*.*fi",
                         width, precision, real(a), width, precision, imag(a));
                 }
                 else {
-                    snprintf(buffer, sizeof(buffer), " %*.*f",
+                    std::snprintf(buffer, sizeof(buffer), " %*.*f",
                         width, precision, real(a));
                 }
             }
