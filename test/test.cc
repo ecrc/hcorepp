@@ -19,6 +19,7 @@ enum Section {
     newline=0,
     blas3_gemm,
     blas3_syrk,
+    blas3_trsm,
     num_sections,
 };
 
@@ -26,6 +27,7 @@ const char* section_names[] = {
     "",
     "Level 3 BLAS -- GEMM",
     "Level 3 BLAS -- SYRK",
+    "Level 3 BLAS -- TRSM",
 };
 
 std::vector<testsweeper::routines_t> routines = {
@@ -44,6 +46,9 @@ std::vector<testsweeper::routines_t> routines = {
     { "syrk_cd",  syrk_test_dispatch, Section::blas3_syrk },
     { "syrk_cc",  syrk_test_dispatch, Section::blas3_syrk },
     { "",         nullptr,            Section::newline    },
+
+    // { "trsm",     trsm_test_dispatch, Section::blas3_trsm },
+    // { "",         nullptr,            Section::newline    },
 };
 
 Params::Params():

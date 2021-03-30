@@ -178,7 +178,7 @@ void gemm(
     //  "Rank after truncation is too big! rk_new:%d max_rank:%d";
     // }
 
-    T* UV = new T[(m + n) * rk_new];
+    T* UV = new T[(ldcu + n) * rk_new];
 
     if (use_ungqr) {
         lapack::ungqr(Um, min_Um_Un, min_Um_Un, &U[0], Um, &Utau[0]);
@@ -212,7 +212,7 @@ void gemm(
         }
     }
 
-    T* UVptr = UV + m * rk_new;
+    T* UVptr = UV + ldcu * rk_new;
 
     if (use_ungqr) {
         lapack::ungqr(Vm, min_Vm_Vn, min_Vm_Vn, &V[0], Vm, &Vtau[0]);
