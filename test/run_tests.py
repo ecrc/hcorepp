@@ -300,7 +300,7 @@ if (opts.blas3):
     # [ 'hemm',  dtype         + layout + align + side + uplo + mn ],
     # [ 'symm',  dtype         + layout + align + side + uplo + mn ],
     # [ 'trmm',  dtype         + layout + align + side + uplo + trans + diag + mn ],
-    # [ 'trsm',  dtype         + layout + align + side + uplo + trans + diag + mn ],
+    [ 'trsm',  dtype         + align + side + uplo + trans + diag + mn ],
     # [ 'herk',  dtype_real    + layout + align + uplo + trans    + mn ],
     # [ 'herk',  dtype_complex + layout + align + uplo + trans_nc + mn ],
     [ 'syrk_dd',  dtype_real    + align + uplo + trans    + mn ],
