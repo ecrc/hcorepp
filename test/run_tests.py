@@ -78,7 +78,7 @@ group_opt.add_argument( '--beta',   action='store', help='default=%(default)s', 
 group_opt.add_argument( '--incx',   action='store', help='default=%(default)s', default='1,2,-1,-2' )
 group_opt.add_argument( '--incy',   action='store', help='default=%(default)s', default='1,2,-1,-2' )
 group_opt.add_argument( '--batch',  action='store', help='default=%(default)s', default='' )
-group_opt.add_argument( '--align',  action='store', help='default=%(default)s', default='' )
+group_opt.add_argument( '--align',  action='store', help='default=%(default)s', default='1,2,4,16,32' )
 group_opt.add_argument( '--check',  action='store', help='default=y', default='' )  # default in test.cc
 group_opt.add_argument( '--ref',    action='store', help='default=y', default='' )  # default in test.cc
 
