@@ -17,6 +17,7 @@
 
 enum Section {
     newline=0,
+    // posv,
     blas3_gemm,
     blas3_syrk,
     blas3_trsm,
@@ -25,12 +26,17 @@ enum Section {
 
 const char* section_names[] = {
     "",
+    // "Cholesky",
     "Level 3 BLAS -- GEMM",
     "Level 3 BLAS -- SYRK",
     "Level 3 BLAS -- TRSM",
+    
 };
 
 std::vector<testsweeper::routines_t> routines = {
+    // { "posv",     posv_test_dispatch, Section::posv       },
+    // { "",         nullptr,            Section::newline    },
+
     { "gemm_ddd", gemm_test_dispatch, Section::blas3_gemm },
     { "gemm_ddc", gemm_test_dispatch, Section::blas3_gemm },
     { "gemm_dcd", gemm_test_dispatch, Section::blas3_gemm },
@@ -47,8 +53,8 @@ std::vector<testsweeper::routines_t> routines = {
     { "syrk_cc",  syrk_test_dispatch, Section::blas3_syrk },
     { "",         nullptr,            Section::newline    },
 
-    // { "trsm",     trsm_test_dispatch, Section::blas3_trsm },
-    // { "",         nullptr,            Section::newline    },
+    { "trsm",     trsm_test_dispatch, Section::blas3_trsm },
+    { "",         nullptr,            Section::newline    },
 };
 
 Params::Params():
@@ -77,6 +83,16 @@ Params::Params():
         "uplo", 6, testsweeper::ParamType::List, blas::Uplo::Lower,
         blas::char2uplo, blas::uplo2char, blas::uplo2str,
         "triangle: l=lower, u=upper"),
+    side(
+        // name, width, type, default, char2enum, enum2char, enum2str, help
+        "side", 6, testsweeper::ParamType::List, blas::Side::Left,
+        blas::char2side, blas::side2char, blas::side2str,
+        "side: l=left, r=right"),
+    diag(
+        // name, width, type, default, char2enum, enum2char, enum2str, help
+        "diag", 7, testsweeper::ParamType::List, blas::Diag::NonUnit,
+        blas::char2diag, blas::diag2char, blas::diag2str,
+        "diagonal: n=non-unit, u=unit"),
     trans(
         // name, width, type, default, char2enum, enum2char, enum2str, help
         "trans", 7, testsweeper::ParamType::List, blas::Op::NoTrans,

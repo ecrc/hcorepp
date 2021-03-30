@@ -19,6 +19,8 @@ public:
     // testsweeper::ParamEnum<lapack::Norm> norm; // todo
     // testsweeper::ParamEnum<blas::Layout> layout; // todo
     testsweeper::ParamEnum<blas::Uplo> uplo;
+    testsweeper::ParamEnum<blas::Side> side;
+    testsweeper::ParamEnum<blas::Diag> diag;
     testsweeper::ParamEnum<blas::Op> trans;
     testsweeper::ParamEnum<blas::Op> transA;
     testsweeper::ParamEnum<blas::Op> transB;
@@ -60,5 +62,6 @@ public:
 
 void gemm_test_dispatch(Params& params, bool run);
 void syrk_test_dispatch(Params& params, bool run);
+void trsm_test_dispatch(Params& params, bool run);
 
 #endif // #ifndef HCORE_TEST_HH

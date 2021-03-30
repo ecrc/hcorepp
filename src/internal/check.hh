@@ -9,6 +9,8 @@
 #include "hcore/exception.hh"
 #include "hcore/tile/tile.hh"
 
+#include "blas.hh"
+
 namespace hcore {
 namespace internal {
 
@@ -38,6 +40,18 @@ void check_syrk(Tile<T> const& A, Tile<T> const& C)
         A.uplo_physical() != blas::Uplo::General);
     hcore_throw_std_invalid_argument_if(
         C.uplo_physical() == blas::Uplo::General);
+}
+
+template <typename T>
+void check_trsm(blas::Side side, Tile<T> const& A, Tile<T> const& B)
+{
+    hcore_throw_std_invalid_argument_if(A.layout() != B.layout());
+    hcore_throw_std_invalid_argument_if(A.m() != A.n());
+    hcore_throw_std_invalid_argument_if(
+        side == blas::Side::Left ? A.m() != B.m()
+                                 : A.m() != B.n());
+    hcore_throw_std_invalid_argument_if(
+        B.uplo_physical() != blas::Uplo::General);
 }
 
 } // namespace internal

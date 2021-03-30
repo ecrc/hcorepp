@@ -9,6 +9,8 @@
 #include "hcore/tile/dense.hh"
 #include "hcore/tile/compressed.hh"
 
+#include "blas.hh"
+
 #include <cstdint>
 
 namespace hcore {
@@ -212,6 +214,22 @@ void syrk(
 {
     // forward
     hcore::syrk(alpha, A, beta, C);
+}
+
+template <typename T>
+void trsm(
+    blas::Side side, blas::Diag diag,
+    T alpha, DenseTile<T> const& A,
+             DenseTile<T>      & B);
+// converts rvalue references to lvalue references
+template <typename T>
+void trsm(
+    blas::Side side, blas::Diag diag,
+    T alpha, DenseTile<T> const&& A,
+             DenseTile<T>      && B)
+{
+    // forward
+    hcore::trsm(side, diag, alpha, A, B);
 }
 
 } // namespace hcore

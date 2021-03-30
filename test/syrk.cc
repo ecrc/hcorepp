@@ -16,6 +16,7 @@
 #include <vector>
 #include <cstdint>
 #include <complex>
+#include <cassert>
 #include <stdexcept>
 
 template <typename T>
