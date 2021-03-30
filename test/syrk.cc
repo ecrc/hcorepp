@@ -19,17 +19,6 @@
 #include <stdexcept>
 
 template <typename T>
-void conjugate(hcore::Tile<T>& A)
-{
-    using blas::conj;
-    for (int64_t j = 0; j < A.n(); ++j) {
-        for (int64_t i = 0; i < A.m(); ++i) {
-            A.at(i, j) = conj(A.at(i, j));
-        }
-    }
-}
-
-template <typename T>
 void syrk_test_execute(Params& params, bool run)
 {
     // todo
@@ -164,9 +153,6 @@ void syrk_test_execute(Params& params, bool run)
         // }
     }
 
-    if (C.op() == blas::Op::ConjTrans)
-        conjugate(C);
-
     double gflops = 0.0;
     double time_start = testsweeper::get_wtime();
 
@@ -196,9 +182,6 @@ void syrk_test_execute(Params& params, bool run)
     params.time() = time_end - time_start;
     params.gflops() = gflops / params.time();
 
-    if (C.op() == blas::Op::ConjTrans)
-        conjugate(C);
-
     if (verbose) {
         if (params.routine == "syrk_dd" ||
             params.routine == "syrk_cd") {
@@ -220,15 +203,10 @@ void syrk_test_execute(Params& params, bool run)
     }
 
     if (params.check() == 'y') {
-        blas::Uplo op_uplo = uplo;
-        if (C.op() != blas::Op::NoTrans) {
-            op_uplo = (op_uplo == blas::Uplo::Lower ? blas::Uplo::Upper
-                                                    : blas::Uplo::Lower);
-        }
         double ref_time_start = testsweeper::get_wtime();
         {
             blas::syrk(
-                blas::Layout::ColMajor, op_uplo, trans,
+                blas::Layout::ColMajor, uplo, trans,
                 n, k,
                 alpha, &Adata[0], lda,
                 beta,  &Cref[0],  ldc);
@@ -261,8 +239,8 @@ void syrk_test_execute(Params& params, bool run)
 
         for (int64_t j = 0; j < Cn; ++j) {
             for (int64_t i = 0; i < Cm; ++i) {
-                if ((op_uplo == blas::Uplo::Lower && i >= j) ||
-                    (op_uplo == blas::Uplo::Upper && i <= j)) {
+                if ((uplo == blas::Uplo::Lower && i >= j) ||
+                    (uplo == blas::Uplo::Upper && i <= j)) {
                     Cref[i + j * ldc] -= C_ptr[i + j * ldc];
                 }
             }
@@ -273,7 +251,7 @@ void syrk_test_execute(Params& params, bool run)
         }
 
         params.error() =
-                    lapack::lansy(lapack::Norm::Inf, op_uplo, Cn, &Cref[0], ldc)
+                    lapack::lansy(lapack::Norm::Inf, uplo, Cn, &Cref[0], ldc)
                     / (sqrt(blas::real_type<T>(k) + 2) * std::abs(alpha) *
                        Anorm * Anorm + 2 * std::abs(beta) * Cnorm);
 
