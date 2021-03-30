@@ -4,9 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
 #include "hcore.hh"
+#include "internal/check.hh"
+#include "hcore/tile/dense.hh"
+#include "hcore/tile/compressed.hh"
 
-#include <assert.h>
+#include "blas.hh"
+
+#include <vector>
 #include <complex>
+#include <cassert>
 
 namespace hcore {
 
@@ -27,10 +33,21 @@ namespace hcore {
 template <typename T>
 void syrk(
     T alpha, DenseTile<T> const& A,
-    T beta,  DenseTile<T>       & C)
+    T beta,  DenseTile<T>      & C)
 {
-    // todo
-    assert(false);
+    assert(C.layout() == blas::Layout::ColMajor); // todo
+
+    internal::check_syrk(A, C);
+
+    if (blas::is_complex<T>::value && C.op() == blas::Op::ConjTrans)
+        assert(false);
+
+    blas::syrk(
+        blas::Layout::ColMajor, C.uplo_physical(), A.op(),
+        C.n(), A.n(),
+        alpha, A.data(), A.ld(),
+        beta,  C.data(), C.ld());
+
 }
 
 template
@@ -110,8 +127,42 @@ void syrk(
     T alpha, CompressedTile<T> const& A,
     T beta,      DenseTile<T>       & C)
 {
-    // todo
-    assert(false);
+    assert(A.op() == blas::Op::NoTrans); // todo
+    assert(C.op() == blas::Op::NoTrans); // todo
+    assert(C.layout() == blas::Layout::ColMajor); // todo
+
+    internal::check_syrk(A, C);
+
+    if (blas::is_complex<T>::value && C.op() == blas::Op::ConjTrans)
+        assert(false);
+
+    // C = beta * C + ((AU * (alpha * AV * AV.')) * AU.')
+    std::vector<T> W0(A.rk() * A.rk());
+
+    // W0 = alpha * AV * AV.'
+    blas::syrk(
+        blas::Layout::ColMajor, C.uplo(), blas::Op::NoTrans,
+        A.rk(), A.n(),
+        alpha, A.Vdata(), A.ldv(),
+        0.0,   &W0[0],    A.rk());
+
+    std::vector<T> W1(A.m() * A.rk());
+
+    // W1 = AU * W0
+    blas::gemm(
+        blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
+        A.m(), A.rk(), A.rk(),
+        1.0, A.Udata(), A.ldu(),
+             &W0[0],    A.rk(),
+        0.0, &W1[0],    A.m());
+
+    // C = W1 * AU.' + beta * C
+    blas::gemm(
+        blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::Trans, 
+        A.m(), A.m(), A.rk(),
+        1.0,  &W1[0],    A.m(),
+              A.Udata(), A.ldu(),
+        beta, C.data(),  C.ld());
 }
 
 template

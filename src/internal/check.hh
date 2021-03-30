@@ -28,6 +28,18 @@ void check_gemm(Tile<T> const& A, Tile<T> const& B, Tile<T> const& C)
         C.uplo_physical() != blas::Uplo::General);
 }
 
+template <typename T>
+void check_syrk(Tile<T> const& A, Tile<T> const& C)
+{
+    hcore_throw_std_invalid_argument_if(A.layout() != C.layout());
+    hcore_throw_std_invalid_argument_if(C.m() != C.n());
+    hcore_throw_std_invalid_argument_if(C.m() != A.m());
+    hcore_throw_std_invalid_argument_if(
+        A.uplo_physical() != blas::Uplo::General);
+    hcore_throw_std_invalid_argument_if(
+        C.uplo_physical() == blas::Uplo::General);
+}
+
 } // namespace internal
 } // namespace hcore
 

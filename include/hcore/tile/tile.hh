@@ -78,6 +78,10 @@ public:
     }
 
     /// Set transposition operation of this tile.
+    /// @param[in] op
+    ///     - Trans: this tile has a transposed structure.
+    ///     - ConjTrans: this tile has a conjugate-transposed structure.
+    ///     - NoTrans: this tile has no transposed structure.
     void op(blas::Op op)
     {
         hcore_throw_std_invalid_argument_if(
@@ -97,6 +101,20 @@ public:
             return uplo_logical();
         else
             return uplo_physical();
+    }
+
+    /// Set the physical packed storage type of this tile.
+    /// @param[in] uplo
+    ///     - General: both triangles of this tile are stored.
+    ///     - Upper: upper triangle of this tile is stored.
+    ///     - Lower: lower triangle of this tile is stored.
+    void uplo(blas::Uplo uplo)
+    {
+        hcore_throw_std_invalid_argument_if(
+            uplo != blas::Uplo::General &&
+            uplo != blas::Uplo::Lower   &&
+            uplo != blas::Uplo::Upper);
+        uplo_ = uplo;
     }
 
     /// @return the physical packed storage type of this tile.
@@ -121,6 +139,69 @@ public:
     blas::Layout layout() const
     {
         return layout_;
+    }
+
+    /// @return element {i, j} of this tile.
+    /// The actual value is returned, not a reference.
+    /// If op() == blas::Op::ConjTrans then data is conjugated; it takes
+    /// the layout into account.
+    /// @param[in] i
+    ///     Row index. 0 <= i < m.
+    /// @param[in] j
+    ///     Column index. 0 <= j < n.
+    T operator()(int64_t i, int64_t j) const
+    {
+        hcore_throw_std_invalid_argument_if(0 > i || i >= m());
+        hcore_throw_std_invalid_argument_if(0 > j || j >= n());
+
+        using blas::conj;
+
+        if (op_ == blas::Op::ConjTrans) {
+            if (layout_ == blas::Layout::ColMajor)
+                return conj(data_[j + i * ld_]);
+            else
+                return conj(data_[i + j * ld_]);
+        }
+        else if (
+            (op_ == blas::Op::NoTrans) == (layout_ == blas::Layout::ColMajor)) {
+            return data_[i + j * ld_];
+        }
+        else {
+            return data_[j + i * ld_];
+        }
+    }
+
+    /// @return a const reference to element {i, j} of this tile.
+    /// If op() == blas::Op::ConjTrans then data isn't conjugated, because a
+    /// reference is returned; it takes the layout into account.
+    /// @param[in] i
+    ///     Row index. 0 <= i < m.
+    /// @param[in] j
+    ///     Column index. 0 <= j < n.
+    T const& at(int64_t i, int64_t j) const
+    {
+        hcore_throw_std_invalid_argument_if(0 > i || i >= m());
+        hcore_throw_std_invalid_argument_if(0 > j || j >= n());
+
+        if ((op_ == blas::Op::NoTrans) == (layout_ == blas::Layout::ColMajor)) {
+            return data_[i + j * ld_];
+        }
+        else {
+            return data_[j + i * ld_];
+        }
+    }
+
+    /// @return a reference to element {i, j} of this tile.
+    /// If op() == blas::Op::ConjTrans then data isn't conjugated, because a
+    /// reference is returned; it takes the layout into account.
+    /// @param[in] i
+    ///     Row index. 0 <= i < m.
+    /// @param[in] j
+    ///     Column index. 0 <= j < n.
+    T& at(int64_t i, int64_t j)
+    {
+        // forward to const at() version
+        return const_cast<T&>(static_cast<const Tile>(*this).at(i, j));
     }
 
 private:

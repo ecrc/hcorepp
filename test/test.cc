@@ -67,6 +67,16 @@ Params::Params():
     //     "layout", 6, testsweeper::ParamType::List, blas::Layout::ColMajor,
     //     blas::char2layout, blas::layout2char, blas::layout2str,
     //      "layout: r=row major, c=column major (default)"),
+    uplo(
+        // name, width, type, default, char2enum, enum2char, enum2str, help
+        "uplo", 6, testsweeper::ParamType::List, blas::Uplo::Lower,
+        blas::char2uplo, blas::uplo2char, blas::uplo2str,
+        "triangle: l=lower, u=upper"),
+    trans(
+        // name, width, type, default, char2enum, enum2char, enum2str, help
+        "trans", 7, testsweeper::ParamType::List, blas::Op::NoTrans,
+        blas::char2op, blas::op2char, blas::op2str,
+        "transpose: n=notrans (default), t=trans, c=conjtrans"),
     transA(
         // name, width, type, default, char2enum, enum2char, enum2str, help
         "transA", 7, testsweeper::ParamType::List, blas::Op::NoTrans,
@@ -180,7 +190,9 @@ Params::Params():
     okay();
     error();
     time();
+    ref_time();
     gflops();
+    ref_gflops();
 
     check();
     repeat();

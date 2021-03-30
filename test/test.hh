@@ -18,6 +18,8 @@ public:
     testsweeper::ParamEnum<testsweeper::DataType> datatype;
     // testsweeper::ParamEnum<lapack::Norm> norm; // todo
     // testsweeper::ParamEnum<blas::Layout> layout; // todo
+    testsweeper::ParamEnum<blas::Uplo> uplo;
+    testsweeper::ParamEnum<blas::Op> trans;
     testsweeper::ParamEnum<blas::Op> transA;
     testsweeper::ParamEnum<blas::Op> transB;
 

@@ -13,7 +13,7 @@
     do { \
         if (condition) { \
             const std::string& what_arg = \
-                "HCORE throws an std::invalid_argument exception: (" \
+                "HCORE throws std::invalid_argument exception: (" \
                 + std::string(#condition) + "), function " \
                 + __func__ + ", file " + __FILE__ + ", line " \
                 + std::to_string(__LINE__) + "."; \
