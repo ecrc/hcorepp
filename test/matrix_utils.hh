@@ -6,7 +6,6 @@
 #ifndef HCORE_TEST_MATRIX_UTILS_HH
 #define HCORE_TEST_MATRIX_UTILS_HH
 
-#include "hcore.hh"
 #include "lapacke_wrappers.hh"
 
 #include "blas.hh"
@@ -19,34 +18,10 @@
 #include <algorithm>
 
 template <typename T>
-void diff(T* Aref, int64_t lda_ref, hcore::Tile<T> const& A)
+void generate_dense_matrix(
+    int64_t m, int64_t n, T* A, int64_t lda,
+    int* iseed, int mode=0, blas::real_type<T> cond=1)
 {
-    for (int64_t j = 0; j < A.n(); ++j) {
-        for (int64_t i = 0; i < A.m(); ++i) {
-            Aref[i + j * lda_ref] -= A(i, j);
-        }
-    }
-}
-
-template <typename T>
-void copy(T* Aref, int64_t lda_ref, hcore::Tile<T> const& A)
-{
-    for (int64_t j = 0; j < A.n(); ++j) {
-        for (int64_t i = 0; i < A.m(); ++i) {
-            Aref[i + j * lda_ref] = A(i, j);
-        }
-    }
-}
-
-template <typename T>
-void generate_dense_tile(
-    hcore::DenseTile<T>& A, int* iseed, int mode=0, blas::real_type<T> cond=1)
-{
-    int64_t m = A.m();
-    int64_t n = A.n();
-    T* Adata = A.data();
-    int64_t lda = A.ld();
-
     int16_t min_m_n = std::min(m, n);
 
     std::vector<blas::real_type<T>> D(min_m_n);
@@ -55,22 +30,7 @@ void generate_dense_tile(
         D[i] = std::pow(10, -1*i);
 
     lapacke_latms(
-        m, n, 'U', iseed, 'N', &D[0], mode, cond, -1.0, m-1, n-1, 'N',
-        Adata, lda);
-
-    if (A.uplo_physical() != blas::Uplo::General) {
-        T nan_ = nan("");
-        if (A.uplo_physical() == blas::Uplo::Lower) {
-            lapack::laset(
-                lapack::MatrixType::Upper, m-1, n-1, nan_, nan_,
-                &Adata[0 + 1 * lda], lda);
-        }
-        else {
-            lapack::laset(
-                lapack::MatrixType::Lower, m-1, n-1, nan_, nan_,
-                &Adata[1 + 0 * lda], lda);
-        }
-    }
+        m, n, 'U', iseed, 'N', &D[0], mode, cond, -1.0, m-1, n-1, 'N', A, lda);
 }
 
 template <typename T>
@@ -87,8 +47,8 @@ void compress_dense_matrix(
 
     lapack::gesvd(
         lapack::Job::SomeVec, lapack::Job::SomeVec,
-        m, n, &A[0],  lda, &Sigma[0],
-              &U[0],  lda,
+        m, n, &A[0], lda, &Sigma[0],
+              &U[0], lda,
               &VT[0], min_m_n);
 
     rk = 0;

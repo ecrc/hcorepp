@@ -54,43 +54,42 @@ void trsm_test_execute(Params& params, bool run)
     int64_t lda = testsweeper::roundup(An, align);
     int64_t ldb = testsweeper::roundup(Bm, align);
 
+    std::vector<T> Adata(lda * An);
+    std::vector<T> Bdata(ldb * Bn);
+
     // int64_t idist = 1;
     int iseed[4] = {0, 0, 0, 1};
 
-    std::vector<T> Adata(lda * An);
     // lapack::larnv(idist, iseed, lda * An, &Adata[0]);
+    generate_dense_matrix(An, An, &Adata[0], lda, iseed, mode, cond);
+
+    // lapack::larnv(idist, iseed, ldb * Bn, &Bdata[0]);
+    generate_dense_matrix(Bm, Bn, &Bdata[0], ldb, iseed, mode, cond);
+
+    blas::real_type<T> Anorm =
+            lapack::lantr(lapack::Norm::Inf, uplo, diag, An, An, &Adata[0], lda);
+    blas::real_type<T> Bnorm =
+            lapack::lange(lapack::Norm::Inf, Bm, Bn, &Bdata[0], ldb);
 
     hcore::DenseTile<T> A(An, An, &Adata[0], lda);
     A.op(trans);
     A.uplo(uplo);
-
-    generate_dense_tile(A, iseed, mode, cond);
-
-    blas::real_type<T> Anorm =
-        lapack::lantr(lapack::Norm::Inf, uplo, diag, An, An, &Adata[0], lda);
-
-    std::vector<T> Bdata(ldb * Bn);
-    // lapack::larnv(idist, iseed, ldb * Bn, &Bdata[0]);
-
     hcore::DenseTile<T> B(Bm, Bn, &Bdata[0], ldb);
     // B.op(transB); // todo
-
-    generate_dense_tile(B, iseed, mode, cond);
-
-    blas::real_type<T> Bnorm =
-        lapack::lange(lapack::Norm::Inf, Bm, Bn, &Bdata[0], ldb);
-
-
-
-
-
-
-
-
 
     std::vector<T> Bref;
     if (params.check() == 'y') {
         Bref = Bdata;
+    }
+
+    T nan_ = nan("");
+    if (uplo == blas::Uplo::Lower) {
+        lapack::laset(lapack::MatrixType::Upper,
+            An-1, An-1, nan_, nan_, &Adata[0 + 1 * lda], lda);
+    }
+    else {
+        lapack::laset(lapack::MatrixType::Lower,
+            An-1, An-1, nan_, nan_, &Adata[1 + 0 * lda], lda);
     }
 
     // brute force positive definiteness

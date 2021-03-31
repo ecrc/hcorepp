@@ -67,38 +67,43 @@ void syrk_test_execute(Params& params, bool run)
     // todo
     // if (layout == blas::Layout::RowMajor) {
     //     std::swap(Am, An);
-    //     std::swap(Cm, Cn);
     // }
 
     int64_t lda = testsweeper::roundup(Am, align);
     int64_t ldc = testsweeper::roundup(Cm, align);
 
+    std::vector<T> Adata(lda * An);
+    std::vector<T> Cdata(ldc * Cn);
+
     // int64_t idist = 1;
     int iseed[4] = {0, 0, 0, 1};
 
-    std::vector<T> Adata(lda * An);
     // lapack::larnv(idist, iseed, lda * An, &Adata[0]);
+    generate_dense_matrix(Am, An, &Adata[0], lda, iseed, mode, cond);
+
+    // lapack::larnv(idist, iseed, ldc * n, &Cdata[0]);
+    generate_dense_matrix(Cm, Cn, &Cdata[0], ldc, iseed, mode, cond);
+
+    blas::real_type<T> Anorm =
+                lapack::lange(lapack::Norm::Inf, Am, An, &Adata[0], lda);
+    blas::real_type<T> Cnorm =
+                lapack::lansy(lapack::Norm::Inf, uplo, Cn, &Cdata[0], ldc);
 
     hcore::DenseTile<T> A(Am, An, &Adata[0], lda);
     A.op(trans);
-
-    generate_dense_tile(A, iseed, mode, cond);
-
-    blas::real_type<T> Anorm =
-        lapack::lange(lapack::Norm::Inf, Am, An, &Adata[0], lda);
-
-    std::vector<T> Cdata(ldc * Cn);
-    // lapack::larnv(idist, iseed, ldc * n, &Cdata[0]);
-
     hcore::DenseTile<T> C(Cm, Cn, &Cdata[0], ldc);
     C.op(trans);
     C.uplo(uplo);
 
-    generate_dense_tile(C, iseed, mode, cond);
-
-    blas::real_type<T> Cnorm =
-        lapack::lansy(lapack::Norm::Inf, uplo, Cn, &Cdata[0], ldc);
-
+    T nan_ = nan("");
+    if (uplo == blas::Uplo::Lower) {
+        lapack::laset(lapack::MatrixType::Upper,
+            Cm-1, Cn-1, nan_, nan_, &Cdata[0 + 1 * ldc], ldc);
+    }
+    else {
+        lapack::laset(lapack::MatrixType::Lower,
+            Cm-1, Cn-1, nan_, nan_, &Cdata[1 + 0 * ldc], ldc);
+    }
 
     std::vector<T> Cref;
     if (params.check() == 'y') {

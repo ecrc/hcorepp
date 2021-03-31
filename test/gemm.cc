@@ -28,7 +28,6 @@ void gemm_test_execute(Params& params, bool run)
 
     blas::Op transA = params.transA();
     blas::Op transB = params.transB();
-    blas::Op transC = params.transC();
     T alpha = params.alpha();
     T beta  = params.beta();
     int64_t m = params.dim.m();
@@ -67,31 +66,14 @@ void gemm_test_execute(Params& params, bool run)
             printf("skipping: only transB=NoTrans is supported.\n");
             return;
         }
-        if (transC != blas::Op::NoTrans) {
-            printf("skipping: only transC=NoTrans is supported.\n");
-            return;
-        }
-    }
-
-    if (blas::is_complex<T>::value) {
-        if ((transC == blas::Op::Trans &&
-                (transA == blas::Op::ConjTrans || transB == blas::Op::ConjTrans)
-            ) ||
-            (transC == blas::Op::ConjTrans &&
-                (transA == blas::Op::Trans || transB == blas::Op::Trans)
-            )) {
-            printf(
-                "skipping: wrong combinations of transA, transB, and transC.\n");
-            return;
-        }
     }
 
     int64_t Am = transA == blas::Op::NoTrans ? m : k;
     int64_t An = transA == blas::Op::NoTrans ? k : m;
     int64_t Bm = transB == blas::Op::NoTrans ? k : n;
     int64_t Bn = transB == blas::Op::NoTrans ? n : k;
-    int64_t Cm = transC == blas::Op::NoTrans ? m : n;
-    int64_t Cn = transC == blas::Op::NoTrans ? n : m;
+    int64_t Cm = m;
+    int64_t Cn = n;
 
     // todo
     // if (layout == blas::Layout::RowMajor) {
@@ -104,45 +86,38 @@ void gemm_test_execute(Params& params, bool run)
     int64_t ldb = testsweeper::roundup(Bm, align);
     int64_t ldc = testsweeper::roundup(Cm, align);
 
+    std::vector<T> Adata(lda * An);
+    std::vector<T> Bdata(ldb * Bn);
+    std::vector<T> Cdata(ldc * Cn);
+
     // int64_t idist = 1;
     int iseed[4] = {0, 0, 0, 1};
 
-    std::vector<T> Adata(lda * An);
     // lapack::larnv(idist, iseed, lda * An, &Adata[0]);
+    generate_dense_matrix(Am, An, &Adata[0], lda, iseed, mode, cond);
+
+    // lapack::larnv(idist, iseed, ldb * Bn, &Bdata[0]);
+    generate_dense_matrix(Bm, Bn, &Bdata[0], ldb, iseed, mode, cond);
+
+    // lapack::larnv(idist, iseed, ldc * Cn, &Cdata[0]);
+    generate_dense_matrix(Cm, Cn, &Cdata[0], ldc, iseed, mode, cond);
+
+    blas::real_type<T> Anorm =
+                lapack::lange(lapack::Norm::Inf, Am, An, &Adata[0], lda);
+    blas::real_type<T> Bnorm =
+                lapack::lange(lapack::Norm::Inf, Bm, Bn, &Bdata[0], ldb);
+    blas::real_type<T> Cnorm =
+                lapack::lange(lapack::Norm::Inf, Cm, Cn, &Cdata[0], ldc);
 
     hcore::DenseTile<T> A(Am, An, &Adata[0], lda);
     A.op(transA);
-
-    generate_dense_tile(A, iseed, mode, cond);
-
-    blas::real_type<T> Anorm =
-        lapack::lange(lapack::Norm::Inf, Am, An, &Adata[0], lda);
-
-    std::vector<T> Bdata(ldb * Bn);
-    // lapack::larnv(idist, iseed, ldb * Bn, &Bdata[0]);
-
     hcore::DenseTile<T> B(Bm, Bn, &Bdata[0], ldb);
     B.op(transB);
-
-    generate_dense_tile(B, iseed, mode, cond);
-
-    blas::real_type<T> Bnorm =
-        lapack::lange(lapack::Norm::Inf, Bm, Bn, &Bdata[0], ldb);
-
-    std::vector<T> Cdata(ldc * Cn);
-    // lapack::larnv(idist, iseed, ldc * Cn, &Cdata[0]);
-
     hcore::DenseTile<T> C(Cm, Cn, &Cdata[0], ldc);
-    C.op(transC);
 
-    generate_dense_tile(C, iseed, mode, cond);
-
-    blas::real_type<T> Cnorm =
-        lapack::lange(lapack::Norm::Inf, Cm, Cn, &Cdata[0], ldc);
-
-    std::vector<T> Cref(ldc * Cn);
+    std::vector<T> Cref;
     if (params.check() == 'y') {
-        copy(&Cref[0], ldc, C);
+        Cref = Cdata;
     }
 
     if (verbose) {
@@ -304,6 +279,8 @@ void gemm_test_execute(Params& params, bool run)
             pretty_print(Cm, Cn, &Cref[0], ldc, "Cref");
         }
 
+        T* C_ptr = &Cdata[0];
+
         if (params.routine == "gemm_dcc" ||
             params.routine == "gemm_cdc" ||
             params.routine == "gemm_ccc") {
@@ -313,15 +290,19 @@ void gemm_test_execute(Params& params, bool run)
                 Cm, Cn, CUV.rk(),
                 1.0, CUV.Udata(), CUV.ldu(),
                      CUV.Vdata(), CUV.ldv(),
-                0.0, &Cdata[0],   ldc);
+                0.0, &C_ptr[0],   ldc);
+        }
+        else if (params.routine == "gemm_ddc") {
+            C_ptr = CUV.Udata();
         }
 
-        // Compute the Residual ||Cref - C||_inf.        
+        // Compute the Residual ||Cref - C||_inf.
 
-        if (params.routine == "gemm_ddc")
-            diff(&Cref[0], ldc, CUV);
-        else
-            diff(&Cref[0], ldc, C);
+        for (int64_t j = 0; j < Cn; ++j) {
+            for (int64_t i = 0; i < Cm; ++i) {
+                Cref[i + j * ldc] -= C_ptr[i + j * ldc];
+            }
+        }
 
         if (verbose) {
             pretty_print(Cm, Cn, &Cref[0], ldc, "Cref_diff_C");
