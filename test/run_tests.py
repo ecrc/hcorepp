@@ -69,6 +69,7 @@ group_opt.add_argument( '--type',   action='store', help='default=%(default)s', 
 # # group_opt.add_argument( '--layout', action='store', help='default=%(default)s', default='c,r' )
 group_opt.add_argument( '--transA', action='store', help='default=%(default)s', default='n,t,c' )
 group_opt.add_argument( '--transB', action='store', help='default=%(default)s', default='n,t,c' )
+group_opt.add_argument( '--transC', action='store', help='default=%(default)s', default='n,t,c' )
 group_opt.add_argument( '--trans',  action='store', help='default=%(default)s', default='n,t,c' )
 group_opt.add_argument( '--uplo',   action='store', help='default=%(default)s', default='l,u' )
 group_opt.add_argument( '--diag',   action='store', help='default=%(default)s', default='n,u' )
@@ -210,6 +211,7 @@ dtype  = ' --type '   + opts.type   if (opts.type)   else ''
 # layout = ' --layout ' + opts.layout if (opts.layout) else ''
 transA = ' --transA ' + opts.transA if (opts.transA) else ''
 transB = ' --transB ' + opts.transB if (opts.transB) else ''
+transC = ' --transC ' + opts.transC if (opts.transC) else ''
 trans  = ' --trans '  + opts.trans  if (opts.trans)  else ''
 uplo   = ' --uplo '   + opts.uplo   if (opts.uplo)   else ''
 diag   = ' --diag '   + opts.diag   if (opts.diag)   else ''
@@ -289,14 +291,14 @@ cmds = []
 # Level 3
 if (opts.blas3):
     cmds += [
-    [ 'gemm_ddd', dtype + align + transA + transB + mnk ],
-    [ 'gemm_ddc', dtype + align + transA + transB + mnk ],
-    [ 'gemm_dcd', dtype + align + transA + transB + mnk ],
-    [ 'gemm_dcc', dtype + align + transA + transB + mnk ],
-    [ 'gemm_cdd', dtype + align + transA + transB + mnk ],
-    [ 'gemm_cdc', dtype + align + transA + transB + mnk ],
-    [ 'gemm_ccd', dtype + align + transA + transB + mnk ],
-    [ 'gemm_ccc', dtype + align + transA + transB + mnk ],
+    [ 'gemm_ddd', dtype + align + transA + transB + transC + mnk ],
+    [ 'gemm_ddc', dtype + align + transA + transB + transC + mnk ],
+    [ 'gemm_dcd', dtype + align + transA + transB + transC + mnk ],
+    [ 'gemm_dcc', dtype + align + transA + transB + transC + mnk ],
+    [ 'gemm_cdd', dtype + align + transA + transB + transC + mnk ],
+    [ 'gemm_cdc', dtype + align + transA + transB + transC + mnk ],
+    [ 'gemm_ccd', dtype + align + transA + transB + transC + mnk ],
+    [ 'gemm_ccc', dtype + align + transA + transB + transC + mnk ],
     # [ 'hemm',  dtype         + layout + align + side + uplo + mn ],
     # [ 'symm',  dtype         + layout + align + side + uplo + mn ],
     # [ 'trmm',  dtype         + layout + align + side + uplo + trans + diag + mn ],
