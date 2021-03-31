@@ -14,6 +14,8 @@
 #include <vector>
 #include <complex>
 #include <cassert>
+#include <string>
+#include <stdexcept>
 
 namespace hcore {
 
@@ -53,20 +55,30 @@ void gemm(
     }
     else {
         blas::Op opA;
-        if (A.op() == blas::Op::NoTrans)
+        if (A.op() == blas::Op::NoTrans) {
             opA = C.op();
-        else if ((A.op() == C.op()) || (!blas::is_complex<T>::value))
+        }
+        else if ((A.op() == C.op()) || (!blas::is_complex<T>::value)) {
             opA = blas::Op::NoTrans;
-        else
-            assert(false);
+        }
+        else {
+            const std::string& what_arg =
+            "C is complex, C != blas::Op::NoTrans, and A != blas::Op::NoTrans.";
+            throw std::invalid_argument(what_arg);
+        }
 
         blas::Op opB;
-        if (B.op() == blas::Op::NoTrans)
+        if (B.op() == blas::Op::NoTrans) {
             opB = C.op();
-        else if ((B.op() == C.op()) || (!blas::is_complex<T>::value))
+        }
+        else if ((B.op() == C.op()) || (!blas::is_complex<T>::value)) {
             opB = blas::Op::NoTrans;
-        else
-            assert(false);
+        }
+        else {
+            const std::string& what_arg =
+            "C is complex, C != blas::Op::NoTrans, and B != blas::Op::NoTrans.";
+            throw std::invalid_argument(what_arg);
+        }
 
         using blas::conj;
 
