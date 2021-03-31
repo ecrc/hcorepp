@@ -3,9 +3,10 @@
 // All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
-#ifndef HCORE_TEST_PRETTY_PRINT_HH
-#define HCORE_TEST_PRETTY_PRINT_HH
+#ifndef HCORE_TEST_TILE_UTILS_HH
+#define HCORE_TEST_TILE_UTILS_HH
 
+#include "hcore/tile/tile.hh"
 #include "hcore/tile/dense.hh"
 #include "hcore/tile/compressed.hh"
 
@@ -14,6 +15,26 @@
 #include <string>
 #include <cstdio>
 #include <cstdint>
+
+template <typename T>
+void diff(T* Aref, int64_t lda_ref, hcore::Tile<T> const& A)
+{
+    for (int64_t j = 0; j < A.n(); ++j) {
+        for (int64_t i = 0; i < A.m(); ++i) {
+            Aref[i + j * lda_ref] -= A(i, j);
+        }
+    }
+}
+
+template <typename T>
+void copy(T* Aref, int64_t lda_ref, hcore::Tile<T> const& A)
+{
+    for (int64_t j = 0; j < A.n(); ++j) {
+        for (int64_t i = 0; i < A.m(); ++i) {
+            Aref[i + j * lda_ref] = A(i, j);
+        }
+    }
+}
 
 template <typename T>
 void pretty_print(
@@ -82,4 +103,4 @@ void pretty_print(
         A.rk(), A.n(), A.Vdata(), A.ldv(), Vlabel.c_str(), width, precision);
 }
 
-#endif // HCORE_TEST_PRETTY_PRINT_HH
+#endif // HCORE_TEST_TILE_UTILS_HH

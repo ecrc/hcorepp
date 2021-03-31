@@ -5,7 +5,7 @@
 
 #include "test.hh"
 #include "hcore.hh"
-#include "pretty_print.hh"
+#include "tile_utils.hh"
 #include "matrix_utils.hh"
 
 #include "blas.hh"
@@ -23,28 +23,36 @@
 template <typename T>
 void gemm_test_execute(Params& params, bool run)
 {
+    using real_t = blas::real_type<T>;
+
     // todo
     // blas::Layout layout = params.layout();
 
     blas::Op transA = params.transA();
     blas::Op transB = params.transB();
+    blas::Op transC = params.transC();
+
     T alpha = params.alpha();
-    T beta  = params.beta();
+    T beta = params.beta();
+
+    int verbose = params.verbose();
+    int mode = params.latms_mode();
+
     int64_t m = params.dim.m();
     int64_t n = params.dim.n();
     int64_t k = params.dim.k();
     int64_t align = params.align();
-    int verbose = params.verbose();
-    double tol = params.tol();
-    int mode = params.latms_mode();
-    blas::real_type<T> cond = params.latms_cond();
-    blas::real_type<T> accuracy = params.routine == "gemm_ddd" ?
-        std::numeric_limits<blas::real_type<T>>::epsilon() : params.accuracy();
+    int64_t truncate_with_fixed_rk = params.truncate_with_fixed_rk();
+
+    real_t tol = params.tol();
+    real_t cond = params.latms_cond();
+    real_t accuracy =
+        params.routine == "gemm_ddd" ? std::numeric_limits<real_t>::epsilon()
+                                     : params.accuracy();
 
     bool use_trmm = params.use_trmm() == 'y';
     bool use_ungqr = params.use_ungqr() == 'y';
     bool truncate_with_tol = params.truncate_with_tol() == 'y';
-    int64_t truncate_with_fixed_rk = params.truncate_with_fixed_rk();
 
     if (params.routine == "gemm_ddc" ||
         params.routine == "gemm_dcc" ||
@@ -56,6 +64,18 @@ void gemm_test_execute(Params& params, bool run)
     if (!run) return;
 
     // quick returns
+    if (blas::is_complex<T>::value) {
+        if ((transC == blas::Op::Trans &&
+                (transA == blas::Op::ConjTrans || transB == blas::Op::ConjTrans)
+            ) ||
+            (transC == blas::Op::ConjTrans &&
+                (transA == blas::Op::Trans || transB == blas::Op::Trans)
+            )) {
+            printf("skipping: wrong combinations of transA/transB/transC.\n");
+            return;
+        }
+    }
+
     // todo: relax these assumptions
     if (params.routine != "gemm_ddd") {
         if (transA != blas::Op::NoTrans) {
@@ -66,14 +86,18 @@ void gemm_test_execute(Params& params, bool run)
             printf("skipping: only transB=NoTrans is supported.\n");
             return;
         }
+        if (transC != blas::Op::NoTrans) {
+            printf("skipping: only transC=NoTrans is supported.\n");
+            return;
+        }
     }
 
     int64_t Am = transA == blas::Op::NoTrans ? m : k;
     int64_t An = transA == blas::Op::NoTrans ? k : m;
     int64_t Bm = transB == blas::Op::NoTrans ? k : n;
     int64_t Bn = transB == blas::Op::NoTrans ? n : k;
-    int64_t Cm = m;
-    int64_t Cn = n;
+    int64_t Cm = transC == blas::Op::NoTrans ? m : n;
+    int64_t Cn = transC == blas::Op::NoTrans ? n : m;
 
     // todo
     // if (layout == blas::Layout::RowMajor) {
@@ -102,11 +126,11 @@ void gemm_test_execute(Params& params, bool run)
     // lapack::larnv(idist, iseed, ldc * Cn, &Cdata[0]);
     generate_dense_matrix(Cm, Cn, &Cdata[0], ldc, iseed, mode, cond);
 
-    blas::real_type<T> Anorm =
+    real_t Anorm =
                 lapack::lange(lapack::Norm::Inf, Am, An, &Adata[0], lda);
-    blas::real_type<T> Bnorm =
+    real_t Bnorm =
                 lapack::lange(lapack::Norm::Inf, Bm, Bn, &Bdata[0], ldb);
-    blas::real_type<T> Cnorm =
+    real_t Cnorm =
                 lapack::lange(lapack::Norm::Inf, Cm, Cn, &Cdata[0], ldc);
 
     hcore::DenseTile<T> A(Am, An, &Adata[0], lda);
@@ -114,10 +138,14 @@ void gemm_test_execute(Params& params, bool run)
     hcore::DenseTile<T> B(Bm, Bn, &Bdata[0], ldb);
     B.op(transB);
     hcore::DenseTile<T> C(Cm, Cn, &Cdata[0], ldc);
+    C.op(transC);
+
+    int64_t ldc_ref = testsweeper::roundup(m, align);
 
     std::vector<T> Cref;
     if (params.check() == 'y') {
-        Cref = Cdata;
+        Cref.resize(ldc_ref * n);
+        copy(&Cref[0], ldc_ref, C);
     }
 
     if (verbose) {
@@ -126,7 +154,7 @@ void gemm_test_execute(Params& params, bool run)
         pretty_print(C, "C");
 
         if (verbose > 1) {
-            pretty_print(Cm, Cn, &Cref[0], ldc, "Cref");
+            pretty_print(m, n, &Cref[0], ldc_ref, "Cref");
         }
     }
 
@@ -220,7 +248,7 @@ void gemm_test_execute(Params& params, bool run)
     else if (params.routine == "gemm_ccc") {
         hcore::gemm<T>(alpha, AUV, BUV, beta, CUV,
                 use_trmm, use_ungqr, truncate_with_tol, truncate_with_fixed_rk);
-        // use PASC papers, assume square matrices
+        // todo: for now use PASC paper, which assumes square matrices
         int64_t max_Ark_Brk_Crk = std::max({Ark, Brk, Crk});
         int64_t max_m_n_k = std::max({m, n, k});
         gflops = (1e-9 * ((blas::is_complex<T>::value ? 3 : 1)
@@ -269,17 +297,15 @@ void gemm_test_execute(Params& params, bool run)
                 m, n, k,
                 alpha, &Adata[0], lda,
                        &Bdata[0], ldb,
-                beta,  &Cref[0],  ldc);
+                beta,  &Cref[0],  ldc_ref);
         }
         double ref_time_end = testsweeper::get_wtime();
         params.ref_time() = ref_time_end - ref_time_start;
         params.ref_gflops() = blas::Gflop<T>::gemm(m, n, k) / params.ref_time();
 
         if (verbose) {
-            pretty_print(Cm, Cn, &Cref[0], ldc, "Cref");
+            pretty_print(m, n, &Cref[0], ldc_ref, "Cref");
         }
-
-        T* C_ptr = &Cdata[0];
 
         if (params.routine == "gemm_dcc" ||
             params.routine == "gemm_cdc" ||
@@ -290,27 +316,23 @@ void gemm_test_execute(Params& params, bool run)
                 Cm, Cn, CUV.rk(),
                 1.0, CUV.Udata(), CUV.ldu(),
                      CUV.Vdata(), CUV.ldv(),
-                0.0, &C_ptr[0],   ldc);
-        }
-        else if (params.routine == "gemm_ddc") {
-            C_ptr = CUV.Udata();
+                0.0, &Cdata[0],   ldc);
         }
 
-        // Compute the Residual ||Cref - C||_inf.
+        // Compute the Residual ||Cref - C||_inf.        
 
-        for (int64_t j = 0; j < Cn; ++j) {
-            for (int64_t i = 0; i < Cm; ++i) {
-                Cref[i + j * ldc] -= C_ptr[i + j * ldc];
-            }
-        }
+        if (params.routine == "gemm_ddc")
+            diff(&Cref[0], ldc_ref, CUV);
+        else
+            diff(&Cref[0], ldc_ref, C);
 
         if (verbose) {
-            pretty_print(Cm, Cn, &Cref[0], ldc, "Cref_diff_C");
+            pretty_print(m, n, &Cref[0], ldc_ref, "Cref_diff_C");
         }
 
         params.error() =
-                    lapack::lange(lapack::Norm::Inf, Cm, Cn, &Cref[0], ldc)
-                    / (sqrt(blas::real_type<T>(k) + 2) * std::abs(alpha) *
+                    lapack::lange(lapack::Norm::Inf, m, n, &Cref[0], ldc_ref)
+                    / (sqrt(real_t(k) + 2) * std::abs(alpha) *
                        Anorm * Bnorm + 2 * std::abs(beta) * Cnorm);
 
         // Complex number need extra factor.

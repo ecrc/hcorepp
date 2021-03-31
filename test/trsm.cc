@@ -5,7 +5,7 @@
 
 #include "test.hh"
 #include "hcore.hh"
-#include "pretty_print.hh"
+#include "tile_utils.hh"
 #include "matrix_utils.hh"
 
 #include "blas.hh"
