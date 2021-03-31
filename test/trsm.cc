@@ -9,8 +9,8 @@
 #include "matrix_utils.hh"
 
 #include "blas.hh"
-#include "lapack.hh"
 #include "blas/flops.hh"
+#include "lapack.hh"
 #include "testsweeper.hh"
 
 #include <vector>

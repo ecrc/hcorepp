@@ -24,6 +24,7 @@ public:
     testsweeper::ParamEnum<blas::Op> trans;
     testsweeper::ParamEnum<blas::Op> transA;
     testsweeper::ParamEnum<blas::Op> transB;
+    testsweeper::ParamEnum<blas::Op> transC;
 
     testsweeper::ParamChar check;
     testsweeper::ParamChar use_trmm;

@@ -108,6 +108,11 @@ Params::Params():
         "transB", 7, testsweeper::ParamType::List, blas::Op::NoTrans,
         blas::char2op, blas::op2char, blas::op2str,
         "transpose of B: n=notrans (default), t=trans, c=conjtrans"),
+    transC(
+        // name, width, type, default, char2enum, enum2char, enum2str, help
+        "transC", 7, testsweeper::ParamType::List, blas::Op::NoTrans,
+        blas::char2op, blas::op2char, blas::op2str,
+        "transpose of C: n=notrans (default), t=trans, c=conjtrans"),
     dim(
         // name, width, type, min, max, help
         "dim", 5, testsweeper::ParamType::List, 0, 1000000,

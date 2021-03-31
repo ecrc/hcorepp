@@ -5,19 +5,20 @@
 
 #include "test.hh"
 #include "hcore.hh"
-#include "flops.hh"
 #include "pretty_print.hh"
 #include "matrix_utils.hh"
 
 #include "blas.hh"
-#include "lapack.hh"
 #include "blas/flops.hh"
+#include "lapack.hh"
 #include "testsweeper.hh"
 
 #include <vector>
 #include <cstdint>
 #include <complex>
 #include <stdexcept>
+#include <algorithm>
+#include <initializer_list>
 
 template <typename T>
 void gemm_test_execute(Params& params, bool run)
@@ -217,9 +218,15 @@ void gemm_test_execute(Params& params, bool run)
                                blas::Gflop<T>::gemm(Cm, Cn, Brk));
     }
     else if (params.routine == "gemm_ccc") {
-        hcore::gemm<T>(alpha, AUV, BUV, beta, CUV, 
+        hcore::gemm<T>(alpha, AUV, BUV, beta, CUV,
                 use_trmm, use_ungqr, truncate_with_tol, truncate_with_fixed_rk);
-        gflops = hcore::Gflop<T>::gemm(m, n, k, Ark, Brk, CUV.rk());
+        // use PASC papers, assume square matrices
+        int64_t max_Ark_Brk_Crk = std::max({Ark, Brk, Crk});
+        int64_t max_m_n_k = std::max({m, n, k});
+        gflops = (1e-9 * ((blas::is_complex<T>::value ? 3 : 1)
+                     * 36 * max_m_n_k * (max_Ark_Brk_Crk
+                     * max_Ark_Brk_Crk) + 157 * (max_Ark_Brk_Crk
+                     * max_Ark_Brk_Crk * max_Ark_Brk_Crk)));
         // todo
         // gflops = blas::Gflop<T>::gemm(Ark, Brk, An) +
         //          (Ark <= Brk ? blas::Gflop<T>::gemm(Ark, Cn, Brk) +
