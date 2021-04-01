@@ -34,6 +34,23 @@ void generate_dense_matrix(
 }
 
 template <typename T>
+void set_dense_uplo(
+    blas::Uplo uplo, int64_t m, int64_t n, T* A, int64_t lda, T v = nan(""))
+{
+    if (uplo == blas::Uplo::Lower) {
+        lapack::laset(
+            lapack::MatrixType::Upper, m-1, n-1, v, v, &A[0+1*lda], lda);
+    }
+    else if (uplo == blas::Uplo::Upper) {
+        lapack::laset(
+            lapack::MatrixType::Lower, m-1, n-1, v, v, &A[1+0*lda], lda);
+    }
+    else {
+        assert(false);
+    }
+}
+
+template <typename T>
 void compress_dense_matrix(
     int64_t m, int64_t n, std::vector<T> A, int64_t lda,
     std::vector<T>& UV, int64_t& rk, blas::real_type<T> accuracy)

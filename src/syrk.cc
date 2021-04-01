@@ -13,6 +13,7 @@
 #include <vector>
 #include <complex>
 #include <cassert>
+#include <stdexcept>
 
 namespace hcore {
 
@@ -39,8 +40,16 @@ void syrk(
 
     internal::check_syrk(A, C);
 
-    if (blas::is_complex<T>::value && C.op() == blas::Op::ConjTrans)
-        assert(false);
+    if (blas::is_complex<T>::value) {
+        if (A.op() == blas::Op::ConjTrans) {
+            throw std::invalid_argument(
+                "C is complex and transA == Op::ConjTrans.");
+        }
+        else if (C.op() == blas::Op::ConjTrans) {
+            throw std::invalid_argument(
+                "C is complex and transC == Op::ConjTrans.");
+        }
+    }
 
     blas::syrk(
         blas::Layout::ColMajor, C.uplo_physical(), A.op(),

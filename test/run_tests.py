@@ -241,6 +241,12 @@ dtype_real    = ' --type ' + filter_csv( ('s', 'd'), opts.type )
 dtype_complex = ' --type ' + filter_csv( ('c', 'z'), opts.type )
 dtype_double  = ' --type ' + filter_csv( ('d', 'z'), opts.type )
 
+transA_nt = ' --transA ' + filter_csv( ('n', 't'), opts.trans )
+transA_nc = ' --transA ' + filter_csv( ('n', 'c'), opts.trans )
+
+transC_nt = ' --transC ' + filter_csv( ('n', 't'), opts.trans )
+transC_nc = ' --transC ' + filter_csv( ('n', 'c'), opts.trans )
+
 trans_nt = ' --trans ' + filter_csv( ('n', 't'), opts.trans )
 trans_nc = ' --trans ' + filter_csv( ('n', 'c'), opts.trans )
 
@@ -305,10 +311,10 @@ if (opts.blas3):
     [ 'trsm',  dtype         + align + side + uplo + trans + diag + mn ],
     # [ 'herk',  dtype_real    + layout + align + uplo + trans    + mn ],
     # [ 'herk',  dtype_complex + layout + align + uplo + trans_nc + mn ],
-    [ 'syrk_dd',  dtype_real    + align + uplo + trans    + mn ],
-    [ 'syrk_dd',  dtype_complex + align + uplo + trans_nt + mn ],
-    [ 'syrk_cd',  dtype_real    + align + uplo + trans    + mn ],
-    [ 'syrk_cd',  dtype_complex + align + uplo + trans_nt + mn ],
+    [ 'syrk_dd',  dtype_real    + align + uplo + transA    + transC    + mn ],
+    [ 'syrk_dd',  dtype_complex + align + uplo + transA_nt + transC_nt + mn ],
+    [ 'syrk_cd',  dtype_real    + align + uplo + transA    + transC    + mn ],
+    [ 'syrk_cd',  dtype_complex + align + uplo + transA_nt + transC_nt + mn ],
     # [ 'her2k', dtype_real    + layout + align + uplo + trans    + mn ],
     # [ 'her2k', dtype_complex + layout + align + uplo + trans_nc + mn ],
     # [ 'syr2k', dtype_real    + layout + align + uplo + trans    + mn ],

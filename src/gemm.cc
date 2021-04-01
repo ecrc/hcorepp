@@ -63,7 +63,7 @@ void gemm(
         }
         else {
             throw std::invalid_argument(
-                "C is complex, C != blas::Op::NoTrans, and transA != transC.");
+                "C is complex, transC != Op::NoTrans, and transA != transC.");
         }
 
         blas::Op opB;
@@ -75,7 +75,7 @@ void gemm(
         }
         else {
             throw std::invalid_argument(
-                "C is complex, C != blas::Op::NoTrans, and transB != transC.");
+                "C is complex, transC != Op::NoTrans, and transB != transC.");
         }
 
         using blas::conj;

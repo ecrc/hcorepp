@@ -16,28 +16,35 @@
 #include <vector>
 #include <cstdint>
 #include <complex>
-#include <cassert>
 #include <stdexcept>
 
 template <typename T>
 void syrk_test_execute(Params& params, bool run)
 {
+    using real_t = blas::real_type<T>;
+
     // todo
     // blas::Layout layout = params.layout();
 
     blas::Uplo uplo = params.uplo();
-    blas::Op trans = params.trans();
+    blas::Op transA = params.transA();
+    blas::Op transC = params.transC();
+
     T alpha = params.alpha();
     T beta  = params.beta();
+
+    int verbose = params.verbose();
+    int mode = params.latms_mode();
+
     int64_t n = params.dim.n();
     int64_t k = params.dim.k();
     int64_t align = params.align();
-    int verbose = params.verbose();
-    double tol = params.tol();
-    int mode = params.latms_mode();
-    blas::real_type<T> cond = params.latms_cond();
-    blas::real_type<T> accuracy = params.routine == "syrk_dd" ?
-        std::numeric_limits<blas::real_type<T>>::epsilon() : params.accuracy();
+
+    real_t tol = params.tol();
+    real_t cond = params.latms_cond();
+    real_t accuracy =
+        params.routine == "syrk_dd" ? std::numeric_limits<real_t>::epsilon()
+                                    : params.accuracy();
 
     if (params.routine == "syrk_dc" ||
         params.routine == "syrk_cc") {
@@ -47,10 +54,21 @@ void syrk_test_execute(Params& params, bool run)
     if (!run) return;
 
     // quick returns
+    if (blas::is_complex<T>::value) {
+        if (transA == blas::Op::ConjTrans || transC == blas::Op::ConjTrans) {
+            printf("skipping: wrong combinations of transA/transC.\n");
+            return;
+        }
+    }
+
     // todo: relax these assumptions
     if (params.routine != "syrk_dd") {
-        if (trans != blas::Op::NoTrans) {
-            printf("skipping: only trans=NoTrans is supported.\n");
+        if (transA != blas::Op::NoTrans) {
+            printf("skipping: only transA=NoTrans is supported.\n");
+            return;
+        }
+        if (transC != blas::Op::NoTrans) {
+            printf("skipping: only transC=NoTrans is supported.\n");
             return;
         }
     }
@@ -59,10 +77,8 @@ void syrk_test_execute(Params& params, bool run)
         return;
     }
 
-    int64_t Am = trans == blas::Op::NoTrans ? n : k;
-    int64_t An = trans == blas::Op::NoTrans ? k : n;
-    int64_t Cm = n;
-    int64_t Cn = n;
+    int64_t Am = transA == blas::Op::NoTrans ? n : k;
+    int64_t An = transA == blas::Op::NoTrans ? k : n;
 
     // todo
     // if (layout == blas::Layout::RowMajor) {
@@ -70,10 +86,10 @@ void syrk_test_execute(Params& params, bool run)
     // }
 
     int64_t lda = testsweeper::roundup(Am, align);
-    int64_t ldc = testsweeper::roundup(Cm, align);
+    int64_t ldc = testsweeper::roundup(n,  align);
 
     std::vector<T> Adata(lda * An);
-    std::vector<T> Cdata(ldc * Cn);
+    std::vector<T> Cdata(ldc *  n);
 
     // int64_t idist = 1;
     int iseed[4] = {0, 0, 0, 1};
@@ -82,44 +98,31 @@ void syrk_test_execute(Params& params, bool run)
     generate_dense_matrix(Am, An, &Adata[0], lda, iseed, mode, cond);
 
     // lapack::larnv(idist, iseed, ldc * n, &Cdata[0]);
-    generate_dense_matrix(Cm, Cn, &Cdata[0], ldc, iseed, mode, cond);
+    generate_dense_matrix(n, n, &Cdata[0], ldc, iseed, mode, cond);
 
-    blas::real_type<T> Anorm =
-                lapack::lange(lapack::Norm::Inf, Am, An, &Adata[0], lda);
-    blas::real_type<T> Cnorm =
-                lapack::lansy(lapack::Norm::Inf, uplo, Cn, &Cdata[0], ldc);
+    real_t Anorm = lapack::lange(lapack::Norm::Inf, Am, An, &Adata[0], lda);
+    real_t Cnorm = lapack::lansy(lapack::Norm::Inf, uplo, n, &Cdata[0], ldc);
 
     hcore::DenseTile<T> A(Am, An, &Adata[0], lda);
-    A.op(trans);
-    hcore::DenseTile<T> C(Cm, Cn, &Cdata[0], ldc);
-    C.op(trans);
+    A.op(transA);
+    hcore::DenseTile<T> C(n, n, &Cdata[0], ldc);
+    C.op(transC);
     C.uplo(uplo);
 
-    T nan_ = nan("");
-    if (uplo == blas::Uplo::Lower) {
-        lapack::laset(lapack::MatrixType::Upper,
-            Cm-1, Cn-1, nan_, nan_, &Cdata[0 + 1 * ldc], ldc);
-    }
-    else {
-        lapack::laset(lapack::MatrixType::Lower,
-            Cm-1, Cn-1, nan_, nan_, &Cdata[1 + 0 * ldc], ldc);
-    }
+    set_dense_uplo(uplo, n, n, &Cdata[0], ldc);
 
     std::vector<T> Cref;
     if (params.check() == 'y') {
-        Cref = Cdata;
+        Cref.resize(ldc * n);
+        copy(&Cref[0], ldc, C);
     }
-
-    assert(!(
-        blas::is_complex<T>::value &&
-        (C.op() == blas::Op::ConjTrans || A.op() == blas::Op::ConjTrans)));
 
     if (verbose) {
         pretty_print(A, "A");
         pretty_print(C, "C");
 
         if (verbose > 1) {
-            pretty_print(Cm, Cn, &Cref[0], ldc, "Cref");
+            pretty_print(n, n, &Cref[0], ldc, "Cref");
         }
     }
 
@@ -132,7 +135,7 @@ void syrk_test_execute(Params& params, bool run)
         compress_dense_matrix(Am, An, Adata, lda, AUVdata, Ark, accuracy);
 
         AUV = hcore::CompressedTile<T>(Am, An, &AUVdata[0], lda, Ark, accuracy);
-        AUV.op(trans);
+        AUV.op(transA);
 
         if (verbose) {
             pretty_print(AUV, "A");
@@ -143,10 +146,10 @@ void syrk_test_execute(Params& params, bool run)
         params.routine == "syrk_cc") {
         assert(false);
         // todo
-        // compress_dense_matrix(Cm, Cn, Cdata, ldc, CUVdata, Crk, accuracy);
+        // compress_dense_matrix(n, n, Cdata, ldc, CUVdata, Crk, accuracy);
 
-        // CUV = hcore::CompressedTile<T>(Cm, Cn, &CUVdata[0], ldc, Crk, accuracy);
-        // CUV.op(trans);
+        // CUV = hcore::CompressedTile<T>(n, n, &CUVdata[0], ldc, Crk, accuracy);
+        // CUV.op(transC);
         // CUV.uplo(uplo);
 
         // if (verbose) {
@@ -204,10 +207,16 @@ void syrk_test_execute(Params& params, bool run)
     }
 
     if (params.check() == 'y') {
+        blas::Uplo uplo_ = uplo;
+        if (transC != blas::Op::NoTrans) {
+            uplo_ = (uplo_ == blas::Uplo::Lower ? blas::Uplo::Upper
+                                                : blas::Uplo::Lower);
+        }
+
         double ref_time_start = testsweeper::get_wtime();
         {
             blas::syrk(
-                blas::Layout::ColMajor, uplo, trans,
+                blas::Layout::ColMajor, uplo_, transA,
                 n, k,
                 alpha, &Adata[0], lda,
                 beta,  &Cref[0],  ldc);
@@ -217,42 +226,39 @@ void syrk_test_execute(Params& params, bool run)
         params.ref_gflops() = blas::Gflop<T>::syrk(n, k) / params.ref_time();
 
         if (verbose) {
-            pretty_print(Cm, Cn, &Cref[0], ldc, "Cref");
+            pretty_print(n, n, &Cref[0], ldc, "Cref");
         }
 
-        T* C_ptr = &Cdata[0];
-
         // todo
-        //if (params.routine == "syrk_cc") {
-        //    // C = CU * CV.'
-        //    blas::gemm(
-        //        blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
-        //        Cm, Cn, CUV.rk(),
-        //        1.0, CUV.Udata(), CUV.ldu(),
-        //             CUV.Vdata(), CUV.ldv(),
-        //        0.0, &C_ptr[0],   ldc);
-        //}
-        //else if (params.routine == "syrk_dc") {
-        //    C_ptr = CUV.Udata();
-        //}
+        // if (params.routine == "syrk_dcc" ||
+        //     params.routine == "syrk_cdc" ||
+        //     params.routine == "syrk_ccc") {
+        //     // C = CU * CV.'
+        //     blas::gemm(
+        //         blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
+        //         Cm, Cn, CUV.rk(),
+        //         1.0, CUV.Udata(), CUV.ldu(),
+        //              CUV.Vdata(), CUV.ldv(),
+        //         0.0, &Cdata[0],   ldc);
+        // }
 
-        // Compute the Residual ||Cref - C||_inf.
+        // Compute the Residual ||Cref - C||_inf.        
 
-        for (int64_t j = 0; j < Cn; ++j) {
-            for (int64_t i = 0; i < Cm; ++i) {
-                if ((uplo == blas::Uplo::Lower && i >= j) ||
-                    (uplo == blas::Uplo::Upper && i <= j)) {
-                    Cref[i + j * ldc] -= C_ptr[i + j * ldc];
-                }
-            }
+        if (params.routine == "syrk_dc") {
+            assert(false);
+            // todo
+            // diff(&Cref[0], ldc, CUV);
+        }
+        else {
+            diff(&Cref[0], ldc, C);
         }
 
         if (verbose) {
-            pretty_print(Cm, Cn, &Cref[0], ldc, "Cref_diff_C");
+            pretty_print(n, n, &Cref[0], ldc, "Cref_diff_C");
         }
 
         params.error() =
-                    lapack::lansy(lapack::Norm::Inf, uplo, Cn, &Cref[0], ldc)
+                    lapack::lansy(lapack::Norm::Inf, uplo_, n, &Cref[0], ldc)
                     / (sqrt(blas::real_type<T>(k) + 2) * std::abs(alpha) *
                        Anorm * Anorm + 2 * std::abs(beta) * Cnorm);
 
