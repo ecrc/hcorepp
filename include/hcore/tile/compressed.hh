@@ -12,6 +12,7 @@
 #include "blas.hh"
 
 #include <cstdint>
+#include <algorithm>
 
 namespace hcore {
 
@@ -21,6 +22,9 @@ namespace hcore {
 template <typename T>
 class CompressedTile : public Tile<T>
 {
+private:
+    static const int64_t FULL_RANK = -1; ///> Constant representing full rank.
+
 public:
     /// Empty compressed tile.
     CompressedTile() : Tile<T>(), rk_(0)
@@ -106,13 +110,6 @@ public:
         this->data_ = UV;
     }
 
-    /// Update linear algebra rank of this tile.
-    void rk(int64_t rk)
-    {
-        hcore_throw_std_invalid_argument_if(rk < 0);
-        rk_ = rk;
-    }
-
     /// @return column/row stride of V.
     int64_t ldv() const
     {
@@ -122,8 +119,28 @@ public:
     /// @return linear algebra rank of this tile.
     int64_t rk() const
     {
-        return rk_;
+        return (rk_ == FULL_RANK ? std::min(this->m(), this->n()) : rk_);
     }
+
+    /// Update linear algebra rank of this tile.
+    void rk(int64_t rk)
+    {
+        hcore_throw_std_invalid_argument_if(rk < 0 && rk != FULL_RANK);
+        rk_ = (rk == std::min(this->m(), this->n()) ? FULL_RANK : rk);
+    }
+
+    /// Update linear algebra rank of this tile to full rank.
+    void to_full_rk()
+    {
+        rk(FULL_RANK);
+    }
+
+    /// @return whether the linear algebra rank of this tile is full or not.
+    bool is_full_rk() const
+    {
+        return (rk_ == FULL_RANK ? true : false);
+    }
+
 
     /// @return numerical error threshold of this tile.
     blas::real_type<T> accuracy() const

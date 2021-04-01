@@ -126,12 +126,9 @@ void gemm_test_execute(Params& params, bool run)
     // lapack::larnv(idist, iseed, ldc * Cn, &Cdata[0]);
     generate_dense_matrix(Cm, Cn, &Cdata[0], ldc, iseed, mode, cond);
 
-    real_t Anorm =
-                lapack::lange(lapack::Norm::Inf, Am, An, &Adata[0], lda);
-    real_t Bnorm =
-                lapack::lange(lapack::Norm::Inf, Bm, Bn, &Bdata[0], ldb);
-    real_t Cnorm =
-                lapack::lange(lapack::Norm::Inf, Cm, Cn, &Cdata[0], ldc);
+    real_t Anorm = lapack::lange(lapack::Norm::Inf, Am, An, &Adata[0], lda);
+    real_t Bnorm = lapack::lange(lapack::Norm::Inf, Bm, Bn, &Bdata[0], ldb);
+    real_t Cnorm = lapack::lange(lapack::Norm::Inf, Cm, Cn, &Cdata[0], ldc);
 
     hcore::DenseTile<T> A(Am, An, &Adata[0], lda);
     A.op(transA);
@@ -140,12 +137,12 @@ void gemm_test_execute(Params& params, bool run)
     hcore::DenseTile<T> C(Cm, Cn, &Cdata[0], ldc);
     C.op(transC);
 
-    int64_t ldc_ref = testsweeper::roundup(m, align);
+    int64_t ldcref = testsweeper::roundup(m, align);
 
     std::vector<T> Cref;
     if (params.check() == 'y') {
-        Cref.resize(ldc_ref * n);
-        copy(&Cref[0], ldc_ref, C);
+        Cref.resize(ldcref * n);
+        copy(&Cref[0], ldcref, C);
     }
 
     if (verbose) {
@@ -154,7 +151,7 @@ void gemm_test_execute(Params& params, bool run)
         pretty_print(C, "C");
 
         if (verbose > 1) {
-            pretty_print(m, n, &Cref[0], ldc_ref, "Cref");
+            pretty_print(m, n, &Cref[0], ldcref, "Cref");
         }
     }
 
@@ -195,6 +192,7 @@ void gemm_test_execute(Params& params, bool run)
         compress_dense_matrix(Cm, Cn, Cdata, ldc, CUVdata, Crk, accuracy);
 
         CUV = hcore::CompressedTile<T>(Cm, Cn, &CUVdata[0], ldc, Crk, accuracy);
+        CUV.op(transC);
 
         if (verbose) {
             pretty_print(CUV, "C");
@@ -286,7 +284,7 @@ void gemm_test_execute(Params& params, bool run)
         params.routine == "gemm_dcc" ||
         params.routine == "gemm_cdc" ||
         params.routine == "gemm_ccc") {
-        params.rk() = std::to_string(Crk) + " -> " + std::to_string(CUV.rk());
+        params.rk() = std::to_string(Crk) + "->" + std::to_string(CUV.rk());
     }
 
     if (params.check() == 'y') {
@@ -297,14 +295,14 @@ void gemm_test_execute(Params& params, bool run)
                 m, n, k,
                 alpha, &Adata[0], lda,
                        &Bdata[0], ldb,
-                beta,  &Cref[0],  ldc_ref);
+                beta,  &Cref[0],  ldcref);
         }
         double ref_time_end = testsweeper::get_wtime();
         params.ref_time() = ref_time_end - ref_time_start;
         params.ref_gflops() = blas::Gflop<T>::gemm(m, n, k) / params.ref_time();
 
         if (verbose) {
-            pretty_print(m, n, &Cref[0], ldc_ref, "Cref");
+            pretty_print(m, n, &Cref[0], ldcref, "Cref");
         }
 
         if (params.routine == "gemm_dcc" ||
@@ -321,17 +319,19 @@ void gemm_test_execute(Params& params, bool run)
 
         // Compute the Residual ||Cref - C||_inf.        
 
-        if (params.routine == "gemm_ddc")
-            diff(&Cref[0], ldc_ref, CUV);
-        else
-            diff(&Cref[0], ldc_ref, C);
+        if (params.routine == "gemm_ddc") {
+            diff(&Cref[0], ldcref, CUV);
+        }
+        else {
+            diff(&Cref[0], ldcref, C);
+        }
 
         if (verbose) {
-            pretty_print(m, n, &Cref[0], ldc_ref, "Cref_diff_C");
+            pretty_print(m, n, &Cref[0], ldcref, "Cref_diff_C");
         }
 
         params.error() =
-                    lapack::lange(lapack::Norm::Inf, m, n, &Cref[0], ldc_ref)
+                    lapack::lange(lapack::Norm::Inf, m, n, &Cref[0], ldcref)
                     / (sqrt(real_t(k) + 2) * std::abs(alpha) *
                        Anorm * Bnorm + 2 * std::abs(beta) * Cnorm);
 
@@ -343,6 +343,14 @@ void gemm_test_execute(Params& params, bool run)
         }
         params.okay() = (params.error() < tol * accuracy);
     }
+
+    if (params.routine == "gemm_ddc" ||
+        params.routine == "gemm_dcc" ||
+        params.routine == "gemm_cdc" ||
+        params.routine == "gemm_ccc") {
+        delete [] CUV.Udata();
+    }
+
 }
 
 void gemm_test_dispatch(Params& params, bool run)

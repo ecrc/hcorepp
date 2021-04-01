@@ -11,6 +11,7 @@
 
 #include "blas.hh"
 
+#include <new>
 #include <vector>
 #include <complex>
 #include <cassert>
@@ -139,6 +140,7 @@ void gemm(
 {
     assert(A.op() == blas::Op::NoTrans); // todo
     assert(B.op() == blas::Op::NoTrans); // todo
+    assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
     internal::check_gemm(A, B, C);
@@ -162,7 +164,7 @@ void gemm(
         1.0,  &W[0],     C.ldu());
 
     C.UVdata(W);
-    C.rk(std::max(C.m(), C.n()));
+    C.to_full_rk();
 }
 
 // explicit instantaiton
@@ -211,6 +213,7 @@ void gemm(
 {
     assert(A.op() == blas::Op::NoTrans); // todo
     assert(B.op() == blas::Op::NoTrans); // todo
+    assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
     internal::check_gemm(A, B, C);
@@ -276,19 +279,20 @@ void gemm(
 ///     Use trmm. Default false.
 /// @param[in] use_ungqr
 ///     Use ungqr with gemm. Default true.
-/// @param[in] truncation_with_tol
+/// @param[in] truncated_svd
 ///     Truncation to fixed accuracy * tolerance. Default false.
-/// @param[in] rk
-///     Truncation to fixed rank. rk >= 0. Default 0 (false).
+/// @param[in] fixed_rk
+///     Truncation to fixed rank. fixed_rk >= 0. Default 0 (false).
 template <typename T>
 void gemm(
     T alpha,      DenseTile<T> const& A,
              CompressedTile<T> const& B,
     T beta,  CompressedTile<T>      & C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk)
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk)
 {
     assert(A.op() == blas::Op::NoTrans); // todo
     assert(B.op() == blas::Op::NoTrans); // todo
+    assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
     internal::check_gemm(A, B, C);
@@ -303,9 +307,9 @@ void gemm(
                B.Udata(), B.ldu(),
         0.0,   &W[0],     C.m());
 
-    internal::gemm(
+    internal::reduced_svd(
         beta, &W[0], B.Vdata(), C.m(), B.rk(), C,
-        use_trmm, use_ungqr, truncation_with_tol, rk);
+        use_trmm, use_ungqr, truncated_svd, fixed_rk);
 }
 
 // explicit instantaiton
@@ -314,25 +318,25 @@ void gemm(
     float alpha,      DenseTile<float> const& A,
                  CompressedTile<float> const& B,
     float beta,  CompressedTile<float>      & C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk);
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
 void gemm(
     double alpha,      DenseTile<double> const& A,
                   CompressedTile<double> const& B,
     double beta,  CompressedTile<double>      & C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk);
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
 void gemm(
     std::complex<float> alpha,      DenseTile<std::complex<float>> const& A,
                                CompressedTile<std::complex<float>> const& B,
     std::complex<float> beta,  CompressedTile<std::complex<float>>      & C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk);
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
 void gemm(
     std::complex<double> alpha,      DenseTile<std::complex<double>> const& A,
                                 CompressedTile<std::complex<double>> const& B,
     std::complex<double> beta,  CompressedTile<std::complex<double>>      & C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk);
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 
 // =============================================================================
 //
@@ -358,6 +362,7 @@ void gemm(
 {
     assert(A.op() == blas::Op::NoTrans); // todo
     assert(B.op() == blas::Op::NoTrans); // todo
+    assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
     internal::check_gemm(A, B, C);
@@ -423,19 +428,20 @@ void gemm(
 ///     Use trmm. Default false.
 /// @param[in] use_ungqr
 ///     Use ungqr with gemm. Default true.
-/// @param[in] truncation_with_tol
+/// @param[in] truncated_svd
 ///     Truncation to fixed accuracy * tolerance. Default false.
-/// @param[in] rk
-///     Truncation to fixed rank. rk >= 0. Default 0 (false).
+/// @param[in] fixed_rk
+///     Truncation to fixed rank. fixed_rk >= 0. Default 0 (false).
 template <typename T>
 void gemm(
     T alpha, CompressedTile<T> const& A,
                   DenseTile<T> const& B,
     T beta,  CompressedTile<T>      & C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk)
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk)
 {
     assert(A.op() == blas::Op::NoTrans); // todo
     assert(B.op() == blas::Op::NoTrans); // todo
+    assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
     internal::check_gemm(A, B, C);
@@ -450,9 +456,9 @@ void gemm(
                B.data(),  B.ld(),
         0.0,   &W[0],     A.rk());
 
-    internal::gemm(
+    internal::reduced_svd(
         beta, A.Udata(), &W[0], A.ldu(), A.rk(), C,
-        use_trmm, use_ungqr, truncation_with_tol, rk);
+        use_trmm, use_ungqr, truncated_svd, fixed_rk);
 }
 
 // explicit instantaiton
@@ -461,25 +467,25 @@ void gemm(
     float alpha, CompressedTile<float> const& A,
                       DenseTile<float> const& B,
     float beta,  CompressedTile<float>      & C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk);
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
 void gemm(
     double alpha, CompressedTile<double> const& A,
                        DenseTile<double> const& B,
     double beta,  CompressedTile<double>      & C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk);
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
 void gemm(
     std::complex<float> alpha, CompressedTile<std::complex<float>> const& A,
                                     DenseTile<std::complex<float>> const& B,
     std::complex<float> beta,  CompressedTile<std::complex<float>>      & C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk);
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
 void gemm(
     std::complex<double> alpha, CompressedTile<std::complex<double>> const& A,
                                      DenseTile<std::complex<double>> const& B,
     std::complex<double> beta,  CompressedTile<std::complex<double>>      & C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk);
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 
 // =============================================================================
 //
@@ -505,6 +511,7 @@ void gemm(
 {
     assert(A.op() == blas::Op::NoTrans); // todo
     assert(B.op() == blas::Op::NoTrans); // todo
+    assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
     internal::check_gemm(A, B, C);
@@ -601,19 +608,20 @@ void gemm(
 ///     Use trmm. Default false.
 /// @param[in] use_ungqr
 ///     Use ungqr with gemm. Default true.
-/// @param[in] truncation_with_tol
+/// @param[in] truncated_svd
 ///     Truncation to fixed accuracy * tolerance. Default false.
-/// @param[in] rk
-///     Truncation to fixed rank. rk >= 0. Default 0 (false).
+/// @param[in] fixed_rk
+///     Truncation to fixed rank. fixed_rk >= 0. Default 0 (false).
 template <typename T>
 void gemm(
     T alpha, CompressedTile<T> const& A,
              CompressedTile<T> const& B,
     T beta,  CompressedTile<T>& C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk)
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk)
 {
     assert(A.op() == blas::Op::NoTrans); // todo
     assert(B.op() == blas::Op::NoTrans); // todo
+    assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
     internal::check_gemm(A, B, C);
@@ -638,9 +646,9 @@ void gemm(
                  B.Vdata(), B.ldv(),
             0.0, &W1[0],    A.rk());
 
-        internal::gemm(
+        internal::reduced_svd(
             beta, A.Udata(), &W1[0], A.ldu(), A.rk(), C,
-            use_trmm, use_ungqr, truncation_with_tol, rk);
+            use_trmm, use_ungqr, truncated_svd, fixed_rk);
     }
     else {
         std::vector<T> W1(C.m() * B.rk());
@@ -653,9 +661,9 @@ void gemm(
                   &W0[0],    A.rk(),
             0.0,  &W1[0],    C.m());
 
-        internal::gemm(
+        internal::reduced_svd(
             beta, &W1[0], B.Vdata(), C.m(), B.rk(), C,
-            use_trmm, use_ungqr, truncation_with_tol, rk);
+            use_trmm, use_ungqr, truncated_svd, fixed_rk);
     }
 }
 
@@ -665,24 +673,24 @@ void gemm(
     float alpha, CompressedTile<float> const& A,
                  CompressedTile<float> const& B,
     float beta,  CompressedTile<float>      & C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk);
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
 void gemm(
     double alpha, CompressedTile<double> const& A,
                   CompressedTile<double> const& B,
     double beta,  CompressedTile<double>      & C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk);
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
 void gemm(
     std::complex<float> alpha, CompressedTile<std::complex<float>> const& A,
                                CompressedTile<std::complex<float>> const& B,
     std::complex<float> beta,  CompressedTile<std::complex<float>>      & C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk);
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
 void gemm(
     std::complex<double> alpha, CompressedTile<std::complex<double>> const& A,
                                 CompressedTile<std::complex<double>> const& B,
     std::complex<double> beta,  CompressedTile<std::complex<double>>      & C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk);
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 
 } // namespace hcore

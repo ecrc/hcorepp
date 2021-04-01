@@ -93,14 +93,17 @@ void pretty_print(
     hcore::CompressedTile<T> const& A,
     char const* label, int width=12, int precision=9)
 {
-    std::string const& Ulabel = std::string(label) + "U";
-    std::string const& Vlabel = std::string(label) + "V";
-
+    std::string const& Ulabel = (A.is_full_rk() ? std::string(label)
+                                                : std::string(label) + "U");
     // forward
     pretty_print(
         A.m(), A.rk(), A.Udata(), A.ldu(), Ulabel.c_str(), width, precision);
-    pretty_print(
-        A.rk(), A.n(), A.Vdata(), A.ldv(), Vlabel.c_str(), width, precision);
+    if (!A.is_full_rk()) {
+        std::string const& Vlabel = std::string(label) + "V";
+        pretty_print(
+            A.rk(), A.n(), A.Vdata(), A.ldv(), Vlabel.c_str(),
+            width, precision);
+    }
 }
 
 #endif // HCORE_TEST_TILE_UTILS_HH

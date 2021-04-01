@@ -9,6 +9,9 @@
 #include "blas.hh"
 #include "lapack.hh"
 
+#include <new>
+#include <vector>
+#include <cstdint>
 #include <complex>
 #include <cassert>
 #include <algorithm>
@@ -18,10 +21,10 @@ namespace hcore {
 namespace internal {
 
 template <typename T>
-void gemm(
+void reduced_svd(
     T beta, T const* AU, T const* AV, int64_t ldau, int64_t Ark,
-    CompressedTile<T>& C, bool use_trmm, bool use_ungqr,
-    bool truncation_with_tol, int64_t rk)
+    CompressedTile<T>& C,
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk)
 {
     int64_t m = C.m();
     int64_t n = C.n();
@@ -146,14 +149,14 @@ void gemm(
     }
 
     int64_t rk_new;
-    if (rk) { // truncate according to rk
-        rk_new = rk;
-        if (rk > (Ark + Crk))
+    if (fixed_rk) { // truncate according to fixed_rk
+        rk_new = fixed_rk;
+        if (fixed_rk > (Ark + Crk))
             rk_new = (Ark + Crk);
     }
     else { // truncate according to accuracy
         rk_new = sizeS;
-        if (truncation_with_tol) {
+        if (truncated_svd) {
             blas::real_type<T> Sigma_0 = Sigma[0];
             for (int64_t i = 1; i < sizeS; i++) {
                 if (Sigma[i] < accuracy * Sigma_0) {
@@ -250,33 +253,27 @@ void gemm(
 
 // explicit instantaiton
 template
-void gemm(
-    float beta,
-    float const* AU, float const* AV,
-    int64_t ldau, int64_t Ark,
+void reduced_svd(
+    float beta, float const* AU, float const* AV, int64_t ldau, int64_t Ark,
     CompressedTile<float>& C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk);
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
-void gemm(
-    double beta,
-    double const* AU, double const* AV,
-    int64_t ldau, int64_t Ark,
+void reduced_svd(
+    double beta, double const* AU, double const* AV, int64_t ldau, int64_t Ark,
     CompressedTile<double>& C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk);
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
-void gemm(
-    std::complex<float> beta,
-    std::complex<float> const* AU, std::complex<float> const* AV,
-    int64_t ldau, int64_t Ark,
+void reduced_svd(
+    std::complex<float> beta, std::complex<float> const* AU,
+    std::complex<float> const* AV, int64_t ldau, int64_t Ark,
     CompressedTile<std::complex<float>>& C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk);
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
-void gemm(
-    std::complex<double> beta,
-    std::complex<double> const* AU, std::complex<double> const* AV,
-    int64_t ldau, int64_t Ark,
+void reduced_svd(
+    std::complex<double> beta, std::complex<double> const* AU,
+    std::complex<double> const* AV, int64_t ldau, int64_t Ark,
     CompressedTile<std::complex<double>>& C,
-    bool use_trmm, bool use_ungqr, bool truncation_with_tol, int64_t rk);
+    bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 
 } // namespace internal
 } // namespace hcore

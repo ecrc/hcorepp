@@ -14,10 +14,10 @@ namespace hcore {
 namespace internal {
 
 template <typename T>
-void gemm(
+void reduced_svd(
     T beta, T const* AU, T const* AV, int64_t ldau, int64_t Ark,
     CompressedTile<T>& C, bool use_trmm=false, bool use_ungqr=true,
-    bool truncation_with_tol=false, int64_t rk=0);
+    bool truncated_svd=false, int64_t fixed_rk=0);
 
 } // namespace internal
 } // namespace slate
