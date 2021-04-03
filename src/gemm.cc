@@ -21,7 +21,7 @@ namespace hcore {
 
 // =============================================================================
 //
-/// General matrix-matrix multiplication, C = alpha A * B + beta * C.
+/// General matrix-matrix multiplication, C = alpha * A * B + beta * C.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] alpha
@@ -118,7 +118,7 @@ void gemm(
 
 // =============================================================================
 //
-/// General matrix-matrix multiplication, C = alpha A * B + beta * C.
+/// General matrix-matrix multiplication, C = alpha * A * B + beta * C.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] alpha
@@ -191,7 +191,7 @@ void gemm(
 
 // =============================================================================
 //
-/// General matrix-matrix multiplication, C = alpha A * B + beta * C.
+/// General matrix-matrix multiplication, C = alpha * A * B + beta * C.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] alpha
@@ -261,7 +261,7 @@ void gemm(
 
 // =============================================================================
 //
-/// General matrix-matrix multiplication, C = alpha A * B + beta * C.
+/// General matrix-matrix multiplication, C = alpha * A * B + beta * C.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] alpha
@@ -340,7 +340,7 @@ void gemm(
 
 // =============================================================================
 //
-/// General matrix-matrix multiplication, C = alpha A * B + beta * C.
+/// General matrix-matrix multiplication, C = alpha * A * B + beta * C.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] alpha
@@ -410,7 +410,7 @@ void gemm(
 
 // =============================================================================
 //
-/// General matrix-matrix multiplication, C = alpha A * B + beta * C.
+/// General matrix-matrix multiplication, C = alpha * A * B + beta * C.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] alpha
@@ -489,7 +489,7 @@ void gemm(
 
 // =============================================================================
 //
-/// General matrix-matrix multiplication, C = alpha A * B + beta * C.
+/// General matrix-matrix multiplication, C = alpha * A * B + beta * C.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] alpha
@@ -590,7 +590,7 @@ void gemm(
 
 // =============================================================================
 //
-/// General matrix-matrix multiplication, C = alpha A * B + beta * C.
+/// General matrix-matrix multiplication, C = alpha * A * B + beta * C.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] alpha

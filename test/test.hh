@@ -21,7 +21,7 @@ public:
     testsweeper::ParamEnum<blas::Uplo> uplo;
     testsweeper::ParamEnum<blas::Side> side;
     testsweeper::ParamEnum<blas::Diag> diag;
-    testsweeper::ParamEnum<blas::Op> trans;
+    // testsweeper::ParamEnum<blas::Op> trans;
     testsweeper::ParamEnum<blas::Op> transA;
     testsweeper::ParamEnum<blas::Op> transB;
     testsweeper::ParamEnum<blas::Op> transC;

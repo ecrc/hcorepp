@@ -19,7 +19,7 @@ namespace hcore {
 
 // =============================================================================
 //
-/// Symmetric rank-k update, C = alpha A * A^T + beta * C.
+/// Symmetric rank-k update, C = alpha * A * A^T + beta * C.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] alpha
@@ -30,7 +30,7 @@ namespace hcore {
 ///     The scalar beta.
 /// @param[in,out] C
 ///     On entry, the n-by-n symmetric dense tile.
-///     On exit, overwritten by the result: alpha A * A^T + beta * C.
+///     On exit, overwritten by the result: alpha * A * A^T + beta * C.
 template <typename T>
 void syrk(
     T alpha, DenseTile<T> const& A,

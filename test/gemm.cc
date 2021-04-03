@@ -126,9 +126,10 @@ void gemm_test_execute(Params& params, bool run)
     // lapack::larnv(idist, iseed, ldc * Cn, &Cdata[0]);
     generate_dense_matrix(Cm, Cn, &Cdata[0], ldc, iseed, mode, cond);
 
-    real_t Anorm = lapack::lange(lapack::Norm::Inf, Am, An, &Adata[0], lda);
-    real_t Bnorm = lapack::lange(lapack::Norm::Inf, Bm, Bn, &Bdata[0], ldb);
-    real_t Cnorm = lapack::lange(lapack::Norm::Inf, Cm, Cn, &Cdata[0], ldc);
+    lapack::Norm norm = lapack::Norm::Inf; // todo: variable norm type
+    real_t Anorm = lapack::lange(norm, Am, An, &Adata[0], lda);
+    real_t Bnorm = lapack::lange(norm, Bm, Bn, &Bdata[0], ldb);
+    real_t Cnorm = lapack::lange(norm, Cm, Cn, &Cdata[0], ldc);
 
     hcore::DenseTile<T> A(Am, An, &Adata[0], lda);
     A.op(transA);
@@ -299,7 +300,8 @@ void gemm_test_execute(Params& params, bool run)
         }
         double ref_time_end = testsweeper::get_wtime();
         params.ref_time() = ref_time_end - ref_time_start;
-        params.ref_gflops() = blas::Gflop<T>::gemm(m, n, k) / params.ref_time();
+        params.ref_gflops() =
+            blas::Gflop<T>::gemm(m, n, k) / params.ref_time();
 
         if (verbose) {
             pretty_print(m, n, &Cref[0], ldcref, "Cref");
@@ -330,10 +332,9 @@ void gemm_test_execute(Params& params, bool run)
             pretty_print(m, n, &Cref[0], ldcref, "Cref_diff_C");
         }
 
-        params.error() =
-                    lapack::lange(lapack::Norm::Inf, m, n, &Cref[0], ldcref)
-                    / (sqrt(real_t(k) + 2) * std::abs(alpha) *
-                       Anorm * Bnorm + 2 * std::abs(beta) * Cnorm);
+        params.error() = lapack::lange(norm, m, n, &Cref[0], ldcref)
+                        / (sqrt(real_t(k) + 2) * std::abs(alpha) *
+                           Anorm * Bnorm + 2 * std::abs(beta) * Cnorm);
 
         // Complex number need extra factor.
         // See "Accuracy and Stability of Numerical Algorithms", by Nicholas J.

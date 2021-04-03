@@ -53,7 +53,10 @@ std::vector<testsweeper::routines_t> routines = {
     { "syrk_cc",  syrk_test_dispatch, Section::blas3_syrk },
     { "",         nullptr,            Section::newline    },
 
-    { "trsm",     trsm_test_dispatch, Section::blas3_trsm },
+    { "trsm_dd",  trsm_test_dispatch, Section::blas3_trsm },
+    { "trsm_dc",  trsm_test_dispatch, Section::blas3_trsm },
+    { "trsm_cd",  trsm_test_dispatch, Section::blas3_trsm },
+    { "trsm_cc",  trsm_test_dispatch, Section::blas3_trsm },
     { "",         nullptr,            Section::newline    },
 };
 
@@ -93,11 +96,11 @@ Params::Params():
         "diag", 7, testsweeper::ParamType::List, blas::Diag::NonUnit,
         blas::char2diag, blas::diag2char, blas::diag2str,
         "diagonal: n=non-unit, u=unit"),
-    trans(
-        // name, width, type, default, char2enum, enum2char, enum2str, help
-        "trans", 7, testsweeper::ParamType::List, blas::Op::NoTrans,
-        blas::char2op, blas::op2char, blas::op2str,
-        "transpose: n=notrans (default), t=trans, c=conjtrans"),
+    // trans(
+    //     // name, width, type, default, char2enum, enum2char, enum2str, help
+    //     "trans", 7, testsweeper::ParamType::List, blas::Op::NoTrans,
+    //     blas::char2op, blas::op2char, blas::op2str,
+    //     "transpose: n=notrans (default), t=trans, c=conjtrans"),
     transA(
         // name, width, type, default, char2enum, enum2char, enum2str, help
         "transA", 7, testsweeper::ParamType::List, blas::Op::NoTrans,

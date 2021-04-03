@@ -100,8 +100,9 @@ void syrk_test_execute(Params& params, bool run)
     // lapack::larnv(idist, iseed, ldc * n, &Cdata[0]);
     generate_dense_matrix(n, n, &Cdata[0], ldc, iseed, mode, cond);
 
-    real_t Anorm = lapack::lange(lapack::Norm::Inf, Am, An, &Adata[0], lda);
-    real_t Cnorm = lapack::lansy(lapack::Norm::Inf, uplo, n, &Cdata[0], ldc);
+    lapack::Norm norm = lapack::Norm::Inf; // todo: variable norm type
+    real_t Anorm = lapack::lange(norm, Am, An, &Adata[0], lda);
+    real_t Cnorm = lapack::lansy(norm, uplo, n, &Cdata[0], ldc);
 
     hcore::DenseTile<T> A(Am, An, &Adata[0], lda);
     A.op(transA);
@@ -168,7 +169,7 @@ void syrk_test_execute(Params& params, bool run)
         assert(false);
         // todo
         // hcore::syrk<T>(alpha, A, beta, CUV);
-        // gflops = 
+        // gflops =
     }
     else if (params.routine == "syrk_cd") {
         hcore::syrk<T>(alpha, AUV, beta, C);
@@ -230,9 +231,8 @@ void syrk_test_execute(Params& params, bool run)
         }
 
         // todo
-        // if (params.routine == "syrk_dcc" ||
-        //     params.routine == "syrk_cdc" ||
-        //     params.routine == "syrk_ccc") {
+        // if (params.routine == "syrk_dc" ||
+        //     params.routine == "syrk_cc") {
         //     // C = CU * CV.'
         //     blas::gemm(
         //         blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
@@ -257,10 +257,9 @@ void syrk_test_execute(Params& params, bool run)
             pretty_print(n, n, &Cref[0], ldc, "Cref_diff_C");
         }
 
-        params.error() =
-                    lapack::lansy(lapack::Norm::Inf, uplo_, n, &Cref[0], ldc)
-                    / (sqrt(blas::real_type<T>(k) + 2) * std::abs(alpha) *
-                       Anorm * Anorm + 2 * std::abs(beta) * Cnorm);
+        params.error() = lapack::lansy(norm, uplo_, n, &Cref[0], ldc)
+                        / (sqrt(blas::real_type<T>(k) + 2) * std::abs(alpha) *
+                           Anorm * Anorm + 2 * std::abs(beta) * Cnorm);
 
         // Complex number need extra factor.
         // See "Accuracy and Stability of Numerical Algorithms", by Nicholas J.
