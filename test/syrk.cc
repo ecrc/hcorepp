@@ -46,14 +46,20 @@ void syrk_test_execute(Params& params, bool run)
         params.routine == "syrk_dd" ? std::numeric_limits<real_t>::epsilon()
                                     : params.accuracy();
 
-    if (params.routine == "syrk_dc" ||
-        params.routine == "syrk_cc") {
-        params.rk();
-    }
+    // todo
+    // if (params.routine == "syrk_dc" ||
+    //     params.routine == "syrk_cc") {
+    //     params.rk();
+    // }
 
     if (!run) return;
 
     // quick returns
+    if (params.routine == "syrk_dc" || params.routine == "syrk_cc") {
+        printf("skipping: syrk_dc and syrk_cc aren't yet supported.\n");
+        return;
+    }
+
     if (blas::is_complex<T>::value) {
         if (transA == blas::Op::ConjTrans || transC == blas::Op::ConjTrans) {
             printf("skipping: wrong combinations of transA/transC.\n");
@@ -71,10 +77,6 @@ void syrk_test_execute(Params& params, bool run)
             printf("skipping: only transC=NoTrans is supported.\n");
             return;
         }
-    }
-    if (params.routine == "syrk_dc" || params.routine == "syrk_cc") {
-        printf("skipping: syrk_dc and syrk_cc aren't yet supported.\n");
-        return;
     }
 
     int64_t Am = transA == blas::Op::NoTrans ? n : k;
@@ -143,20 +145,18 @@ void syrk_test_execute(Params& params, bool run)
         }
     }
 
-    if (params.routine == "syrk_dc" ||
-        params.routine == "syrk_cc") {
-        assert(false);
-        // todo
-        // compress_dense_matrix(n, n, Cdata, ldc, CUVdata, Crk, accuracy);
-
-        // CUV = hcore::CompressedTile<T>(n, n, &CUVdata[0], ldc, Crk, accuracy);
-        // CUV.op(transC);
-        // CUV.uplo(uplo);
-
-        // if (verbose) {
-        //     pretty_print(CUV, "C");
-        // }
-    }
+//    if (params.routine == "syrk_dc" ||
+//        params.routine == "syrk_cc") {
+//        compress_dense_matrix(n, n, Cdata, ldc, CUVdata, Crk, accuracy);
+//
+//        CUV = hcore::CompressedTile<T>(n, n, &CUVdata[0], ldc, Crk, accuracy);
+//        CUV.op(transC);
+//        CUV.uplo(uplo);
+//
+//        if (verbose) {
+//            pretty_print(CUV, "C");
+//        }
+//    }
 
     double gflops = 0.0;
     double time_start = testsweeper::get_wtime();
@@ -165,23 +165,20 @@ void syrk_test_execute(Params& params, bool run)
         hcore::syrk<T>(alpha, A, beta, C);
         gflops = blas::Gflop<T>::syrk(n, k);
     }
-    else if (params.routine == "syrk_dc") {
-        assert(false);
-        // todo
-        // hcore::syrk<T>(alpha, A, beta, CUV);
-        // gflops =
-    }
+    // else if (params.routine == "syrk_dc") {
+    //     hcore::syrk<T>(alpha, A, beta, CUV);
+    //     gflops =
+    // }
     else if (params.routine == "syrk_cd") {
         hcore::syrk<T>(alpha, AUV, beta, C);
         gflops = blas::Gflop<T>::syrk(Ark, An) +
                  blas::Gflop<T>::gemm(Am, Ark, Ark) +
                  blas::Gflop<T>::gemm(Am, Am, Ark);
     }
-    else if (params.routine == "syrk_cc") {
-        assert(false);
-        // todo
-        // gflops =
-    }
+    // else if (params.routine == "syrk_cc") {
+    //    hcore::syrk<T>(alpha, AUV, beta, CUV);
+    //    gflops =
+    // }
 
     double time_end = testsweeper::get_wtime();
     params.time() = time_end - time_start;
@@ -192,20 +189,16 @@ void syrk_test_execute(Params& params, bool run)
             params.routine == "syrk_cd") {
             pretty_print(C, "C");
         }
-        else if (params.routine == "syrk_dc" ||
-                 params.routine == "syrk_cc") {
-            assert(false);
-            // todo
-            // pretty_print(CUV, "C");
-        }
+        // else if (params.routine == "syrk_dc" ||
+        //          params.routine == "syrk_cc") {
+        //     pretty_print(CUV, "C");
+        // }
     }
 
-    if (params.routine == "syrk_dc" ||
-        params.routine == "syrk_cc") {
-        assert(false);
-        // todo
-        // params.rk() = std::to_string(Crk) + " -> " + std::to_string(CUV.rk());
-    }
+    // if (params.routine == "syrk_dc" ||
+    //     params.routine == "syrk_cc") {
+    //     params.rk() = std::to_string(Crk) + "->" + std::to_string(CUV.rk());
+    // }
 
     if (params.check() == 'y') {
         blas::Uplo uplo_ = uplo;
@@ -213,7 +206,6 @@ void syrk_test_execute(Params& params, bool run)
             uplo_ = (uplo_ == blas::Uplo::Lower ? blas::Uplo::Upper
                                                 : blas::Uplo::Lower);
         }
-
         double ref_time_start = testsweeper::get_wtime();
         {
             blas::syrk(
@@ -244,14 +236,12 @@ void syrk_test_execute(Params& params, bool run)
 
         // Compute the Residual ||Cref - C||_inf.        
 
-        if (params.routine == "syrk_dc") {
-            assert(false);
-            // todo
-            // diff(&Cref[0], ldc, CUV);
-        }
-        else {
-            diff(&Cref[0], ldc, C);
-        }
+        // if (params.routine == "syrk_dc") {
+        //     diff(&Cref[0], ldc, CUV);
+        // }
+        // else {
+        diff(&Cref[0], ldc, C);
+        // }
 
         if (verbose) {
             pretty_print(n, n, &Cref[0], ldc, "Cref_diff_C");

@@ -21,7 +21,7 @@ public:
     testsweeper::ParamEnum<blas::Uplo> uplo;
     testsweeper::ParamEnum<blas::Side> side;
     testsweeper::ParamEnum<blas::Diag> diag;
-    // testsweeper::ParamEnum<blas::Op> trans;
+    testsweeper::ParamEnum<blas::Op> trans;
     testsweeper::ParamEnum<blas::Op> transA;
     testsweeper::ParamEnum<blas::Op> transB;
     testsweeper::ParamEnum<blas::Op> transC;
@@ -61,6 +61,7 @@ public:
 
 }; // class Params
 
+void potrf_test_dispatch(Params& params, bool run);
 void gemm_test_dispatch(Params& params, bool run);
 void syrk_test_dispatch(Params& params, bool run);
 void trsm_test_dispatch(Params& params, bool run);

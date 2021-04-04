@@ -17,7 +17,7 @@
 
 enum Section {
     newline=0,
-    // posv,
+    chol,
     blas3_gemm,
     blas3_syrk,
     blas3_trsm,
@@ -26,7 +26,7 @@ enum Section {
 
 const char* section_names[] = {
     "",
-    // "Cholesky",
+    "Cholesky",
     "Level 3 BLAS -- GEMM",
     "Level 3 BLAS -- SYRK",
     "Level 3 BLAS -- TRSM",
@@ -34,30 +34,33 @@ const char* section_names[] = {
 };
 
 std::vector<testsweeper::routines_t> routines = {
-    // { "posv",     posv_test_dispatch, Section::posv       },
-    // { "",         nullptr,            Section::newline    },
+    { "potrf",    potrf_test_dispatch, Section::chol       },
+    // { "potrf_c",    potrf_test_dispatch, Section::chol       }, // todo
+    // { "potrf_d",    potrf_test_dispatch, Section::chol       }, // todo
+    { "",         nullptr,             Section::newline    },
 
-    { "gemm_ddd", gemm_test_dispatch, Section::blas3_gemm },
-    { "gemm_ddc", gemm_test_dispatch, Section::blas3_gemm },
-    { "gemm_dcd", gemm_test_dispatch, Section::blas3_gemm },
-    { "gemm_dcc", gemm_test_dispatch, Section::blas3_gemm },
-    { "gemm_cdd", gemm_test_dispatch, Section::blas3_gemm },
-    { "gemm_cdc", gemm_test_dispatch, Section::blas3_gemm },
-    { "gemm_ccd", gemm_test_dispatch, Section::blas3_gemm },
-    { "gemm_ccc", gemm_test_dispatch, Section::blas3_gemm },
-    { "",         nullptr,            Section::newline    },
+    { "gemm_ddd", gemm_test_dispatch,  Section::blas3_gemm },
+    { "gemm_ddc", gemm_test_dispatch,  Section::blas3_gemm },
+    { "gemm_dcd", gemm_test_dispatch,  Section::blas3_gemm },
+    { "gemm_dcc", gemm_test_dispatch,  Section::blas3_gemm },
+    { "gemm_cdd", gemm_test_dispatch,  Section::blas3_gemm },
+    { "gemm_cdc", gemm_test_dispatch,  Section::blas3_gemm },
+    { "gemm_ccd", gemm_test_dispatch,  Section::blas3_gemm },
+    { "gemm_ccc", gemm_test_dispatch,  Section::blas3_gemm },
+    { "",         nullptr,             Section::newline    },
 
-    { "syrk_dd",  syrk_test_dispatch, Section::blas3_syrk },
-    { "syrk_dc",  syrk_test_dispatch, Section::blas3_syrk },
-    { "syrk_cd",  syrk_test_dispatch, Section::blas3_syrk },
-    { "syrk_cc",  syrk_test_dispatch, Section::blas3_syrk },
-    { "",         nullptr,            Section::newline    },
+    { "syrk_dd",  syrk_test_dispatch,  Section::blas3_syrk },
+    // { "syrk_dc",  syrk_test_dispatch,  Section::blas3_syrk }, // todo
+    { "syrk_cd",  syrk_test_dispatch,  Section::blas3_syrk },
+    // { "syrk_cc",  syrk_test_dispatch,  Section::blas3_syrk }, // todo
+    { "",         nullptr,             Section::newline    },
 
-    { "trsm_dd",  trsm_test_dispatch, Section::blas3_trsm },
-    { "trsm_dc",  trsm_test_dispatch, Section::blas3_trsm },
-    { "trsm_cd",  trsm_test_dispatch, Section::blas3_trsm },
-    { "trsm_cc",  trsm_test_dispatch, Section::blas3_trsm },
-    { "",         nullptr,            Section::newline    },
+    { "trsm",  trsm_test_dispatch,  Section::blas3_trsm },
+    // { "trsm_dd",  trsm_test_dispatch,  Section::blas3_trsm }, // todo
+    // { "trsm_dc",  trsm_test_dispatch,  Section::blas3_trsm }, // todo
+    // { "trsm_cd",  trsm_test_dispatch,  Section::blas3_trsm }, // todo
+    // { "trsm_cc",  trsm_test_dispatch,  Section::blas3_trsm }, // todo
+    { "",         nullptr,             Section::newline    },
 };
 
 Params::Params():
@@ -96,11 +99,11 @@ Params::Params():
         "diag", 7, testsweeper::ParamType::List, blas::Diag::NonUnit,
         blas::char2diag, blas::diag2char, blas::diag2str,
         "diagonal: n=non-unit, u=unit"),
-    // trans(
-    //     // name, width, type, default, char2enum, enum2char, enum2str, help
-    //     "trans", 7, testsweeper::ParamType::List, blas::Op::NoTrans,
-    //     blas::char2op, blas::op2char, blas::op2str,
-    //     "transpose: n=notrans (default), t=trans, c=conjtrans"),
+    trans(
+        // name, width, type, default, char2enum, enum2char, enum2str, help
+        "trans", 7, testsweeper::ParamType::List, blas::Op::NoTrans,
+        blas::char2op, blas::op2char, blas::op2str,
+        "transpose: n=notrans (default), t=trans, c=conjtrans"),
     transA(
         // name, width, type, default, char2enum, enum2char, enum2str, help
         "transA", 7, testsweeper::ParamType::List, blas::Op::NoTrans,

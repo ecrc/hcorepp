@@ -232,6 +232,74 @@ void trsm(
     hcore::trsm(side, diag, alpha, A, B);
 }
 
+template <typename T>
+void trsm(
+    blas::Side side, blas::Diag diag,
+    T alpha, CompressedTile<T> const& A,
+                  DenseTile<T>      & B);
+// converts rvalue references to lvalue references
+template <typename T>
+void trsm(
+    blas::Side side, blas::Diag diag,
+    T alpha, CompressedTile<T> const&& A,
+                  DenseTile<T>      && B)
+{
+    // forward
+    hcore::trsm(side, diag, alpha, A, B);
+}
+
+template <typename T>
+void trsm(
+    blas::Side side, blas::Diag diag,
+    T alpha,      DenseTile<T> const& A,
+             CompressedTile<T>      & B);
+// converts rvalue references to lvalue references
+template <typename T>
+void trsm(
+    blas::Side side, blas::Diag diag,
+    T alpha,      DenseTile<T> const&& A,
+             CompressedTile<T>      && B)
+{
+    // forward
+    hcore::trsm(side, diag, alpha, A, B);
+}
+
+template <typename T>
+void trsm(
+    blas::Side side, blas::Diag diag,
+    T alpha, CompressedTile<T> const& A,
+             CompressedTile<T>      & B);
+// converts rvalue references to lvalue references
+template <typename T>
+void trsm(
+    blas::Side side, blas::Diag diag,
+    T alpha, CompressedTile<T> const&& A,
+             CompressedTile<T>      && B)
+{
+    // forward
+    hcore::trsm(side, diag, alpha, A, B);
+}
+
+template <typename T>
+void potrf(DenseTile<T>& A);
+// converts rvalue references to lvalue references
+template <typename T>
+void potrf(DenseTile<T>&& A)
+{
+    // forward
+    hcore::potrf(A);
+}
+
+template <typename T>
+void potrf(CompressedTile<T>& A);
+// converts rvalue references to lvalue references
+template <typename T>
+void potrf(CompressedTile<T>&& A)
+{
+    // forward
+    hcore::potrf(A);
+}
+
 } // namespace hcore
 
 #endif // HCORE_HH

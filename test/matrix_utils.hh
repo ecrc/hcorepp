@@ -51,6 +51,14 @@ void set_dense_uplo(
 }
 
 template <typename T>
+void dense_to_positive_definite(int64_t n, T* A, int64_t lda)
+{
+    // brute force positive definiteness
+    for (int64_t j = 0; j < n; ++j)
+        A[j + j * lda] += n;
+}
+
+template <typename T>
 void compress_dense_matrix(
     int64_t m, int64_t n, std::vector<T> A, int64_t lda,
     std::vector<T>& UV, int64_t& rk, blas::real_type<T> accuracy)

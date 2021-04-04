@@ -46,6 +46,7 @@ group_size.add_argument(       '--dim',    action='store',      help='explicitly
 
 group_cat = parser.add_argument_group( 'category (default is all)' )
 categories = [
+    group_cat.add_argument( '--chol',          action='store_true', help='run Cholesky tests' ),
     # group_cat.add_argument( '--blas1', action='store_true', help='run Level 1 BLAS tests' ),
     # group_cat.add_argument( '--blas2', action='store_true', help='run Level 2 BLAS tests' ),
     group_cat.add_argument( '--blas3', action='store_true', help='run Level 3 BLAS tests' ),
@@ -256,6 +257,18 @@ incy_pos = ' --incy ' + filter_csv( ('1', '2'), opts.incy )
 
 # ------------------------------------------------------------------------------
 cmds = []
+
+# Cholesky
+if (opts.chol):
+    cmds += [
+    # [ 'posv',  gen + dtype + align + n + uplo ],
+    [ 'potrf', dtype + align + trans + n + uplo ],
+    # [ 'potrs', gen + dtype + align + n + uplo ],
+    # [ 'potri', gen + dtype + align + n + uplo ],
+    # [ 'pocon', gen + dtype + align + n + uplo ],
+    # [ 'porfs', gen + dtype + align + n + uplo ],
+    # [ 'poequ', gen + dtype + align + n ],  # only diagonal elements (no uplo)
+    ]
 
 # Level 1
 #if (opts.blas1):

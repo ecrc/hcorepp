@@ -16,7 +16,6 @@
 #include <vector>
 #include <cstdint>
 #include <complex>
-#include <cassert>
 #include <stdexcept>
 
 template <typename T>
@@ -44,14 +43,7 @@ void trsm_test_execute(Params& params, bool run)
 
     real_t tol = params.tol();
     real_t cond = params.latms_cond();
-    real_t accuracy =
-        params.routine == "trsm_dd" ? std::numeric_limits<real_t>::epsilon()
-                                     : params.accuracy();
-
-    if (params.routine == "trsm_dc" ||
-        params.routine == "trsm_cc") {
-        params.rk();
-    }
+    real_t accuracy = std::numeric_limits<real_t>::epsilon();
 
     if (!run) return;
 
@@ -62,24 +54,6 @@ void trsm_test_execute(Params& params, bool run)
             printf("skipping: wrong combinations of transA/transB.\n");
             return;
         }
-    }
-
-    // todo: relax these assumptions
-    if (params.routine != "trsm_dd") {
-        if (transA != blas::Op::NoTrans) {
-            printf("skipping: only transA=NoTrans is supported.\n");
-            return;
-        }
-        if (transB != blas::Op::NoTrans) {
-            printf("skipping: only transB=NoTrans is supported.\n");
-            return;
-        }
-    }
-    if (params.routine == "trsm_dc" ||
-        params.routine == "trsm_cd" ||
-        params.routine == "trsm_cc") {
-        printf("skipping: trsm_dc/trsm_cd/trsm_cc aren't yet supported.\n");
-        return;
     }
 
     int64_t An = side == blas::Side::Left ? m : n;
@@ -105,9 +79,7 @@ void trsm_test_execute(Params& params, bool run)
 
     set_dense_uplo(uplo, An, An, &Adata[0], lda);
 
-    // brute force positive definiteness
-    for (int j = 0; j < An; ++j)
-        Adata[j + j * lda] += An;
+    dense_to_positive_definite(An, &Adata[0], lda);
 
     // factor to get well-conditioned triangle
     lapack::potrf(uplo, An, &Adata[0], lda);
@@ -152,86 +124,18 @@ void trsm_test_execute(Params& params, bool run)
         }
     }
 
-    // todo
-    // std::vector<T> AUVdata, BUVdata;
-    // int64_t Ark, Brk;
-    // hcore::CompressedTile<T> AUV, BUV;
-
-    if (params.routine == "trsm_cd" ||
-        params.routine == "trsm_cc") {
-        assert(false);
-        // todo
-        // compress_dense_matrix(Am, An, Adata, lda, AUVdata, Ark, accuracy);
-
-        // AUV = hcore::CompressedTile<T>(Am, An, &AUVdata[0], lda, Ark, accuracy);
-        // AUV.op(transA);
-
-        // if (verbose) {
-        //     pretty_print(AUV, "A");
-        // }
-    }
-    if (params.routine == "trsm_dc" ||
-        params.routine == "trsm_cc") {
-        assert(false);
-        // todo
-        // compress_dense_matrix(Bm, Bn, Bdata, ldb, BUVdata, Brk, accuracy);
-
-        // BUV = hcore::CompressedTile<T>(Bm, Bn, &BUVdata[0], ldb, Brk, accuracy);
-        // BUV.op(transB);
-
-        // if (verbose) {
-        //     pretty_print(BUV, "B");
-        // }
-    }
-
     double gflops = 0.0;
     double time_start = testsweeper::get_wtime();
-
-    if (params.routine == "trsm_dd") {
+    {
         hcore::trsm<T>(side, diag, alpha, A, B);
         gflops = blas::Gflop<T>::trsm(side, m, n);
     }
-    else if (params.routine == "trsm_dc") {
-        assert(false);
-        // todo
-        // hcore::trsm<T>(side, diag, alpha, A, BUV);
-        // gflops =
-    }
-    else if (params.routine == "trsm_cd") {
-        assert(false);
-        // todo
-        // hcore::trsm<T>(side, diag, alpha, AUV, B);
-        // gflops =
-    }
-    else if (params.routine == "trsm_cc") {
-        assert(false);
-        // todo
-        // hcore::trsm<T>(side, diag, alpha, AUV, BUV);
-        // gflops =
-    }
-
     double time_end = testsweeper::get_wtime();
     params.time() = time_end - time_start;
     params.gflops() = gflops / params.time();
 
     if (verbose) {
-        if (params.routine == "trsm_dd" ||
-            params.routine == "trsm_cd") {
-            pretty_print(B, "B");
-        }
-        else if (params.routine == "trsm_dc" ||
-                 params.routine == "trsm_cc") {
-            assert(false);
-            // todo
-            // pretty_print(BUV, "B");
-        }
-    }
-
-    if (params.routine == "trsm_dc" ||
-        params.routine == "trsm_cc") {
-        assert(false);
-        // todo
-        // params.rk() = std::to_string(Brk) + "->" + std::to_string(BUV.rk());
+        pretty_print(B, "B");
     }
 
     if (params.check() == 'y') {
@@ -252,28 +156,9 @@ void trsm_test_execute(Params& params, bool run)
             pretty_print(m, n, &Bref[0], ldbref, "Bref");
         }
 
-        // todo
-        // if (params.routine == "trsm_dc" ||
-        //     params.routine == "trsm_cc") {
-        //     // C = CU * CV.'
-        //     blas::gemm(
-        //         blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
-        //         Cm, Cn, CUV.rk(),
-        //         1.0, CUV.Udata(), CUV.ldu(),
-        //              CUV.Vdata(), CUV.ldv(),
-        //         0.0, &Cdata[0],   ldc);
-        // }
-
         // Compute the Residual ||Bref - B||_inf.
 
-        if (params.routine == "trsm_dc") {
-            assert(false);
-            // todo
-            // diff(&Bref[0], ldbref, BUV);
-        }
-        else {
-            diff(&Bref[0], ldbref, B);
-        }
+        diff(&Bref[0], ldbref, B);
 
         if (verbose) {
             pretty_print(m, n, &Bref[0], ldbref, "Bref_diff_B");
