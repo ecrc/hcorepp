@@ -111,18 +111,25 @@ void potrf_test_execute(Params& params, bool run)
 
         // Compute the Residual ||Aref - A||_2.
 
+        real_t temp = 0;
         real_t diff = 0;
+        real_t norm = 0;
         for (int64_t j = 0; j < A.n(); ++j) {
             for (int64_t i = 0; i < A.m(); ++i) {
                 if ((uplo_ == blas::Uplo::Lower && i >= j) ||
                     (uplo_ == blas::Uplo::Upper && i <= j)) {
-                    real_t absolute_error = std::abs(A(i, j) - Aref[i + j*lda]);
-                    diff += absolute_error * absolute_error;
+                    temp = std::abs(A(i, j) - Aref[i + j * lda]);
+                    diff += temp * temp;
+
+                    temp = std::abs(Aref[i + j * lda]);
+                    norm += temp * temp;
                 }
             }
         }
+        diff = sqrt(diff);
+        norm = sqrt(norm);
 
-        params.error() = sqrt(diff);
+        params.error() = diff / norm;
 
         // Complex number need extra factor.
         // See "Accuracy and Stability of Numerical Algorithms", by Nicholas J.
