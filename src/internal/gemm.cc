@@ -13,7 +13,7 @@
 #include <vector>
 #include <cstdint>
 #include <complex>
-#include <cassert>
+#include <stdexcept>
 #include <algorithm>
 #include <initializer_list>
 
@@ -176,10 +176,16 @@ void reduced_svd(
         }
     }
 
-    // todo
-    // if (rk_new > max_rank) {
-    //  "Rank after truncation is too big! rk_new:%d max_rank:%d";
-    // }
+    // rk_new is the full spectrum, if rk_new = std::min(m, n).
+    int64_t max_rk = std::min(m, n);
+
+    if (rk_new > max_rk) {
+        const std::string& what_arg =
+            "Rank after truncation is too big: old rank "
+            + std::to_string(Crk) + ", new rank " + std::to_string(rk_new)
+            + ", max rank " + std::to_string(max_rk) + ".";
+        throw std::length_error(what_arg);
+    }
 
     T* UV = new T[(ldcu + n) * rk_new];
 
