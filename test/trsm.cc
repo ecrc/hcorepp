@@ -34,12 +34,11 @@ void trsm_test_execute(Params& params, bool run)
 
     T alpha = params.alpha();
 
-    int verbose = params.verbose();
-    int mode = params.latms_mode();
-
     int64_t m = params.dim.m();
     int64_t n = params.dim.n();
+    int64_t mode = params.latms_mode();
     int64_t align = params.align();
+    int64_t verbose = params.verbose();
 
     real_t tol = params.tol();
     real_t cond = params.latms_cond();
@@ -72,7 +71,7 @@ void trsm_test_execute(Params& params, bool run)
     std::vector<T> Bdata(ldb * Bn);
 
     // int64_t idist = 1;
-    int iseed[4] = {0, 0, 0, 1};
+    int64_t iseed[4] = {0, 0, 0, 1};
 
     // lapack::larnv(idist, iseed, lda * An, &Adata[0]);
     generate_dense_matrix(An, An, &Adata[0], lda, iseed, mode, cond);

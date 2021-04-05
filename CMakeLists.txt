@@ -247,6 +247,10 @@ if ("${blaspp_defines}" MATCHES "HAVE_MKL")
     target_compile_definitions(hcore PUBLIC "-DHCORE_WITH_MKL")
 endif()
 
+if ("${lapackpp_defines}" MATCHES "LAPACK_ILP64")
+    target_compile_definitions(hcore PUBLIC "-DHCORE_WITH_LAPACK_ILP64")
+endif()
+
 if (build_tests)
     add_subdirectory(test)
 else()

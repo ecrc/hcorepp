@@ -6,7 +6,8 @@
 #ifndef HCORE_TEST_MATRIX_UTILS_HH
 #define HCORE_TEST_MATRIX_UTILS_HH
 
-#include "lapacke_wrappers.hh"
+// #include "lapacke_wrappers.hh"
+#include "lapack_wrappers.hh"
 
 #include "blas.hh"
 #include "lapack.hh"
@@ -20,7 +21,7 @@
 template <typename T>
 void generate_dense_matrix(
     int64_t m, int64_t n, T* A, int64_t lda,
-    int* iseed, int mode=0, blas::real_type<T> cond=1)
+    int64_t* iseed, int64_t mode=0, blas::real_type<T> cond=1)
 {
     int16_t min_m_n = std::min(m, n);
 
@@ -29,7 +30,7 @@ void generate_dense_matrix(
     for (int64_t i = 0; i < min_m_n; ++i)
         D[i] = std::pow(10, -1*i);
 
-    lapacke_latms(
+    lapack_latms(
         m, n, 'U', iseed, 'N', &D[0], mode, cond, -1.0, m-1, n-1, 'N', A, lda);
 }
 

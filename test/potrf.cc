@@ -30,11 +30,10 @@ void potrf_test_execute(Params& params, bool run)
     blas::Uplo uplo = params.uplo();
     blas::Op trans = params.trans();
 
-    int verbose = params.verbose();
-    int mode = params.latms_mode();
-
     int64_t n = params.dim.n();
+    int64_t mode = params.latms_mode();
     int64_t align = params.align();
+    int64_t verbose = params.verbose();
 
     real_t tol = params.tol();
     real_t cond = params.latms_cond();
@@ -47,7 +46,7 @@ void potrf_test_execute(Params& params, bool run)
     std::vector<T> Adata(lda * n);
 
     // int64_t idist = 1;
-    int iseed[4] = {0, 0, 0, 1};
+    int64_t iseed[4] = {0, 0, 0, 1};
 
     // lapack::larnv(idist, iseed, lda * n, &Adata[0]);
     generate_dense_matrix(n, n, &Adata[0], lda, iseed, mode, cond);

@@ -33,12 +33,11 @@ void syrk_test_execute(Params& params, bool run)
     T alpha = params.alpha();
     T beta  = params.beta();
 
-    int verbose = params.verbose();
-    int mode = params.latms_mode();
-
     int64_t n = params.dim.n();
     int64_t k = params.dim.k();
+    int64_t mode = params.latms_mode();
     int64_t align = params.align();
+    int64_t verbose = params.verbose();
 
     real_t tol = params.tol();
     real_t cond = params.latms_cond();
@@ -94,7 +93,7 @@ void syrk_test_execute(Params& params, bool run)
     std::vector<T> Cdata(ldc *  n);
 
     // int64_t idist = 1;
-    int iseed[4] = {0, 0, 0, 1};
+    int64_t iseed[4] = {0, 0, 0, 1};
 
     // lapack::larnv(idist, iseed, lda * An, &Adata[0]);
     generate_dense_matrix(Am, An, &Adata[0], lda, iseed, mode, cond);
