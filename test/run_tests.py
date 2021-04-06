@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2017,
+# Copyright (c) 2017-2021,
 # King Abdullah University of Science and Technology (KAUST)
 # All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
@@ -46,19 +46,18 @@ group_size.add_argument(       '--dim',    action='store',      help='explicitly
 
 group_cat = parser.add_argument_group( 'category (default is all)' )
 categories = [
-    group_cat.add_argument( '--chol',          action='store_true', help='run Cholesky tests' ),
-    # group_cat.add_argument( '--blas1', action='store_true', help='run Level 1 BLAS tests' ),
-    # group_cat.add_argument( '--blas2', action='store_true', help='run Level 2 BLAS tests' ),
-    group_cat.add_argument( '--blas3', action='store_true', help='run Level 3 BLAS tests' ),
-    # group_cat.add_argument( '--batch-blas3', action='store_true', help='run Level 3 Batch BLAS tests' ),
-
-    # group_cat.add_argument( '--host', action='store_true', help='run all CPU host routines' ),
-
-    # group_cat.add_argument( '--blas1-device', action='store_true', help='run Level 1 BLAS on devices (GPUs)' ),
-    # group_cat.add_argument( '--blas3-device', action='store_true', help='run Level 3 BLAS on devices (GPUs)' ),
-    # group_cat.add_argument( '--batch-blas3-device', action='store_true', help='run Level 3 Batch BLAS on devices (GPUs)' ),
-
-    # group_cat.add_argument( '--device', action='store_true', help='run all GPU device routines' ),
+    group_cat.add_argument(
+        '--chol', action='store_true',
+        help='run Cholesky tests'),
+    group_cat.add_argument(
+        '--blas3-gemm', action='store_true',
+        help='run Level 3 BLAS gemm tests'),
+    group_cat.add_argument(
+        '--blas3-syrk', action='store_true',
+        help='run Level 3 BLAS syrk tests'),
+    group_cat.add_argument(
+        '--blas3-trsm', action='store_true',
+        help='run Level 3 BLAS trsm tests'),
 ]
 # map category objects to category names: ['lu', 'chol', ...]
 categories = list( map( lambda x: x.dest, categories ) )
@@ -105,23 +104,28 @@ if (not (opts.square or opts.tall or opts.wide or opts.mnk)):
     opts.wide   = True
     opts.mnk    = True
 
-# By default, or if specific test routines given, enable all categories
-# to get whichever has the routines.
+# by default, run all categories
 if (opts.tests or not any( map( lambda c: opts.__dict__[ c ], categories ))):
-    opts.host   = True
-    opts.device = True
-
-# If --host, run all non-device categories.
-if (opts.host):
     for c in categories:
-        if (not c.endswith('device')):
-            opts.__dict__[ c ] = True
+        opts.__dict__[ c ] = True
 
-# If --device, run all device categories.
-if (opts.device):
-    for c in categories:
-        if (c.endswith('_device')):
-            opts.__dict__[ c ] = True
+## By default, or if specific test routines given, enable all categories
+## to get whichever has the routines.
+#if (opts.tests or not any( map( lambda c: opts.__dict__[ c ], categories ))):
+#    opts.host   = True
+#    opts.device = True
+#
+## If --host, run all non-device categories.
+#if (opts.host):
+#    for c in categories:
+#        if (not c.endswith('device')):
+#            opts.__dict__[ c ] = True
+#
+## If --device, run all device categories.
+#if (opts.device):
+#    for c in categories:
+#        if (c.endswith('_device')):
+#            opts.__dict__[ c ] = True
 
 # ------------------------------------------------------------------------------
 # parameters
@@ -259,16 +263,16 @@ incy_pos = ' --incy ' + filter_csv( ('1', '2'), opts.incy )
 cmds = []
 
 # Cholesky
-if (opts.chol):
-    cmds += [
+# if (opts.chol):
+    # cmds += [
     # [ 'posv',  gen + dtype + align + n + uplo ],
-    [ 'potrf', dtype + align + trans + n + uplo ],
+    # [ 'potrf', dtype + align + trans + n + uplo ],
     # [ 'potrs', gen + dtype + align + n + uplo ],
     # [ 'potri', gen + dtype + align + n + uplo ],
     # [ 'pocon', gen + dtype + align + n + uplo ],
     # [ 'porfs', gen + dtype + align + n + uplo ],
     # [ 'poequ', gen + dtype + align + n ],  # only diagonal elements (no uplo)
-    ]
+    # ]
 
 # Level 1
 #if (opts.blas1):
@@ -307,32 +311,40 @@ if (opts.chol):
 #    [ 'trsv',  dtype      + layout + align + uplo + trans + diag + n + incx ],
 #    ]
 
-# Level 3
-if (opts.blas3):
+# Cholesky
+if (opts.chol):
     cmds += [
-    [ 'gemm_ddd', dtype + align + transA + transB + transC + mnk ],
-    [ 'gemm_ddc', dtype + align + transA + transB + transC + mnk ],
-    [ 'gemm_dcd', dtype + align + transA + transB + transC + mnk ],
-    [ 'gemm_dcc', dtype + align + transA + transB + transC + mnk ],
-    [ 'gemm_cdd', dtype + align + transA + transB + transC + mnk ],
-    [ 'gemm_cdc', dtype + align + transA + transB + transC + mnk ],
-    [ 'gemm_ccd', dtype + align + transA + transB + transC + mnk ],
-    [ 'gemm_ccc', dtype + align + transA + transB + transC + mnk ],
-    # [ 'hemm',  dtype         + layout + align + side + uplo + mn ],
-    # [ 'symm',  dtype         + layout + align + side + uplo + mn ],
-    # [ 'trmm',  dtype         + layout + align + side + uplo + trans + diag + mn ],
-    [ 'trsm',  dtype + align + side + uplo + transA + transB + diag + mn ],
-    # [ 'herk',  dtype_real    + layout + align + uplo + trans    + mn ],
-    # [ 'herk',  dtype_complex + layout + align + uplo + trans_nc + mn ],
-    [ 'syrk_dd',  dtype_real    + align + uplo + transA    + transC    + mn ],
-    [ 'syrk_dd',  dtype_complex + align + uplo + transA_nt + transC_nt + mn ],
-    [ 'syrk_cd',  dtype_real    + align + uplo + transA    + transC    + mn ],
-    [ 'syrk_cd',  dtype_complex + align + uplo + transA_nt + transC_nt + mn ],
-    # [ 'her2k', dtype_real    + layout + align + uplo + trans    + mn ],
-    # [ 'her2k', dtype_complex + layout + align + uplo + trans_nc + mn ],
-    # [ 'syr2k', dtype_real    + layout + align + uplo + trans    + mn ],
-    # [ 'syr2k', dtype_complex + layout + align + uplo + trans_nt + mn ],
+        ['potrf', dtype + align + trans + n + uplo],
     ]
+
+# Level 3 BLAS -- GEMM
+if (opts.blas3_gemm):
+    cmds += [
+        ['gemm_ddd', dtype + align + transA + transB + transC + mnk],
+        ['gemm_ddc', dtype + align + transA + transB + transC + mnk],
+        ['gemm_dcd', dtype + align + transA + transB + transC + mnk],
+        ['gemm_dcc', dtype + align + transA + transB + transC + mnk],
+        ['gemm_cdd', dtype + align + transA + transB + transC + mnk],
+        ['gemm_cdc', dtype + align + transA + transB + transC + mnk],
+        ['gemm_ccd', dtype + align + transA + transB + transC + mnk],
+        ['gemm_ccc', dtype + align + transA + transB + transC + mnk],
+    ]
+
+# Level 3 BLAS -- SYRK
+if (opts.blas3_syrk):
+    cmds += [
+        ['syrk_dd', dtype_real    + align + uplo + transA    + transC    + mn],
+        ['syrk_dd', dtype_complex + align + uplo + transA_nt + transC_nt + mn],
+        ['syrk_cd', dtype_real    + align + uplo + transA    + transC    + mn],
+        ['syrk_cd', dtype_complex + align + uplo + transA_nt + transC_nt + mn],
+    ]
+
+# Level 3 BLAS -- TRSM
+if (opts.blas3_trsm):
+    cmds += [
+        ['trsm', dtype + align + side + uplo + transA + transB + diag + mn],
+    ]
+
 
 # Batch Level 3
 #if (opts.batch_blas3):
