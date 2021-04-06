@@ -116,7 +116,7 @@ Supercomputing Laboratory at KAUST.
 
 ### License
 
-Copyright (c) 2017,
+Copyright (c) 2017-2021,
 King Abdullah University of Science and Technology (KAUST)
 All rights reserved.
 
