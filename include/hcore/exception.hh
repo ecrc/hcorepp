@@ -44,7 +44,6 @@ inline void throw_if(bool cond, const char* condstr, const char* func)
         throw Error(condstr, func);
     }
 }
-
 // internal helper function; throws Error if cond is true
 // uses printf-style format for error message
 // called by hcore_error_if_msg macro

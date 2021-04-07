@@ -38,7 +38,7 @@ void syrk(
 {
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
-    internal::check_syrk(A, C);
+    internal::check::syrk(A, C);
 
     if (blas::is_complex<T>::value) {
         if (A.op() == blas::Op::ConjTrans) {
@@ -138,7 +138,7 @@ void syrk(
     assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
-    internal::check_syrk(A, C);
+    internal::check::syrk(A, C);
 
     if (blas::is_complex<T>::value && C.op() == blas::Op::ConjTrans)
         assert(false);

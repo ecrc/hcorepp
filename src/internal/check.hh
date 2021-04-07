@@ -3,8 +3,8 @@
 // All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
-#ifndef HCORE_INTERNAL_UTIL_HH
-#define HCORE_INTERNAL_UTIL_HH
+#ifndef HCORE_INTERNAL_CHECK_HH
+#define HCORE_INTERNAL_CHECK_HH
 
 #include "hcore/exception.hh"
 #include "hcore/tile/tile.hh"
@@ -13,9 +13,10 @@
 
 namespace hcore {
 namespace internal {
+namespace check {
 
 template <typename T>
-void check_gemm(Tile<T> const& A, Tile<T> const& B, Tile<T> const& C)
+void gemm(Tile<T> const& A, Tile<T> const& B, Tile<T> const& C)
 {
     hcore_error_if(A.layout() != B.layout());
     hcore_error_if(B.layout() != C.layout());
@@ -28,7 +29,7 @@ void check_gemm(Tile<T> const& A, Tile<T> const& B, Tile<T> const& C)
 }
 
 template <typename T>
-void check_syrk(Tile<T> const& A, Tile<T> const& C)
+void syrk(Tile<T> const& A, Tile<T> const& C)
 {
     hcore_error_if(A.layout() != C.layout());
     hcore_error_if(C.m() != C.n());
@@ -38,7 +39,7 @@ void check_syrk(Tile<T> const& A, Tile<T> const& C)
 }
 
 template <typename T>
-void check_trsm(blas::Side side, Tile<T> const& A, Tile<T> const& B)
+void trsm(blas::Side side, Tile<T> const& A, Tile<T> const& B)
 {
     hcore_error_if(A.layout() != B.layout());
     hcore_error_if(A.m() != A.n());
@@ -46,7 +47,8 @@ void check_trsm(blas::Side side, Tile<T> const& A, Tile<T> const& B)
     hcore_error_if(B.uplo_physical() != blas::Uplo::General);
 }
 
+} // namespace check
 } // namespace internal
 } // namespace hcore
 
-#endif // HCORE_INTERNAL_UTIL_HH
+#endif // HCORE_INTERNAL_CHECK_HH

@@ -43,7 +43,7 @@ void gemm(
 {
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
-    internal::check_gemm(A, B, C);
+    internal::check::gemm(A, B, C);
 
     if (C.op() == blas::Op::NoTrans) {
         blas::gemm(
@@ -143,7 +143,7 @@ void gemm(
     assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
-    internal::check_gemm(A, B, C);
+    internal::check::gemm(A, B, C);
 
     T* W = new T[C.ldu() * C.n()];
 
@@ -216,7 +216,7 @@ void gemm(
     assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
-    internal::check_gemm(A, B, C);
+    internal::check::gemm(A, B, C);
 
     std::vector<T> W(C.m() * B.rk());
 
@@ -295,7 +295,7 @@ void gemm(
     assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
-    internal::check_gemm(A, B, C);
+    internal::check::gemm(A, B, C);
 
     std::vector<T> W(C.m() * B.rk());
 
@@ -365,7 +365,7 @@ void gemm(
     assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
-    internal::check_gemm(A, B, C);
+    internal::check::gemm(A, B, C);
 
     std::vector<T> W(A.rk() * C.n());
 
@@ -444,7 +444,7 @@ void gemm(
     assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
-    internal::check_gemm(A, B, C);
+    internal::check::gemm(A, B, C);
 
     std::vector<T> W(A.rk() * C.n());
 
@@ -514,7 +514,7 @@ void gemm(
     assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
-    internal::check_gemm(A, B, C);
+    internal::check::gemm(A, B, C);
 
     std::vector<T> W0(A.rk() * B.rk());
 
@@ -624,7 +624,7 @@ void gemm(
     assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
-    internal::check_gemm(A, B, C);
+    internal::check::gemm(A, B, C);
 
     // W0 = alpha * AV * BU
     std::vector<T> W0(A.rk() * B.rk());

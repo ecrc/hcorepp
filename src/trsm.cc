@@ -45,7 +45,7 @@ void trsm(
 {
     assert(B.layout() == blas::Layout::ColMajor); // todo
 
-    internal::check_trsm(side, A, B);
+    internal::check::trsm(side, A, B);
 
     if (B.op() == blas::Op::NoTrans) {
         blas::trsm(
