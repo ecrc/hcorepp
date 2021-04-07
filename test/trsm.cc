@@ -16,7 +16,6 @@
 #include <vector>
 #include <cstdint>
 #include <complex>
-#include <stdexcept>
 
 template <typename T>
 void trsm_test_execute(Params& params, bool run)
@@ -195,7 +194,7 @@ void trsm_test_dispatch(Params& params, bool run)
             trsm_test_execute<std::complex<double>>(params, run);
             break;
         default:
-            throw std::invalid_argument("Unsupported data type.");
+            throw hcore::Error("Unsupported data type.");
             break;
     }
 }

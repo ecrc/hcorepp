@@ -4,16 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
 #include "hcore.hh"
+#include "hcore/exception.hh"
 #include "hcore/tile/dense.hh"
 #include "hcore/tile/compressed.hh"
 
 #include "lapack.hh"
 
-#include <string>
 #include <complex>
 #include <cassert>
 #include <cstdint>
-#include <stdexcept>
 
 namespace hcore {
 
@@ -31,11 +30,8 @@ void potrf(DenseTile<T>& A)
 {
     int64_t info = lapack::potrf(A.uplo_physical(), A.n(), A.data(), A.ld());
 
-    if (info != 0) {
-        const std::string& what_arg =
-            "lapack::potrf returned error " + std::to_string(info) + ".";
-        throw std::runtime_error(what_arg);
-    }
+    hcore_error_if_msg(
+        info != 0, "lapack::potrf returned error %lld", (long long)info);
 }
 
 template

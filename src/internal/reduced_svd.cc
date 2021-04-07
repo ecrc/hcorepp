@@ -3,6 +3,7 @@
 // All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
+#include "hcore/exception.hh"
 #include "internal/internal.hh"
 #include "hcore/tile/compressed.hh"
 
@@ -13,7 +14,6 @@
 #include <vector>
 #include <cstdint>
 #include <complex>
-#include <stdexcept>
 #include <algorithm>
 #include <initializer_list>
 
@@ -26,6 +26,8 @@ void reduced_svd(
     CompressedTile<T>& C,
     bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk)
 {
+    using blas::conj;
+
     int64_t m = C.m();
     int64_t n = C.n();
 
@@ -35,8 +37,6 @@ void reduced_svd(
     int64_t Crk = C.rk();
 
     blas::real_type<T> accuracy = C.accuracy();
-
-    using blas::conj;
 
     int64_t Um = m;
     int64_t Un = Ark + Crk;
@@ -176,16 +176,10 @@ void reduced_svd(
         }
     }
 
-    // rk_new is the full spectrum, if rk_new = std::min(m, n).
-    int64_t max_rk = std::min(m, n);
-
-    if (rk_new > max_rk) {
-        const std::string& what_arg =
-            "Rank after truncation is too big: old rank "
-            + std::to_string(Crk) + ", new rank " + std::to_string(rk_new)
-            + ", max rank " + std::to_string(max_rk) + ".";
-        throw std::length_error(what_arg);
-    }
+    hcore_error_if_msg(
+        rk_new > std::min(m, n),
+        "Rank (%lld) after truncation (%lld) is greater than max rank (%lld)",
+        (long long)Crk, (long long)rk_new, (long long)std::min(m, n));
 
     T* UV = new T[(ldcu + n) * rk_new];
 

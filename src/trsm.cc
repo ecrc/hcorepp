@@ -5,6 +5,7 @@
 
 #include "hcore.hh"
 #include "internal/check.hh"
+#include "hcore/exception.hh"
 #include "hcore/tile/dense.hh"
 #include "hcore/tile/compressed.hh"
 
@@ -13,7 +14,6 @@
 #include <vector>
 #include <complex>
 #include <cassert>
-#include <stdexcept>
 
 namespace hcore {
 
@@ -58,7 +58,7 @@ void trsm(
         if (blas::is_complex<T>::value  &&
             A.op() != blas::Op::NoTrans &&
             A.op() != B.op()) {
-                throw std::invalid_argument(
+                throw hcore::Error(
                 "B is complex, transB != Op::NoTrans, and transA != transB.");
         }
 
@@ -71,7 +71,7 @@ void trsm(
             opA = blas::Op::NoTrans;
         }
         else
-            assert(false);
+            throw hcore::Error();
 
         using blas::conj;
 

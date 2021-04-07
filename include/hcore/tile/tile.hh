@@ -49,13 +49,11 @@ protected:
         n_(n), data_(A), ld_(ld), op_(blas::Op::NoTrans),
         uplo_(blas::Uplo::General), layout_(layout)
     {
-        hcore_throw_std_invalid_argument_if(m < 0);
-        hcore_throw_std_invalid_argument_if(n < 0);
-        hcore_throw_std_invalid_argument_if(A == nullptr);
-        hcore_throw_std_invalid_argument_if(
-            layout == blas::Layout::ColMajor && ld < m);
-        hcore_throw_std_invalid_argument_if(
-            layout == blas::Layout::RowMajor && ld < n);
+        hcore_error_if(m < 0);
+        hcore_error_if(n < 0);
+        hcore_error_if(A == nullptr);
+        hcore_error_if(layout == blas::Layout::ColMajor && ld < m);
+        hcore_error_if(layout == blas::Layout::RowMajor && ld < n);
     }
 
 public:
@@ -84,7 +82,7 @@ public:
     ///     - NoTrans: this tile has no transposed structure.
     void op(blas::Op op)
     {
-        hcore_throw_std_invalid_argument_if(
+        hcore_error_if(
             op != blas::Op::Trans   &&
             op != blas::Op::NoTrans &&
             op != blas::Op::ConjTrans);
@@ -110,7 +108,7 @@ public:
     ///     - Lower: lower triangle of this tile is stored.
     void uplo(blas::Uplo uplo)
     {
-        hcore_throw_std_invalid_argument_if(
+        hcore_error_if(
             uplo != blas::Uplo::General &&
             uplo != blas::Uplo::Lower   &&
             uplo != blas::Uplo::Upper);
@@ -151,8 +149,8 @@ public:
     ///     Column index. 0 <= j < n.
     T operator()(int64_t i, int64_t j) const
     {
-        hcore_throw_std_invalid_argument_if(0 > i || i >= m());
-        hcore_throw_std_invalid_argument_if(0 > j || j >= n());
+        hcore_error_if(0 > i || i >= m());
+        hcore_error_if(0 > j || j >= n());
 
         using blas::conj;
 
@@ -180,8 +178,8 @@ public:
     ///     Column index. 0 <= j < n.
     T const& at(int64_t i, int64_t j) const
     {
-        hcore_throw_std_invalid_argument_if(0 > i || i >= m());
-        hcore_throw_std_invalid_argument_if(0 > j || j >= n());
+        hcore_error_if(0 > i || i >= m());
+        hcore_error_if(0 > j || j >= n());
 
         if ((op_ == blas::Op::NoTrans) == (layout_ == blas::Layout::ColMajor)) {
             return data_[i + j * ld_];

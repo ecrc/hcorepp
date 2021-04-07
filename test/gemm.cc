@@ -16,7 +16,6 @@
 #include <vector>
 #include <cstdint>
 #include <complex>
-#include <stdexcept>
 #include <algorithm>
 #include <initializer_list>
 
@@ -369,7 +368,7 @@ void gemm_test_dispatch(Params& params, bool run)
             gemm_test_execute<std::complex<double>>(params, run);
             break;
         default:
-            throw std::invalid_argument("Unsupported data type.");
+            throw hcore::Error("Unsupported data type.");
             break;
     }
 }

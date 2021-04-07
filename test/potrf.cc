@@ -17,7 +17,6 @@
 #include <cstdint>
 #include <complex>
 #include <cassert>
-#include <stdexcept>
 
 template <typename T>
 void potrf_test_execute(Params& params, bool run)
@@ -97,7 +96,7 @@ void potrf_test_execute(Params& params, bool run)
         {
             int64_t info = lapack::potrf(uplo_, n, &Aref[0], lda);
             if (info != 0) {
-                throw std::runtime_error("lapack::potrf error " + info);
+                throw hcore::Error("lapack::potrf error " + info);
             }
         }
         double ref_time_end = testsweeper::get_wtime();
@@ -158,7 +157,7 @@ void potrf_test_dispatch(Params& params, bool run)
             potrf_test_execute<std::complex<double>>(params, run);
             break;
         default:
-            throw std::invalid_argument("Unsupported data type.");
+            throw hcore::Error("Unsupported data type.");
             break;
     }
 }

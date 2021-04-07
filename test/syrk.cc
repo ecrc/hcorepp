@@ -277,7 +277,7 @@ void syrk_test_dispatch(Params& params, bool run)
             syrk_test_execute<std::complex<double>>(params, run);
             break;
         default:
-            throw std::invalid_argument("Unsupported data type.");
+            throw hcore::Error("Unsupported data type.");
             break;
     }
 }

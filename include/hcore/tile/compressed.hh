@@ -63,8 +63,8 @@ public:
         blas::Layout layout = blas::Layout::ColMajor) : Tile<T>(m, n, UV, ld,
         layout), rk_(rk), accuracy_(accuracy)
     {
-        hcore_throw_std_invalid_argument_if(rk < 0);
-        hcore_throw_std_invalid_argument_if(accuracy < 0);
+        hcore_error_if(rk < 0);
+        hcore_error_if(accuracy < 0);
     }
 
     /// @return const pointer to array data buffer of U.
@@ -106,7 +106,7 @@ public:
     /// Update pointer to array data buffer of U and V.
     void UVdata(T* UV)
     {
-        hcore_throw_std_invalid_argument_if(UV == nullptr);
+        hcore_error_if(UV == nullptr);
         this->data_ = UV;
     }
 
@@ -125,7 +125,7 @@ public:
     /// Update linear algebra rank of this tile.
     void rk(int64_t rk)
     {
-        hcore_throw_std_invalid_argument_if(rk < 0 && rk != FULL_RANK);
+        hcore_error_if(rk < 0 && rk != FULL_RANK);
         rk_ = (rk == std::min(this->m(), this->n()) ? FULL_RANK : rk);
     }
 

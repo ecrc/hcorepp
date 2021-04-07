@@ -5,6 +5,7 @@
 
 #include "hcore.hh"
 #include "internal/check.hh"
+#include "hcore/exception.hh"
 #include "hcore/tile/dense.hh"
 #include "internal/internal.hh"
 #include "hcore/tile/compressed.hh"
@@ -15,7 +16,6 @@
 #include <vector>
 #include <complex>
 #include <cassert>
-#include <stdexcept>
 
 namespace hcore {
 
@@ -62,7 +62,7 @@ void gemm(
             opA = blas::Op::NoTrans;
         }
         else {
-            throw std::invalid_argument(
+            throw hcore::Error(
                 "C is complex, transC != Op::NoTrans, and transA != transC.");
         }
 
@@ -74,7 +74,7 @@ void gemm(
             opB = blas::Op::NoTrans;
         }
         else {
-            throw std::invalid_argument(
+            throw hcore::Error(
                 "C is complex, transC != Op::NoTrans, and transB != transC.");
         }
 

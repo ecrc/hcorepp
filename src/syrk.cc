@@ -5,6 +5,7 @@
 
 #include "hcore.hh"
 #include "internal/check.hh"
+#include "hcore/exception.hh"
 #include "hcore/tile/dense.hh"
 #include "hcore/tile/compressed.hh"
 
@@ -13,7 +14,6 @@
 #include <vector>
 #include <complex>
 #include <cassert>
-#include <stdexcept>
 
 namespace hcore {
 
@@ -42,12 +42,10 @@ void syrk(
 
     if (blas::is_complex<T>::value) {
         if (A.op() == blas::Op::ConjTrans) {
-            throw std::invalid_argument(
-                "C is complex and transA == Op::ConjTrans.");
+            throw hcore::Error("C is complex and transA == Op::ConjTrans.");
         }
         else if (C.op() == blas::Op::ConjTrans) {
-            throw std::invalid_argument(
-                "C is complex and transC == Op::ConjTrans.");
+            throw hcore::Error("C is complex and transC == Op::ConjTrans.");
         }
     }
 

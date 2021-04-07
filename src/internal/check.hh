@@ -17,41 +17,33 @@ namespace internal {
 template <typename T>
 void check_gemm(Tile<T> const& A, Tile<T> const& B, Tile<T> const& C)
 {
-    hcore_throw_std_invalid_argument_if(A.layout() != B.layout());
-    hcore_throw_std_invalid_argument_if(B.layout() != C.layout());
-    hcore_throw_std_invalid_argument_if(A.m() != C.m());
-    hcore_throw_std_invalid_argument_if(B.n() != C.n());
-    hcore_throw_std_invalid_argument_if(A.n() != B.m());
-    hcore_throw_std_invalid_argument_if(
-        A.uplo_physical() != blas::Uplo::General);
-    hcore_throw_std_invalid_argument_if(
-        B.uplo_physical() != blas::Uplo::General);
-    hcore_throw_std_invalid_argument_if(
-        C.uplo_physical() != blas::Uplo::General);
+    hcore_error_if(A.layout() != B.layout());
+    hcore_error_if(B.layout() != C.layout());
+    hcore_error_if(A.m() != C.m());
+    hcore_error_if(B.n() != C.n());
+    hcore_error_if(A.n() != B.m());
+    hcore_error_if(A.uplo_physical() != blas::Uplo::General);
+    hcore_error_if(B.uplo_physical() != blas::Uplo::General);
+    hcore_error_if(C.uplo_physical() != blas::Uplo::General);
 }
 
 template <typename T>
 void check_syrk(Tile<T> const& A, Tile<T> const& C)
 {
-    hcore_throw_std_invalid_argument_if(A.layout() != C.layout());
-    hcore_throw_std_invalid_argument_if(C.m() != C.n());
-    hcore_throw_std_invalid_argument_if(C.m() != A.m());
-    hcore_throw_std_invalid_argument_if(
-        A.uplo_physical() != blas::Uplo::General);
-    hcore_throw_std_invalid_argument_if(
-        C.uplo_physical() == blas::Uplo::General);
+    hcore_error_if(A.layout() != C.layout());
+    hcore_error_if(C.m() != C.n());
+    hcore_error_if(C.m() != A.m());
+    hcore_error_if(A.uplo_physical() != blas::Uplo::General);
+    hcore_error_if(C.uplo_physical() == blas::Uplo::General);
 }
 
 template <typename T>
 void check_trsm(blas::Side side, Tile<T> const& A, Tile<T> const& B)
 {
-    hcore_throw_std_invalid_argument_if(A.layout() != B.layout());
-    hcore_throw_std_invalid_argument_if(A.m() != A.n());
-    hcore_throw_std_invalid_argument_if(
-        side == blas::Side::Left ? A.m() != B.m()
-                                 : A.m() != B.n());
-    hcore_throw_std_invalid_argument_if(
-        B.uplo_physical() != blas::Uplo::General);
+    hcore_error_if(A.layout() != B.layout());
+    hcore_error_if(A.m() != A.n());
+    hcore_error_if(side == blas::Side::Left ? A.m() != B.m() : A.m() != B.n());
+    hcore_error_if(B.uplo_physical() != blas::Uplo::General);
 }
 
 } // namespace internal
