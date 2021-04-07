@@ -38,7 +38,7 @@ pipeline {
                             module purge
 
                             # cmake
-                            if [ "${host}" = "Vulture" || "${host}" = "stork" ]; then
+                            if [ "${host}" = "Vulture"] || ["${host}" = "stork" ]; then
                                 module load cmake/3.17.3
                             else
                                 module load cmake/3.19.2
