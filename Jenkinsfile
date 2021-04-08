@@ -16,8 +16,7 @@ pipeline {
                         name 'host'
                         values 'Almaha', 'Buraq', 'Condor', 'Flamingo',
                             'Jasmine', 'Shihab', 'Vulture', 'Albatross',
-                            'Tuwaiq'
-                            // 'stork'   // no modules
+                            'Tuwaiq', 'stork'
                             // 'Oqab',   // decommissioned
                             // 'P100',   // decommissioned
                             // 'Raed',   // decommissioned
