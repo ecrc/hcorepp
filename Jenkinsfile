@@ -38,8 +38,10 @@ pipeline {
                             module purge
 
                             # cmake
-                            if [ "${host}" = "Vulture" ] || [ "${host}" = "stork" ]; then
+                            if [ "${host}" = "Vulture" ]; then
                                 module load cmake/3.17.3
+                            elif [ "${host}" = "stork" ]; then
+                                module load cmake/3.17.3/gcc-7.5.0-hsgw7ba
                             else
                                 module load cmake/3.19.2
                             fi
