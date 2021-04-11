@@ -16,7 +16,8 @@ pipeline {
                         name 'host'
                         values 'Almaha', 'Buraq', 'Condor', 'Flamingo',
                             'Jasmine', 'Shihab', 'Vulture', 'Albatross',
-                            'Tuwaiq', 'stork'
+                            'Tuwaiq'
+                            // 'stork'   // no modules
                             // 'Oqab',   // decommissioned
                             // 'P100',   // decommissioned
                             // 'Raed',   // decommissioned
@@ -37,20 +38,13 @@ pipeline {
 
                             module purge
 
-                            # cmake
-                            if [ "${host}" = "Vulture" ]; then
-                                module load cmake/3.17.3
-                            elif [ "${host}" = "stork" ]; then
-                                module load cmake/3.17.3/gcc-7.5.0-hsgw7ba
-                            else
-                                module load cmake/3.19.2
-                            fi
-
-                            # gcc
+                            # gcc and cmake
                             if [ "${host}" = "Vulture" ]; then
                                 module load gcc/7.2.0
+                                module load cmake/3.17.3
                             else
                                 module load gcc/10.2.0
+                                module load cmake/3.19.2
                             fi
 
                             # BLAS/LAPACK
