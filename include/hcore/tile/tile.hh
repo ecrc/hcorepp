@@ -205,13 +205,15 @@ public:
 private:
     int64_t m_; ///> Number of rows.
     int64_t n_; ///> Number of columns.
-    blas::Op op_; ///> Transposition operation.
-    blas::Uplo uplo_; ///> Physical packed storage type.
-    blas::Layout layout_; ///> Physical ordering of the matrix elements.
 
 protected:
     T* data_; ///> Data array buffer.
     int64_t ld_; ///> Leading dimension.
+
+private:
+    blas::Op op_; ///> Transposition operation.
+    blas::Uplo uplo_; ///> Physical packed storage type.
+    blas::Layout layout_; ///> Physical ordering of the matrix elements.
 
 }; // class Tile
 } // namespace hcore
