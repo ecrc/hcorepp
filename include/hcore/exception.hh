@@ -21,7 +21,13 @@ public:
     Error(const std::string& what_arg) : std::exception(), what_arg_(what_arg)
     {
     }
-    Error(const std::string& what_arg,
+    Error(
+        const std::string& what_arg, const char* function) : std::exception(),
+        what_arg_(what_arg + ", function " + function + ".")
+    {
+    }
+    Error(
+        const std::string& what_arg,
         const char* function, const char* file, int line) : std::exception(),
         what_arg_(what_arg
             + ", function " + function
