@@ -48,6 +48,15 @@ public:
     {
     }
 
+    /// [explicit]
+    /// Conversion from compressed tile, which creates a shallow copy view of
+    /// the base tile.
+    /// @param[in,out] tile
+    ///     Base tile.
+    explicit DenseTile(Tile<T> const& tile) : Tile<T>(tile)
+    {
+    }
+
     /// @return const pointer to array data buffer of this tile.
     T const* data() const
     {

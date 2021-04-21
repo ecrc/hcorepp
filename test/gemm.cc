@@ -264,15 +264,19 @@ void gemm_test_execute(Params& params, bool run)
     params.time() = time_end - time_start;
     params.gflops() = gflops / params.time();
 
+    if (params.routine == "gemm_ddc") {
+        C = hcore::DenseTile<T>(CUV);
+    }
+
     if (verbose) {
         if (params.routine == "gemm_ddd" ||
             params.routine == "gemm_dcd" ||
             params.routine == "gemm_cdd" ||
-            params.routine == "gemm_ccd") {
+            params.routine == "gemm_ccd" ||
+            params.routine == "gemm_ddc") {
             pretty_print(C, "C");
         }
-        else if (params.routine == "gemm_ddc" ||
-                 params.routine == "gemm_dcc" ||
+        else if (params.routine == "gemm_dcc" ||
                  params.routine == "gemm_cdc" ||
                  params.routine == "gemm_ccc") {
             pretty_print(CUV, "C");
@@ -319,12 +323,7 @@ void gemm_test_execute(Params& params, bool run)
 
         // Compute the Residual ||Cref - C||_inf.        
 
-        if (params.routine == "gemm_ddc") {
-            diff(&Cref[0], ldcref, CUV);
-        }
-        else {
-            diff(&Cref[0], ldcref, C);
-        }
+        diff(&Cref[0], ldcref, C);
 
         if (verbose) {
             pretty_print(m, n, &Cref[0], ldcref, "Cref_diff_C");

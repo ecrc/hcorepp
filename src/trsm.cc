@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
 #include "hcore.hh"
-#include "internal/check.hh"
 #include "hcore/exception.hh"
+#include "hcore/tile/tile.hh"
 #include "hcore/tile/dense.hh"
 #include "hcore/tile/compressed.hh"
 
@@ -16,17 +16,32 @@
 #include <cassert>
 
 namespace hcore {
+namespace internal {
+namespace check {
+
+template <typename T>
+void trsm(blas::Side side, Tile<T> const& A, Tile<T> const& B)
+{
+    hcore_error_if(A.m() != A.n());
+    hcore_error_if(A.layout() != B.layout());
+    hcore_error_if(B.uplo_physical() != blas::Uplo::General);
+    hcore_error_if(side == blas::Side::Left ? A.m() != B.m() : A.m() != B.n());
+}
+
+} // namespace check
+} // namespace internal
+
 
 // =============================================================================
 //
 /// Triangular matrix-matrix multiplication that solves one of the matrix
-/// equations: A * X = alpha * B or X * A = alpha * B.
+/// equations: op(A) * X = alpha * B or X * op(A) = alpha * B.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] side
 ///     Whether A appears on the left or on the right of X:
-///     - Side::Left: solve A * X = alpha * B.
-///     - Side::Right: solve X * A = alpha * B.
+///     - Side::Left: solve op(A) * X = alpha * B.
+///     - Side::Right: solve X * op(A) = alpha * B.
 /// @param[in] diag
 ///     Whether A is a unit or non-unit upper or lower triangular matrix.
 /// @param[in] alpha
@@ -58,20 +73,24 @@ void trsm(
         if (blas::is_complex<T>::value  &&
             A.op() != blas::Op::NoTrans &&
             A.op() != B.op()) {
-                throw hcore::Error(
+            throw hcore::Error(
                 "B is complex, transB != Op::NoTrans, and transA != transB.");
         }
 
         blas::Side side_ =
             side == blas::Side::Left ? blas::Side::Right : blas::Side::Left;
+
         blas::Op opA;
-        if (A.op() == blas::Op::NoTrans)
+        if (A.op() == blas::Op::NoTrans) {
             opA = B.op();
+        }
         else if (A.op() == B.op() || (!blas::is_complex<T>::value)) {
             opA = blas::Op::NoTrans;
         }
-        else
-            throw hcore::Error();
+        else {
+            throw hcore::Error(
+                "B is complex, transB != Op::NoTrans, and transA != transB.");
+        }
 
         using blas::conj;
 
@@ -111,13 +130,13 @@ void trsm(
 // =============================================================================
 //
 /// Triangular matrix-matrix multiplication that solves one of the matrix
-/// equations: A * X = alpha * B or X * A = alpha * B.
+/// equations: op(A) * X = alpha * B or X * op(A) = alpha * B.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] side
 ///     Whether A appears on the left or on the right of X:
-///     - Side::Left: solve A * X = alpha * B.
-///     - Side::Right: solve X * A = alpha * B.
+///     - Side::Left: solve op(A) * X = alpha * B.
+///     - Side::Right: solve X * op(A) = alpha * B.
 /// @param[in] diag
 ///     Whether A is a unit or non-unit upper or lower triangular matrix.
 /// @param[in] alpha
@@ -134,8 +153,7 @@ void trsm(
     T alpha,      DenseTile<T> const& A,
              CompressedTile<T>      & B)
 {
-    // todo
-    assert(false);
+    assert(false); // todo
 }
 
 template
@@ -162,22 +180,22 @@ void trsm(
 // =============================================================================
 //
 /// Triangular matrix-matrix multiplication that solves one of the matrix
-/// equations: A * X = alpha * B or X * A = alpha * B.
+/// equations: op(A) * X = alpha * B or X * op(A) = alpha * B.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] side
 ///     Whether A appears on the left or on the right of X:
-///     - Side::Left: solve A * X = alpha * B.
-///     - Side::Right: solve X * A = alpha * B.
+///     - Side::Left: solve op(A) * X = alpha * B.
+///     - Side::Right: solve X * op(A) = alpha * B.
 /// @param[in] diag
 ///     Whether A is a unit or non-unit upper or lower triangular matrix.
 /// @param[in] alpha
 ///     The scalar alpha.
 /// @param[in] A
 ///     - Side::Left: the m-by-m triangular compressed tile
-///                   (U: m-by-Ark; V: Ark-by-m).
+///       (U: m-by-Ark; V: Ark-by-m).
 ///     - Side::Right: the n-by-n triangular compressed tile
-///                    (U: n-by-Ark; V: Ark-by-n).
+///       (U: n-by-Ark; V: Ark-by-n).
 /// @param[in,out] B
 ///     On entry, the m-by-n dense tile.
 ///     On exit, overwritten by the result X.
@@ -187,8 +205,7 @@ void trsm(
     T alpha, CompressedTile<T> const& A,
                   DenseTile<T>      & B)
 {
-    // todo
-    assert(false);
+    assert(false); // todo
 }
 
 template
@@ -215,22 +232,22 @@ void trsm(
 // =============================================================================
 //
 /// Triangular matrix-matrix multiplication that solves one of the matrix
-/// equations: A * X = alpha * B or X * A = alpha * B.
+/// equations: op(A) * X = alpha * B or X * op(A) = alpha * B.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] side
 ///     Whether A appears on the left or on the right of X:
-///     - Side::Left: solve A * X = alpha * B.
-///     - Side::Right: solve X * A = alpha * B.
+///     - Side::Left: solve op(A) * X = alpha * B.
+///     - Side::Right: solve X * op(A) = alpha * B.
 /// @param[in] diag
 ///     Whether A is a unit or non-unit upper or lower triangular matrix.
 /// @param[in] alpha
 ///     The scalar alpha.
 /// @param[in] A
 ///     - Side::Left: the m-by-m triangular compressed tile
-///                   (U: m-by-Ark; V: Ark-by-m).
+///       (U: m-by-Ark; V: Ark-by-m).
 ///     - Side::Right: the n-by-n triangular compressed tile
-///                    (U: n-by-Ark; V: Ark-by-n).
+///       (U: n-by-Ark; V: Ark-by-n).
 /// @param[in,out] B
 ///     On entry, the m-by-n compressed tile (U: m-by-Brk; V: Brk-by-n).
 ///     On exit, overwritten by the result X.
@@ -240,8 +257,7 @@ void trsm(
     T alpha, CompressedTile<T> const& A,
              CompressedTile<T>      & B)
 {
-    // todo
-    assert(false);
+    assert(false); // todo
 }
 
 template
