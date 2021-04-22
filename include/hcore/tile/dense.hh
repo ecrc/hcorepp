@@ -20,11 +20,16 @@ namespace hcore {
 template <typename T>
 class DenseTile : public Tile<T> {
 public:
+
+    // =========================================================================
+    //
     /// Empty Dense tile.
     DenseTile() : Tile<T>()
     {
     }
 
+    // =========================================================================
+    //
     /// Dense tile that wraps existing (preallocated) memory buffer.
     /// @param[in] m
     ///     Number of rows of the tile. m >= 0.
@@ -48,6 +53,8 @@ public:
     {
     }
 
+    // =========================================================================
+    //
     /// [explicit]
     /// Conversion from compressed tile, which creates a shallow copy view of
     /// the base tile.

@@ -22,15 +22,21 @@ namespace hcore {
 template <typename T>
 class CompressedTile : public Tile<T>
 {
+    using real_t = blas::real_type<T>;
+
 private:
-    static const int64_t FULL_RANK = -1; ///> Constant representing full rank.
+    static const int64_t FULL_RANK_ = -1; ///> Constant representing full rank.
 
 public:
+    // =========================================================================
+    //
     /// Empty compressed tile.
     CompressedTile() : Tile<T>(), rk_(0)
     {
     }
 
+    // =========================================================================
+    //
     /// Compressed tile that wraps existing (preallocated) memory buffer.
     /// @param[in] m
     ///     Number of rows of the tile. m >= 0.
@@ -59,9 +65,8 @@ public:
     ///     blas::Layout::ColMajor: column elements are 1-strided (default), or
     ///     blas::Layout::RowMajor: row elements are 1-strided.
     CompressedTile(int64_t m, int64_t n, T* UV, int64_t ld, int64_t rk,
-        blas::real_type<T> accuracy,
-        blas::Layout layout = blas::Layout::ColMajor) : Tile<T>(m, n, UV, ld,
-        layout), rk_(rk), accuracy_(accuracy)
+        real_t accuracy, blas::Layout layout = blas::Layout::ColMajor)
+        : Tile<T>(m, n, UV, ld, layout), rk_(rk), accuracy_(accuracy)
     {
         hcore_error_if(rk < 0);
         hcore_error_if(accuracy < 0);
@@ -119,40 +124,39 @@ public:
     /// @return linear algebra rank of this tile.
     int64_t rk() const
     {
-        return (rk_ == FULL_RANK ? std::min(this->m(), this->n()) : rk_);
+        return (rk_ == FULL_RANK_ ? std::min(this->m(), this->n()) : rk_);
     }
 
     /// Update linear algebra rank of this tile.
     void rk(int64_t rk)
     {
-        hcore_error_if(rk < 0 && rk != FULL_RANK);
-        rk_ = (rk == std::min(this->m(), this->n()) ? FULL_RANK : rk);
+        hcore_error_if(rk < 0 && rk != FULL_RANK_);
+        rk_ = (rk == std::min(this->m(), this->n()) ? FULL_RANK_ : rk);
     }
 
     /// Update linear algebra rank of this tile to full rank.
     void to_full_rk()
     {
-        rk(FULL_RANK);
+        rk(FULL_RANK_);
     }
 
     /// @return whether the linear algebra rank of this tile is full or not.
     bool is_full_rk() const
     {
-        return (rk_ == FULL_RANK ? true : false);
+        return (rk_ == FULL_RANK_ ? true : false);
     }
 
-
     /// @return numerical error threshold of this tile.
-    blas::real_type<T> accuracy() const
+    real_t accuracy() const
     {
         return accuracy_;
     }
 
 private:
     int64_t rk_; ///> Linear algebra matrix rank.
-    blas::real_type<T> accuracy_; ///> Numerical error threshold.
+    real_t accuracy_; ///> Numerical error threshold.
 
 }; // class CompressedTile
-} // namespace hcore
+}  // namespace hcore
 
 #endif // HCORE_TILE_COMPRESSED_HH

@@ -22,12 +22,17 @@ template <typename T>
 class Tile
 {
 protected:
+
+    // =========================================================================
+    //
     /// Empty tile.
     Tile() : m_(0), n_(0), data_(nullptr), ld_(0), op_(blas::Op::NoTrans),
         uplo_(blas::Uplo::General), layout_(blas::Layout::ColMajor)
     {
     }
 
+    // =========================================================================
+    //
     /// Tile that wraps existing (preallocated) memory buffer.
     /// @param[in] m
     ///     Number of rows of the tile. m >= 0.
