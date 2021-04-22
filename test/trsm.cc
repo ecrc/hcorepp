@@ -46,12 +46,9 @@ void trsm_test_execute(Params& params, bool run)
     if (!run) return;
 
     // quick returns
-    if (blas::is_complex<T>::value) {
-        if ((transB == blas::Op::Trans     && transA == blas::Op::ConjTrans) ||
-            (transB == blas::Op::ConjTrans && transA == blas::Op::Trans)) {
-            printf("skipping: wrong combinations of transA/transB.\n");
-            return;
-        }
+    if (blas::is_complex<T>::value && transA != blas::Op::NoTrans && transA != transB) {
+        printf("skipping: wrong combinations of transA/transB.\n");
+        return;
     }
 
     int64_t An = side == blas::Side::Left ? m : n;

@@ -307,28 +307,32 @@ void gemm(
             beta,  C.data(), C.ld());
     }
     else {
+        hcore_error_if(
+            C.is_complex && A.op() != blas::Op::NoTrans && A.op() != C.op());
+
         blas::Op opA;
         if (A.op() == blas::Op::NoTrans) {
             opA = C.op();
         }
-        else if ((A.op() == C.op()) || (!blas::is_complex<T>::value)) {
+        else if (A.op() == C.op() || !C.is_complex) {
             opA = blas::Op::NoTrans;
         }
         else {
-            throw hcore::Error(
-                "C is complex, transC != Op::NoTrans, and transA != transC.");
+            throw hcore::Error();
         }
+
+        hcore_error_if(
+            C.is_complex && B.op() != blas::Op::NoTrans && B.op() != C.op());
 
         blas::Op opB;
         if (B.op() == blas::Op::NoTrans) {
             opB = C.op();
         }
-        else if ((B.op() == C.op()) || (!blas::is_complex<T>::value)) {
+        else if (B.op() == C.op() || !C.is_complex) {
             opB = blas::Op::NoTrans;
         }
         else {
-            throw hcore::Error(
-                "C is complex, transC != Op::NoTrans, and transB != transC.");
+            throw hcore::Error();
         }
 
         using blas::conj;

@@ -52,10 +52,8 @@ void gemm_test_execute(Params& params, bool run)
     bool use_ungqr = params.use_ungqr() == 'y';
     bool truncate_with_tol = params.truncate_with_tol() == 'y';
 
-    if (params.routine == "gemm_ddc" ||
-        params.routine == "gemm_dcc" ||
-        params.routine == "gemm_cdc" ||
-        params.routine == "gemm_ccc") {
+    if (params.routine == "gemm_ddc" || params.routine == "gemm_dcc" ||
+        params.routine == "gemm_cdc" || params.routine == "gemm_ccc") {
         params.rk();
     }
 
@@ -64,10 +62,10 @@ void gemm_test_execute(Params& params, bool run)
     // quick returns
     if (blas::is_complex<T>::value) {
         if ((transC == blas::Op::Trans &&
-                (transA == blas::Op::ConjTrans || transB == blas::Op::ConjTrans)
+             (transA == blas::Op::ConjTrans || transB == blas::Op::ConjTrans)
             ) ||
             (transC == blas::Op::ConjTrans &&
-                (transA == blas::Op::Trans || transB == blas::Op::Trans)
+             (transA == blas::Op::Trans || transB == blas::Op::Trans)
             )) {
             printf("skipping: wrong combinations of transA/transB/transC.\n");
             return;

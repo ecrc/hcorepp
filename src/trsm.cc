@@ -70,12 +70,8 @@ void trsm(
                    B.data(), B.ld());
     }
     else {
-        if (blas::is_complex<T>::value  &&
-            A.op() != blas::Op::NoTrans &&
-            A.op() != B.op()) {
-            throw hcore::Error(
-                "B is complex, transB != Op::NoTrans, and transA != transB.");
-        }
+        hcore_error_if(
+            B.is_complex && A.op() != blas::Op::NoTrans && A.op() != B.op());
 
         blas::Side side_ =
             side == blas::Side::Left ? blas::Side::Right : blas::Side::Left;
@@ -84,12 +80,11 @@ void trsm(
         if (A.op() == blas::Op::NoTrans) {
             opA = B.op();
         }
-        else if (A.op() == B.op() || (!blas::is_complex<T>::value)) {
+        else if (A.op() == B.op() || !B.is_complex) {
             opA = blas::Op::NoTrans;
         }
         else {
-            throw hcore::Error(
-                "B is complex, transB != Op::NoTrans, and transA != transB.");
+            throw hcore::Error();
         }
 
         using blas::conj;

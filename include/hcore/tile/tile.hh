@@ -57,6 +57,8 @@ protected:
     }
 
 public:
+    static constexpr bool is_complex = blas::is_complex<T>::value;
+
     /// @return number of rows of this tile.
     int64_t m() const
     {

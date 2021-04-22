@@ -59,14 +59,8 @@ void syrk(
 
     internal::check::syrk(A, C);
 
-    if (blas::is_complex<T>::value) {
-        if (A.op() == blas::Op::ConjTrans) {
-            throw hcore::Error("C is complex and transA == Op::ConjTrans.");
-        }
-        else if (C.op() == blas::Op::ConjTrans) {
-            throw hcore::Error("C is complex and transC == Op::ConjTrans.");
-        }
-    }
+    hcore_error_if(C.is_complex &&
+            (A.op() == blas::Op::ConjTrans || C.op() == blas::Op::ConjTrans));
 
     blas::syrk(
         blas::Layout::ColMajor, C.uplo_physical(), A.op(),
