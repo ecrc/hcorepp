@@ -187,8 +187,8 @@ if (NOT TARGET blaspp)
         set(build_tests "false")
 
         set(url "https://bitbucket.org/icl/blaspp")
-        # set(tag "2020.10.02")
-        set(tag "2021.04.00")
+        set(tag "2020.10.02")
+        # set(tag "2021.04.00") ## todo
         message(STATUS "Fetching BLAS++ ${tag} from ${url}")
         include(FetchContent)
         FetchContent_Declare(
