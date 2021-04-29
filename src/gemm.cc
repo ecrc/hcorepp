@@ -47,6 +47,9 @@ void reduced_svd(
 {
     using blas::conj;
 
+    T zero = 0.0;
+    T one  = 1.0;
+
     int64_t m = C.m();
     int64_t n = C.n();
 
@@ -78,7 +81,7 @@ void reduced_svd(
     // RU: uppertriangular part of QR(U)
     std::vector<T> RU(min_Um_Un * Un);
     lapack::laset(lapack::MatrixType::Lower,
-        min_Um_Un, Un, 0.0, 0.0, &RU[0], min_Um_Un);
+        min_Um_Un, Un, zero, zero, &RU[0], min_Um_Un);
     lapack::lacpy(lapack::MatrixType::Upper,
         min_Um_Un, Un, &U[0], Um, &RU[0], min_Um_Un);
 
@@ -127,7 +130,7 @@ void reduced_svd(
             (use_ungqr ? blas::Op::ConjTrans : blas::Op::Trans),
             blas::Diag::NonUnit,
             min_Um_Un, Un,
-            1.0, &V[0],  Vm,
+            one, &V[0],  Vm,
                  &RU[0], min_Um_Un);
 
         // orthogonal QU and QV
@@ -143,7 +146,7 @@ void reduced_svd(
         // RV: uppertriangular part of QR(V)
         std::vector<T> RV(min_Vm_Vn * Vn);
         lapack::laset(lapack::MatrixType::Lower,
-            min_Vm_Vn, Vn, 0.0, 0.0, &RV[0], min_Vm_Vn);
+            min_Vm_Vn, Vn, zero, zero, &RV[0], min_Vm_Vn);
         lapack::lacpy(lapack::MatrixType::Upper,
             min_Vm_Vn, Vn, &V[0], Vm, &RV[0], min_Vm_Vn);
 
@@ -153,9 +156,9 @@ void reduced_svd(
             blas::Layout::ColMajor, blas::Op::NoTrans,
             (use_ungqr ? blas::Op::ConjTrans : blas::Op::Trans),
             min_Um_Un, min_Vm_Vn, (Ark + Crk),
-            1.0, &RU[0],   min_Um_Un,
-                 &RV[0],   min_Vm_Vn,
-            0.0, &RURV[0], min_Um_Un);
+            one,  &RU[0],   min_Um_Un,
+                  &RV[0],   min_Vm_Vn,
+            zero, &RURV[0], min_Um_Un);
 
         // orthogonal QU and QV
         // [Unew, Sigma, VTnew] = svd(RU * RV.');
@@ -207,9 +210,9 @@ void reduced_svd(
         blas::gemm(
             blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
             Um, rk_new, min_Um_Un,
-            1.0, &U[0],    Um,
-                 &Unew[0], min_Um_Un,
-            0.0, &UV[0],   ldcu);
+            one,  &U[0],    Um,
+                  &Unew[0], min_Um_Un,
+            zero, &UV[0],   ldcu);
     }
     else {
         lapack::unmqr(
@@ -242,9 +245,9 @@ void reduced_svd(
         blas::gemm(
             blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::ConjTrans,
             Vm, rk_new, min_Vm_Vn,
-            1.0, &V[0],     Vm,
-                 &VTnew[0], sizeS,
-            0.0, &Vnew[0],  Vm);
+            one,  &V[0],     Vm,
+                  &VTnew[0], sizeS,
+            zero, &Vnew[0],  Vm);
         for (int64_t j = 0; j < rk_new; ++j) {
             for (int64_t i = 0; i < Vm; ++i) {
                 UVptr[j + i * rk_new] = conj(Vnew[i + j * Vm]);
@@ -402,6 +405,9 @@ void gemm(
 
     internal::check::gemm(A, B, C);
 
+    T zero = 0.0;
+    T one  = 1.0;
+
     T* W = new T[C.ldu() * C.n()];
 
     // W = alpha * A * B
@@ -410,7 +416,7 @@ void gemm(
         C.m(), C.n(), A.n(),
         alpha, A.data(), A.ld(),
                B.data(), B.ld(),
-        0.0,   &W[0],    C.ldu());
+        zero,  &W[0],    C.ldu());
 
     // W += beta * CU * VC
     blas::gemm(
@@ -418,7 +424,7 @@ void gemm(
         C.m(), C.n(), C.rk(),
         beta, C.Udata(), C.ldu(),
               C.Vdata(), C.ldv(),
-        1.0,  &W[0],     C.ldu());
+        one,  &W[0],     C.ldu());
 
     C.UVdata(W);
     C.to_full_rk();
@@ -475,6 +481,9 @@ void gemm(
 
     internal::check::gemm(A, B, C);
 
+    T zero = 0.0;
+    T one  = 1.0;
+
     std::vector<T> W(C.m() * B.rk());
 
     // W = alpha * A * BU
@@ -483,13 +492,13 @@ void gemm(
         C.m(), B.rk(), A.n(),
         alpha, A.data(),  A.ld(),
                B.Udata(), B.ldu(),
-        0.0,   &W[0],     C.m());
+        zero,  &W[0],     C.m());
 
     // C = W * BV + beta * C
     blas::gemm(
         blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
         C.m(), C.n(), B.rk(),
-        1.0,  &W[0],     C.m(),
+        one,  &W[0],     C.m(),
               B.Vdata(), B.ldv(),
         beta, C.data(),  C.ld());
 }
@@ -554,6 +563,8 @@ void gemm(
 
     internal::check::gemm(A, B, C);
 
+    T zero = 0.0;
+
     std::vector<T> W(C.m() * B.rk());
 
     // W = alpha * A * BU
@@ -562,7 +573,7 @@ void gemm(
         C.m(), B.rk(), A.n(),
         alpha, A.data(),  A.ld(),
                B.Udata(), B.ldu(),
-        0.0,   &W[0],     C.m());
+        zero,  &W[0],     C.m());
 
     internal::reduced_svd(
         beta, &W[0], B.Vdata(), C.m(), B.rk(), C,
@@ -624,15 +635,18 @@ void gemm(
 
     internal::check::gemm(A, B, C);
 
+    T zero = 0.0;
+    T one  = 1.0;
+
     std::vector<T> W(A.rk() * C.n());
 
     // W = AV * B
     blas::gemm(
         blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
         A.rk(), C.n(), A.n(),
-        1.0, A.Vdata(), A.ldv(),
-             B.data(),  B.ld(),
-        0.0, &W[0],     A.rk());
+        one,  A.Vdata(), A.ldv(),
+              B.data(),  B.ld(),
+        zero, &W[0],     A.rk());
 
     // C = alpha * AU * W + beta * C
     blas::gemm(
@@ -703,6 +717,8 @@ void gemm(
 
     internal::check::gemm(A, B, C);
 
+    T zero = 0.0;
+
     std::vector<T> W(A.rk() * C.n());
 
     // W = alpha * AV * B
@@ -711,7 +727,7 @@ void gemm(
         A.rk(), C.n(), A.n(),
         alpha, A.Vdata(), A.ldv(),
                B.data(),  B.ld(),
-        0.0,   &W[0],     A.rk());
+        zero,  &W[0],     A.rk());
 
     internal::reduced_svd(
         beta, A.Udata(), &W[0], A.ldu(), A.rk(), C,
@@ -773,6 +789,9 @@ void gemm(
 
     internal::check::gemm(A, B, C);
 
+    T zero = 0.0;
+    T one  = 1.0;
+
     std::vector<T> W0(A.rk() * B.rk());
 
     // W0 = alpha * AV * BU
@@ -781,7 +800,7 @@ void gemm(
         A.rk(), B.rk(), A.n(),
         alpha, A.Vdata(), A.ldv(),
                B.Udata(), B.ldu(),
-        0.0,   &W0[0],    A.rk());
+        zero,  &W0[0],    A.rk());
 
     if (A.rk() <= B.rk()) {
         std::vector<T> W1(A.rk() * C.n());
@@ -790,15 +809,15 @@ void gemm(
         blas::gemm(
             blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
             A.rk(), C.n(), B.rk(),
-            1.0, &W0[0],    A.rk(),
-                 B.Vdata(), B.ldv(),
-            0.0, &W1[0],    A.rk());
+            one,  &W0[0],    A.rk(),
+                  B.Vdata(), B.ldv(),
+            zero, &W1[0],    A.rk());
 
         // C = AU * W1 + beta * C
         blas::gemm(
             blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
             C.m(), C.n(), A.rk(),
-            1.0,  A.Udata(), A.ldu(),
+            one,  A.Udata(), A.ldu(),
                   &W1[0],    A.rk(),
             beta, C.data(),  C.ld());
     }
@@ -809,15 +828,15 @@ void gemm(
         blas::gemm(
             blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
             C.m(), B.rk(), A.rk(),
-            1.0,  A.Udata(), A.ldu(),
+            one,  A.Udata(), A.ldu(),
                   &W0[0],    A.rk(),
-            0.0,  &W1[0],    C.m());
+            zero, &W1[0],    C.m());
 
         // C = W1 * BV + beta * C
         blas::gemm(
             blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
             C.m(), C.n(), B.rk(),
-            1.0,  &W1[0],    C.m(),
+            one,  &W1[0],    C.m(),
                   B.Vdata(), B.ldv(),
             beta, C.data(),  C.ld());
     }
@@ -881,6 +900,9 @@ void gemm(
     assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
+    T zero = 0.0;
+    T one  = 1.0;
+
     internal::check::gemm(A, B, C);
 
     // W0 = alpha * AV * BU
@@ -890,7 +912,7 @@ void gemm(
         A.rk(), B.rk(), A.n(),
         alpha, A.Vdata(), A.ldv(),
                B.Udata(), B.ldu(),
-        0.0,   &W0[0],    A.rk());
+        zero,  &W0[0],    A.rk());
 
     if (A.rk() <= B.rk()) {
         std::vector<T> W1(A.rk() * C.n());
@@ -899,9 +921,9 @@ void gemm(
         blas::gemm(
             blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
             A.rk(), C.n(), B.rk(),
-            1.0, &W0[0],    A.rk(),
-                 B.Vdata(), B.ldv(),
-            0.0, &W1[0],    A.rk());
+            one,  &W0[0],    A.rk(),
+                  B.Vdata(), B.ldv(),
+            zero, &W1[0],    A.rk());
 
         internal::reduced_svd(
             beta, A.Udata(), &W1[0], A.ldu(), A.rk(), C,
@@ -914,9 +936,9 @@ void gemm(
         blas::gemm(
             blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
             C.m(), B.rk(), A.rk(),
-            1.0,  A.Udata(), A.ldu(),
+            one,  A.Udata(), A.ldu(),
                   &W0[0],    A.rk(),
-            0.0,  &W1[0],    C.m());
+            zero, &W1[0],    C.m());
 
         internal::reduced_svd(
             beta, &W1[0], B.Vdata(), C.m(), B.rk(), C,

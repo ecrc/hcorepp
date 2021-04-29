@@ -159,6 +159,9 @@ void syrk(
 
     internal::check::syrk(A, C);
 
+    T zero = 0.0;
+    T one  = 1.0;
+
     // C = beta * C + ((AU * (alpha * AV * AV.')) * AU.')
 
     std::vector<T> W0(A.rk() * A.rk());
@@ -168,7 +171,7 @@ void syrk(
         blas::Layout::ColMajor, C.uplo(), blas::Op::NoTrans,
         A.rk(), A.n(),
         alpha, A.Vdata(), A.ldv(),
-        0.0,   &W0[0],    A.rk());
+        zero,  &W0[0],    A.rk());
 
     std::vector<T> W1(A.m() * A.rk());
 
@@ -176,15 +179,15 @@ void syrk(
     blas::gemm(
         blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
         A.m(), A.rk(), A.rk(),
-        1.0, A.Udata(), A.ldu(),
-             &W0[0],    A.rk(),
-        0.0, &W1[0],    A.m());
+        one,  A.Udata(), A.ldu(),
+              &W0[0],    A.rk(),
+        zero, &W1[0],    A.m());
 
     // C = W1 * AU.' + beta * C
     blas::gemm(
         blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::Trans, 
         A.m(), A.m(), A.rk(),
-        1.0,  &W1[0],    A.m(),
+        one,  &W1[0],    A.m(),
               A.Udata(), A.ldu(),
         beta, C.data(),  C.ld());
 }
