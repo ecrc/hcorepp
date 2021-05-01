@@ -6,10 +6,17 @@
 #include "hcore.hh"
 
 #include <vector>
-#include <cstdint> // int64_t
-#include <stdio.h> // printf
+#include <cstdint>   // int64_t
+#include <stdio.h>   // printf
 #include <algorithm> // std::min
 
+// -----------------------------------------------------------------------------
+// Performs tile low-rank Matrix-matrix multiplication:
+// C = alpha * A * B + beta * C, where alpha and beta are scalars, and A, B, and
+// C are compressed matrices, with A an m-by-k tile low-rank matrix
+// (U: m-by-Ark, V: Ark-by-k), B a k-by-n tile low-rank matrix
+// (U: k-by-Brk, V: Brk-by-n), and C an m-by-n tile low-rank matrix
+// (U: m-by-Crk, V: Crk-by-n).
 template <typename T>
 void execute(int64_t m, int64_t n, int64_t k)
 {
@@ -37,6 +44,13 @@ void execute(int64_t m, int64_t n, int64_t k)
 
     // C = -1.0 * A * B + 1.0 * C
     hcore::gemm<T>(-1.0, A, B, 1.0, C);
+
+    // Note: The matrices can be transposed or conjugate-transposed beforehand.
+    // For example:
+    //
+    //     auto AT = hcore::transpose(A);
+    //     auto BT = hcore::conjugate_transpose(B);
+    //     hcore::gemm<T>(alpha, AT, BT, beta, C);
 }
 
 int main(int argc, char* argv[])
