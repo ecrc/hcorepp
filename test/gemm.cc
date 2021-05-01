@@ -31,8 +31,8 @@ void gemm_test_execute(Params& params, bool run)
     blas::Op transB = params.transB();
     blas::Op transC = params.transC();
 
-    T alpha = params.alpha();
-    T beta = params.beta();
+    T alpha = params.alpha.get<T>();
+    T beta  = params.beta.get<T>();
 
     int64_t m = params.dim.m();
     int64_t n = params.dim.n();

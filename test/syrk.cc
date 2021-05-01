@@ -30,8 +30,8 @@ void syrk_test_execute(Params& params, bool run)
     blas::Op transA = params.transA();
     blas::Op transC = params.transC();
 
-    T alpha = params.alpha();
-    T beta  = params.beta();
+    T alpha = params.alpha.get<T>();
+    T beta  = params.beta.get<T>();
 
     int64_t n = params.dim.n();
     int64_t k = params.dim.k();

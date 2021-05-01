@@ -134,13 +134,15 @@ Params::Params():
         "are to be specified (1 to 6)"),
     alpha(
         // name, width, precision, type, default, min, max, help
-        "alpha", 6, 4, testsweeper::ParamType::List, 3.141592653589793,
+        "alpha", 6, 4, testsweeper::ParamType::List,
+        "3.141592653589793+1.414213562373095i",
         -std::numeric_limits<double>::infinity(),
-         std::numeric_limits<double>::infinity(), "scalar alpha"),
+         std::numeric_limits<double>::infinity(), "alpha value"),
     beta(
-        "beta", 6, 4, testsweeper::ParamType::List, 2.718281828459045,
+        "beta", 6, 4, testsweeper::ParamType::List,
+        "2.718281828459045+1.732050807568877i",
         -std::numeric_limits<double>::infinity(),
-         std::numeric_limits<double>::infinity(), "scalar beta"),
+         std::numeric_limits<double>::infinity(), "beta value"),
     check(
         // name, width, type, default, valid, help
         "check", 0, testsweeper::ParamType::Value, 'y', "ny",

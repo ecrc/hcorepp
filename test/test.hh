@@ -39,8 +39,9 @@ public:
     testsweeper::ParamInt latms_mode;
     testsweeper::ParamInt truncate_with_fixed_rk;
 
-    testsweeper::ParamDouble alpha;
-    testsweeper::ParamDouble beta;
+    testsweeper::ParamComplex alpha;
+    testsweeper::ParamComplex beta;
+
     testsweeper::ParamDouble tol;
     testsweeper::ParamDouble time;
     testsweeper::ParamDouble gflops;

@@ -31,7 +31,7 @@ void trsm_test_execute(Params& params, bool run)
     blas::Op transA = params.transA();
     blas::Op transB = params.transB();
 
-    T alpha = params.alpha();
+    T alpha = params.alpha.get<T>();
 
     int64_t m = params.dim.m();
     int64_t n = params.dim.n();
