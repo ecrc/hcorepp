@@ -42,11 +42,16 @@ the HCORE root directory:
     make
     make install
 
+If HCORE test suite (test/tester) is built, then HCORE tester can be run:
+
+    hcore/build$ cd test
+    hcore/build/test$ ./tester [-h|--help] [parameters] routine
+
 Requirements
 --------------------------------------------------------------------------------
 
-HCORE requires BLAS++ (https://bitbucket.org/icl/blaspp) version 2020.10.02 and
-LAPACK++ (https://bitbucket.org/icl/lapackpp) version 2020.10.02.
+HCORE requires BLAS++ (https://bitbucket.org/icl/blaspp) and LAPACK++
+(https://bitbucket.org/icl/lapackpp).
 It inherits its dependencies from them, and they must be installed first via
 CMake, before running HCORE's CMake. Therefore, HCORE should find BLAS++ and
 LAPACK++, if it is installed in a system default location (e.g., `/usr/local`),
@@ -69,8 +74,8 @@ syntax (not as environment variables), such as:
 
     cmake -Dblas=mkl -DLAPACK_LIBRARIES='-lopenblas' ..
 
-HCORE uses the TestSweeper library (https://bitbucket.org/icl/testsweeper)
-version 2020.09.00 to run its tests. If CMake doesn't find TestSweeper, it will be
+HCORE uses the TestSweeper library (https://bitbucket.org/icl/testsweeper) to
+run its tests. If CMake doesn't find TestSweeper, it will be
 downloaded and compiled. To use a different TestSweeper build that was
 not installed, you can point to its directory.
 
