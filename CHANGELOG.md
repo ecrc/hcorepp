@@ -18,7 +18,7 @@ v1.0.0 | 2021.05.01
 v0.1.1 | 2021.02.03
 --------------------------------------------------------------------------------
 
-   - GEMMM in the form of: C = alpha x A (compressed) x B (compressed) + beta x C
+   - GEMM in the form of: C = alpha x A (compressed) x B (compressed) + beta x C
    - Decompress a low-rank tile: A = U x VT
    - Complex-double precision
    - Support dense SYRK, POTRF, and TRSM
@@ -26,7 +26,7 @@ v0.1.1 | 2021.02.03
 v0.1.0 | 2020.01.08
 --------------------------------------------------------------------------------
 
-   - GEMMM in the form of:
+   - GEMM in the form of:
    C (compressed) = alpha x A (compressed) x B (compressed) + beta x C (compressed)
    - SYRK in the form of: C = alpha x A (compressed) A^T (compressed) x beta x C
    - Double precision
