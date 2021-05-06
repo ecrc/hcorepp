@@ -86,12 +86,10 @@ Options
 
 HCORE specific options include (all values are case insensitive):
 
-<!---
     use_openmp
         Whether to use OpenMP, if available. One of:
         yes  (default)
         no
--->
 
     build_tests
         Whether to build test suite (test/tester).

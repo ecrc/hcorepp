@@ -45,7 +45,7 @@ if (hcore_is_project)
 endif()
 
 option(BUILD_SHARED_LIBS "Build shared libraries" true)
-# option(use_openmp "Use OpenMP, if available" true)
+option(use_openmp "Use OpenMP, if available" true)
 option(build_tests "Build hcore test suite" "${hcore_is_project}")
 option(color "Use ANSI color output" true)
 
@@ -128,16 +128,16 @@ target_include_directories(
 )
 
 # OpenMP support.
-# if (NOT use_openmp)
-#     message(STATUS "User has requested to NOT use OpenMP")
-# else()
-#     find_package(OpenMP)
-# endif()
-# if (OpenMP_CXX_FOUND)
-#     target_link_libraries(hcore PUBLIC "OpenMP::OpenMP_CXX")
-# else()
-#     message(STATUS "No OpenMP support in HCORE")
-# endif()
+if (NOT use_openmp)
+    message(STATUS "User has requested to NOT use OpenMP")
+else()
+    find_package(OpenMP)
+endif()
+if (OpenMP_CXX_FOUND)
+    target_link_libraries(hcore PUBLIC "OpenMP::OpenMP_CXX")
+else()
+    message(STATUS "No OpenMP support in HCORE")
+endif()
 
 # get git commit id
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
