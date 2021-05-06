@@ -86,11 +86,12 @@ Options
 
 HCORE specific options include (all values are case insensitive):
 
-
-    [comment]: # (use_openmp)
-    [comment]: # (    Whether to use OpenMP, if available. One of:)
-    [comment]: # (    yes  (default))
-    [comment]: # (    no)
+<!---
+    use_openmp
+        Whether to use OpenMP, if available. One of:
+        yes  (default)
+        no
+-->
 
     build_tests
         Whether to build test suite (test/tester).
