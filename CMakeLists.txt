@@ -45,7 +45,7 @@ if (hcore_is_project)
 endif()
 
 option(BUILD_SHARED_LIBS "Build shared libraries" true)
-option(use_openmp "Use OpenMP, if available" true)
+# option(use_openmp "Use OpenMP, if available" true)
 option(build_tests "Build hcore test suite" "${hcore_is_project}")
 option(color "Use ANSI color output" true)
 
@@ -128,16 +128,16 @@ target_include_directories(
 )
 
 # OpenMP support.
-if (NOT use_openmp)
-    message(STATUS "User has requested to NOT use OpenMP")
-else()
-    find_package(OpenMP)
-endif()
-if (OpenMP_CXX_FOUND)
-    target_link_libraries(hcore PUBLIC "OpenMP::OpenMP_CXX")
-else()
-    message(STATUS "No OpenMP support in HCORE")
-endif()
+# if (NOT use_openmp)
+#     message(STATUS "User has requested to NOT use OpenMP")
+# else()
+#     find_package(OpenMP)
+# endif()
+# if (OpenMP_CXX_FOUND)
+#     target_link_libraries(hcore PUBLIC "OpenMP::OpenMP_CXX")
+# else()
+#     message(STATUS "No OpenMP support in HCORE")
+# endif()
 
 # get git commit id
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
@@ -187,14 +187,14 @@ if (NOT TARGET blaspp)
         set(build_tests "false")
 
         set(url "https://bitbucket.org/icl/blaspp")
-        # set(tag 2020.08.00)
-        # set(tag 2020.09.00)
-        # set(tag 2020.10.00)
-        # set(tag 2020.10.01)
-        # set(tag 2020.10.02)
+        # set(tag "2020.08.00")
+        # set(tag "2020.09.00")
+        # set(tag "2020.10.00")
+        # set(tag "2020.10.01")
         # set(tag "2020.10.02")
-        # set(tag 2021.04.00)
-        set(tag 2021.04.01)
+        # set(tag "2020.10.02")
+        # set(tag "2021.04.00")
+        set(tag "2021.04.01")
         message(STATUS "Fetching BLAS++ ${tag} from ${url}")
         include(FetchContent)
         FetchContent_Declare(
@@ -214,7 +214,7 @@ message("---------------------------------------- LAPACK++")
 message(STATUS "Checking for LAPACK++")
 if (NOT TARGET lapackpp)
     find_package(lapackpp QUIET)
-    if (blaspp_FOUND)
+    if (lapackpp_FOUND)
         message("   Found LAPACK++: ${lapackpp_DIR}")
     elseif (EXISTS "${CMAKE_SOURCE_DIR}/lapackpp/CMakeLists.txt")
         set(build_tests_save "${build_tests}")
@@ -252,15 +252,60 @@ else()
 endif()
 message(STATUS "LAPACK++ done")
 
-target_link_libraries(hcore PUBLIC blaspp lapackpp )
+target_link_libraries(hcore PUBLIC blaspp lapackpp)
 
-if ("${blaspp_defines}" MATCHES "HAVE_MKL")
-    target_compile_definitions(hcore PUBLIC "-DHCORE_WITH_MKL")
-endif()
+# if ("${blaspp_defines}" MATCHES "HAVE_MKL")
+#     target_compile_definitions(hcore PUBLIC "-DHCORE_")
+# endif()
 
 if ("${lapackpp_defines}" MATCHES "LAPACK_ILP64")
-    target_compile_definitions(hcore PUBLIC "-DHCORE_WITH_LAPACK_ILP64")
+    target_compile_definitions(hcore PUBLIC "-DHCORE_HAVE_LAPACK_WITH_ILP64")
 endif()
+
+if (color)
+    string(ASCII 27 Esc)
+    set(red   "${Esc}[31m")
+    set(green "${Esc}[32m")
+    set(plain "${Esc}[39m")
+endif()
+
+message("")
+message("---------------------------------------- LAPACK MATGEN")
+message(STATUS "Checking for LAPACK LATMS")
+try_run(run_result compile_result ${CMAKE_CURRENT_BINARY_DIR}
+    SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/config/lapack_latms.cc"
+    LINK_LIBRARIES
+        ${blaspp_libraries} ${lapackpp_libraries}
+    COMPILE_DEFINITIONS
+        ${blaspp_defines} ${lapackpp_defines}
+    COMPILE_OUTPUT_VARIABLE
+        compile_output
+    RUN_OUTPUT_VARIABLE
+        run_output
+)
+
+message(DEBUG "lapack_latms.cc compile result: '${compile_result}'")
+message(DEBUG "lapack_latms.cc run result: '${run_result}'")
+message(TRACE "lapack_latms.cc compile_output: '''\n${compile_output}'''")
+message(TRACE "lapack_latms.cc run_output: '''\n${run_output}'''")
+
+if (compile_result AND "${run_output}" MATCHES "ok")
+    set(lapack_latms_found_ true CACHE INTERNAL "")
+endif()
+
+if (lapack_latms_found_)
+    message("   ${green} Found LAPACK LATMS${plain}")
+    message("   ${green} Tester will use LAPACK LATMS for the random "
+            "matrix generation${plain}")
+    target_compile_definitions(hcore PUBLIC "-DHCORE_HAVE_LAPACK_WITH_TMG")
+else()
+    message("   ${red} LAPACK LATMS not found${plain}")
+    message("   ${red} Tester will use LAPACK LARNV for the random "
+            "matrix generation${plain}")
+endif()
+
+message(STATUS "LAPACK MATGEN done")
 
 if (build_tests)
     add_subdirectory(test)

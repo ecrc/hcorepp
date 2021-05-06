@@ -13,10 +13,16 @@
 #     message(WARNING "LAPACK not found; tester cannot be built.")
 #     return()
 # endif()
-# if (NOT lapacke_found)
+# if (NOT lapacke_found_)
 #     message(WARNING "LAPACKE not found; tester cannot be built.")
 #     return()
 # endif()
+
+if (NOT lapack_latms_found_)
+    message(WARNING
+        "LAPACK LATMS not found; tester will use LAPACK LARNV instead.")
+    return()
+endif()
 
 # search for TestSweeper library, if not already included
 message("")
