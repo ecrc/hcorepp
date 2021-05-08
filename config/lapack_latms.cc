@@ -25,7 +25,8 @@
     typedef int lapack_int;
 #endif
 
-#define LAPACK_dlatms FORTRAN_NAME(dlatms, DLATMS)
+#define LAPACK_dlatms FORTRAN_NAME( dlatms, DLATMS )
+
 #ifdef __cplusplus
 extern "C"
 #endif
@@ -38,7 +39,7 @@ void LAPACK_dlatms(
     #ifdef LAPACK_FORTRAN_STRLEN_END
     , unsigned dist_len, unsigned sym_len, unsigned pack_len
     #endif
-    );
+);
 
 int main( int argc, char* argv[] )
 {

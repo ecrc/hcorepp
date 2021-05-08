@@ -64,6 +64,18 @@ else()
     message(STATUS "Using CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
 endif()
 
+# GNU filesystem conventions
+include(GNUInstallDirs)
+
+# the RPATH to be used when installing, but only if it's not a system directory
+list(
+    FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES
+    "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" isSystemDir)
+if ("${isSystemDir}" STREQUAL "-1")
+    list(APPEND
+        CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+endif()
+
 # provide menu of options
 set_property(
     CACHE CMAKE_BUILD_TYPE
@@ -276,7 +288,7 @@ try_run(run_result compile_result ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/config/lapack_latms.cc"
     LINK_LIBRARIES
-        ${blaspp_libraries} # ${lapackpp_libraries}
+        ${blaspp_libraries} ${LAPACK_LATMS_LIBRARIES} # ${lapackpp_libraries}
     COMPILE_DEFINITIONS
         ${blaspp_defines} ${lapackpp_defines}
     COMPILE_OUTPUT_VARIABLE
@@ -320,7 +332,7 @@ endif()
 
 # install rules
 # GNU filesystem conventions
-include(GNUInstallDirs)
+# include(GNUInstallDirs)
 set(install_configdir "${CMAKE_INSTALL_LIBDIR}/hcore")
 
 # install library and add to <package>Targets.cmake
