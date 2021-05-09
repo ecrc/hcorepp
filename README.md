@@ -103,7 +103,7 @@ Conference (ISC 2020)**.
 The HiCMA project welcomes contributions from new developers. Contributions can
 be offered through the standard Github pull request model. We strongly encourage
 you to coordinate large contributions with the HiCMA development team early in
-the process. See [CONTRIBUTING.md](CONTRIBUTING.md) for contributions notes.
+the process. See [CONTRIBUTING.md](CONTRIBUTING.md) for contributing notes.
 
 * * *
 
