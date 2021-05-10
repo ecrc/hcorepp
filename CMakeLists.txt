@@ -1,6 +1,5 @@
-# Copyright (c) 2017-2021,
-# King Abdullah University of Science and Technology (KAUST)
-# All rights reserved.
+# Copyright (c) 2017-2021, King Abdullah University of Science and Technology
+# (KAUST). All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
 # CMake script for HCORE, https://github.com/ecrc/hcorepp
@@ -178,7 +177,7 @@ message("")
 message("---------------------------------------- BLAS++")
 message(STATUS "Checking for BLAS++")
 if (NOT TARGET blaspp)
-    find_package(blaspp QUIET)
+    find_package(blaspp REQUIRED)
     if (blaspp_FOUND)
         message("   Found BLAS++: ${blaspp_DIR}")
     elseif (EXISTS "${CMAKE_SOURCE_DIR}/blaspp/CMakeLists.txt")
@@ -225,7 +224,7 @@ message("")
 message("---------------------------------------- LAPACK++")
 message(STATUS "Checking for LAPACK++")
 if (NOT TARGET lapackpp)
-    find_package(lapackpp QUIET)
+    find_package(lapackpp REQUIRED)
     if (lapackpp_FOUND)
         message("   Found LAPACK++: ${lapackpp_DIR}")
     elseif (EXISTS "${CMAKE_SOURCE_DIR}/lapackpp/CMakeLists.txt")
@@ -284,13 +283,23 @@ endif()
 message("")
 message("---------------------------------------- LAPACK MATGEN")
 message(STATUS "Checking for LAPACK LATMS")
+
+get_target_property(blaspp_include_ blaspp INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(lapackpp_include_ lapackpp INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(lapackpp_link_libraries_ lapackpp INTERFACE_LINK_LIBRARIES)
+
+message(DEBUG "blaspp_include: -I${blaspp_include_}")
+message(DEBUG "lapackpp_include: -I${lapackpp_include_}")
+message(DEBUG "lapackpp_link_libraries: ${lapackpp_link_libraries_}")
+
 try_run(run_result compile_result ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/config/lapack_latms.cc"
     LINK_LIBRARIES
-        ${blaspp_libraries} ${LAPACK_LATMS_LIBRARIES} # ${lapackpp_libraries}
+        ${blaspp_libraries} ${lapackpp_link_libraries_} # ${LAPACK_LATMS_LIBRARIES} ${lapackpp_libraries}
     COMPILE_DEFINITIONS
-        ${blaspp_defines} ${lapackpp_defines}
+        "-I${blaspp_include_}"   ${blaspp_defines}
+        "-I${lapackpp_include_}" ${lapackpp_defines}
     COMPILE_OUTPUT_VARIABLE
         compile_output
     RUN_OUTPUT_VARIABLE

@@ -1,12 +1,10 @@
-// Copyright (c) 2017-2021,
-// King Abdullah University of Science and Technology (KAUST)
-// All rights reserved.
+// Copyright (c) 2017-2021, King Abdullah University of Science and Technology
+// (KAUST). All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
 #ifndef HCORE_TEST_MATRIX_UTILS_HH
 #define HCORE_TEST_MATRIX_UTILS_HH
 
-// #include "lapacke_wrappers.hh"
 #include "lapack_wrappers.hh"
 
 #include "blas.hh"

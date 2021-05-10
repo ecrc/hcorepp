@@ -116,9 +116,8 @@ Supercomputing Laboratory at KAUST.
 
 ### License
 
-Copyright (c) 2017,
-King Abdullah University of Science and Technology (KAUST)
-All rights reserved.
+Copyright (c) 2017-2021, King Abdullah University of Science and Technology
+(KAUST). All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -144,7 +143,3 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-* * *
-
-![HiCMA Handout](https://github.com/ecrc/hicma/blob/master/docs/HiCMA-handout-SC17.png)
