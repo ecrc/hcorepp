@@ -280,57 +280,57 @@ if (color)
     set(plain "${Esc}[39m")
 endif()
 
-message("")
-message("---------------------------------------- LAPACK MATGEN")
-message(STATUS "Checking for LAPACK LATMS")
-
-message(DEBUG "lapackpp_libraries: ${lapackpp_libraries}")
-
-# cache lapackpp_libraries variable for future usage
-set(lapackpp_libraries_ ${lapackpp_libraries})
-message(DEBUG "lapackpp_libraries_: ${lapackpp_libraries_}")
-
-# remove blaspp library from the linking path because the blaspp library doesn't 
-# exist yet.
-list(REMOVE_ITEM lapackpp_libraries_ blaspp)
-message(DEBUG "lapackpp_libraries_: ${lapackpp_libraries_}")
-
-try_run(run_result compile_result ${CMAKE_CURRENT_BINARY_DIR}
-    SOURCES
-        "${CMAKE_CURRENT_SOURCE_DIR}/config/lapack_latms.cc"
-    LINK_LIBRARIES
-        ${blaspp_libraries} ${lapackpp_libraries_} # ${LAPACK_LATMS_LIBRARIES}
-    COMPILE_DEFINITIONS
-        ${blaspp_defines} ${lapackpp_defines}
-    COMPILE_OUTPUT_VARIABLE
-        compile_output
-    RUN_OUTPUT_VARIABLE
-        run_output
-)
-
-message(DEBUG "lapack_latms.cc compile result: '${compile_result}'")
-message(DEBUG "lapack_latms.cc run result: '${run_result}'")
-message(TRACE "lapack_latms.cc compile_output: '''\n${compile_output}'''")
-message(TRACE "lapack_latms.cc run_output: '''\n${run_output}'''")
-
-if (compile_result AND "${run_output}" MATCHES "ok")
-    set(lapack_latms_found_ true CACHE INTERNAL "")
-endif()
-
-if (lapack_latms_found_)
-    message("   ${green} Found LAPACK LATMS${plain}")
-    message("   ${green} Tester will use LAPACK LATMS for the random "
-            "matrix generation${plain}")
-    target_compile_definitions(hcore PUBLIC "-DHCORE_HAVE_LAPACK_WITH_TMG")
-else()
-    message("   ${red} LAPACK LATMS not found${plain}")
-    message("   ${red} Tester will use LAPACK LARNV for the random "
-            "matrix generation${plain}")
-endif()
-
-message(STATUS "LAPACK MATGEN done")
-
 if (build_tests)
+    message("")
+    message("---------------------------------------- LAPACK MATGEN")
+    message(STATUS "Checking for LAPACK LATMS")
+
+    message(DEBUG "lapackpp_libraries: ${lapackpp_libraries}")
+
+    # cache lapackpp_libraries variable for future usage
+    set(lapackpp_libraries_ ${lapackpp_libraries})
+    message(DEBUG "lapackpp_libraries_: ${lapackpp_libraries_}")
+
+    # remove blaspp library from the linking path because the blaspp library doesn't 
+    # exist yet.
+    list(REMOVE_ITEM lapackpp_libraries_ blaspp)
+    message(DEBUG "lapackpp_libraries_: ${lapackpp_libraries_}")
+    message(DEBUG "LAPACK_LATMS_LIBRARIES: ${LAPACK_LATMS_LIBRARIES}")
+
+    try_run(run_result compile_result ${CMAKE_CURRENT_BINARY_DIR}
+        SOURCES
+            "${CMAKE_CURRENT_SOURCE_DIR}/config/lapack_latms.cc"
+        LINK_LIBRARIES
+            ${blaspp_libraries} ${lapackpp_libraries_} ${LAPACK_LATMS_LIBRARIES}
+        COMPILE_DEFINITIONS
+            ${blaspp_defines} ${lapackpp_defines}
+        COMPILE_OUTPUT_VARIABLE
+            compile_output
+        RUN_OUTPUT_VARIABLE
+            run_output
+    )
+
+    message(DEBUG "lapack_latms.cc compile result: '${compile_result}'")
+    message(DEBUG "lapack_latms.cc run result: '${run_result}'")
+    message(TRACE "lapack_latms.cc compile_output: '''\n${compile_output}'''")
+    message(TRACE "lapack_latms.cc run_output: '''\n${run_output}'''")
+
+    if (compile_result AND "${run_output}" MATCHES "ok")
+        set(lapack_latms_found_ true CACHE INTERNAL "")
+    endif()
+
+    if (lapack_latms_found_)
+        message("   ${green} Found LAPACK LATMS${plain}")
+        message("   ${green} Tester will use LAPACK LATMS for the random "
+                "matrix generation${plain}")
+        target_compile_definitions(hcore PUBLIC "-DHCORE_HAVE_LAPACK_WITH_TMG")
+    else()
+        message("   ${red} LAPACK LATMS not found${plain}")
+        message("   ${red} Tester will use LAPACK LARNV for the random "
+                "matrix generation${plain}")
+    endif()
+
+    message(STATUS "LAPACK MATGEN done")
     add_subdirectory(test)
 else()
     message("")
