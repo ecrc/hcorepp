@@ -299,7 +299,7 @@ try_run(run_result compile_result ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/config/lapack_latms.cc"
     LINK_LIBRARIES
-        ${blaspp_libraries} ${lapackpp_libraries} # ${LAPACK_LATMS_LIBRARIES}
+        ${blaspp_libraries} ${lapackpp_libraries_} # ${LAPACK_LATMS_LIBRARIES}
     COMPILE_DEFINITIONS
         ${blaspp_defines} ${lapackpp_defines}
     COMPILE_OUTPUT_VARIABLE
