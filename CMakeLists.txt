@@ -284,22 +284,24 @@ message("")
 message("---------------------------------------- LAPACK MATGEN")
 message(STATUS "Checking for LAPACK LATMS")
 
-get_target_property(blaspp_include_ blaspp INTERFACE_INCLUDE_DIRECTORIES)
-get_target_property(lapackpp_include_ lapackpp INTERFACE_INCLUDE_DIRECTORIES)
-get_target_property(lapackpp_link_libraries_ lapackpp INTERFACE_LINK_LIBRARIES)
+message(DEBUG "lapackpp_libraries: ${lapackpp_libraries}")
 
-message(DEBUG "blaspp_include: -I${blaspp_include_}")
-message(DEBUG "lapackpp_include: -I${lapackpp_include_}")
-message(DEBUG "lapackpp_link_libraries: ${lapackpp_link_libraries_}")
+# cache lapackpp_libraries variable for future usage
+set(lapackpp_libraries_ ${lapackpp_libraries})
+message(DEBUG "lapackpp_libraries_: ${lapackpp_libraries_}")
+
+# remove blaspp library from the linking path because the blaspp library doesn't 
+# exist yet.
+list(REMOVE_ITEM lapackpp_libraries_ blaspp)
+message(DEBUG "lapackpp_libraries_: ${lapackpp_libraries_}")
 
 try_run(run_result compile_result ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/config/lapack_latms.cc"
     LINK_LIBRARIES
-        ${blaspp_libraries} ${lapackpp_link_libraries_} # ${LAPACK_LATMS_LIBRARIES} ${lapackpp_libraries}
+        ${blaspp_libraries} ${lapackpp_libraries} # ${LAPACK_LATMS_LIBRARIES}
     COMPILE_DEFINITIONS
-        "-I${blaspp_include_}"   ${blaspp_defines}
-        "-I${lapackpp_include_}" ${lapackpp_defines}
+        ${blaspp_defines} ${lapackpp_defines}
     COMPILE_OUTPUT_VARIABLE
         compile_output
     RUN_OUTPUT_VARIABLE
