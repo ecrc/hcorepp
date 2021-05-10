@@ -2,11 +2,11 @@ Contributing to HCORE
 --------------------------------------------------------------------------------
 
 - [Synopsis](#synopsis)
-- [Forking](#forking-hcore)
+- [Forking HCORE](#forking-hcore)
 - [Developing new features](#developing-new-features)
 - [Developing bug fixes](#developing-bug-fixes)
 - [Creating pull requests](#creating-pull-requests)
-- [Test](#test)
+- [Tests](#tests)
 
 Synopsis
 --------------------------------------------------------------------------------
