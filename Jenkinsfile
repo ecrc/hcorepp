@@ -8,15 +8,16 @@ pipeline {
         stage('main') {
             matrix {
                 axes {
-                    axis {
-                        name 'blas'
-                        values 'mkl', 'openblas'
-                    }
+                    // axis {
+                    //     name 'build'
+                    //     values 'cmake'
+                    // }
                     axis {
                         name 'host'
-                        values 'Albatross', 'Almaha', 'Buraq', 'Condor',
-                               'Flamingo', 'Jasmine', 'Shihab', 'stork',
-                               'Tuwaiq', 'Vulture'
+                        values 'Almaha', 'Buraq', 'Condor', 'Flamingo',
+                            'Jasmine', 'Shihab', 'Vulture', 'Albatross',
+                            'Tuwaiq'
+                            // 'stork'   // no modules
                             // 'Oqab',   // decommissioned
                             // 'P100',   // decommissioned
                             // 'Raed',   // decommissioned
@@ -32,21 +33,15 @@ pipeline {
                             sh '''#!/bin/bash -le
                             hostname && pwd
 
-                            # Skip NEC for now
-                            if [ "${host}" = "stork" ]; then
-                                exit 0
-                            fi
-
                             # modules
                             echo "========================================"
 
                             module purge
 
                             ####################################################
-                            # Compiler and CMake
+                            # gcc and cmake
                             ####################################################
 
-                            # gcc and cmake
                             if [ "${host}" = "Vulture" ]; then
                                 module load gcc/7.2.0
                                 module load cmake/3.17.3
@@ -59,31 +54,7 @@ pipeline {
                             # BLAS/LAPACK
                             ####################################################
 
-                            # Intel MKL
-                            if [ "${blas}" = "mkl" ]; then
-                                module load mkl/2020.0.166
-                            fi
-
-                            # OpenBLAS
-                            if [ "${blas}" = "openblas" ]; then
-                                # CentOS doesn't have OpenBLAS module, skip the
-                                # test
-                                if [ "${host}" = "Albatross" ]; then
-                                    exit 0
-                                fi
-                                # CentOS doesn't have OpenBLAS module, skip the
-                                # test
-                                if [ "${host}" = "Condor" ]; then
-                                    exit 0
-                                fi
-                                # Ubuntu 16 doesn't have OpenBLAS module, skip
-                                # the test
-                                if [ "${host}" = "Vulture" ]; then
-                                    exit 0
-                                fi
-
-                                module load openblas/0.3.13-gcc-10.2.0-openmp
-                            fi
+                            module load mkl/2020.0.166
 
                             module list
 
@@ -92,7 +63,7 @@ pipeline {
                             rm -rf build
                             mkdir build
                             cd build
-                            cmake -Dcolor=no -DCMAKE_CXX_FLAGS="-Werror" ..
+                            cmake -Dcolor=no -DCMAKE_CXX_FLAGS="-Werror" -Dlog=trace ..
                             export top=../..
 
                             echo "========================================"
