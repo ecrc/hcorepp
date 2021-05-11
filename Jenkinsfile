@@ -8,16 +8,15 @@ pipeline {
         stage('main') {
             matrix {
                 axes {
-                    // axis {
-                    //     name 'build'
-                    //     values 'cmake'
-                    // }
+                    axis {
+                        name 'blas'
+                        values 'mkl', 'openblas'
+                    }
                     axis {
                         name 'host'
-                        values 'Almaha', 'Buraq', 'Condor', 'Flamingo',
-                            'Jasmine', 'Shihab', 'Vulture', 'Albatross',
-                            'Tuwaiq'
-                            // 'stork'   // no modules
+                        values 'Albatross', 'Almaha', 'Buraq', 'Condor',
+                               'Flamingo', 'Jasmine', 'Shihab', 'stork',
+                               'Tuwaiq', 'Vulture'
                             // 'Oqab',   // decommissioned
                             // 'P100',   // decommissioned
                             // 'Raed',   // decommissioned
@@ -33,10 +32,19 @@ pipeline {
                             sh '''#!/bin/bash -le
                             hostname && pwd
 
+                            # Skip NEC for now
+                            if [ "${host}" = "stork" ]; then
+                                continue
+                            fi
+
                             # modules
                             echo "========================================"
 
                             module purge
+
+                            ####################################################
+                            # Compiler and CMake
+                            ####################################################
 
                             # gcc and cmake
                             if [ "${host}" = "Vulture" ]; then
@@ -47,11 +55,34 @@ pipeline {
                                 module load cmake/3.19.2
                             fi
 
+                            ####################################################
                             # BLAS/LAPACK
-                            if [ "${host}" = "Tuwaiq" ]; then
+                            ####################################################
+
+                            # Intel MKL
+                            if [ "${blas}" = "mkl" ]; then
+                                module load mkl/2020.0.166
+                            fi
+
+                            # OpenBLAS
+                            if [ "${blas}" = "openblas" ]; then
+                                # CentOS doesn't have OpenBLAS module, skip the
+                                # test
+                                if [ "${host}" = "Albatross" ]; then
+                                    continue
+                                fi
+                                # CentOS doesn't have OpenBLAS module, skip the
+                                # test
+                                if [ "${host}" = "Condor" ]; then
+                                    continue
+                                fi
+                                # Ubuntu 16 doesn't have OpenBLAS module, skip
+                                # the test
+                                if [ "${host}" = "Vulture" ]; then
+                                    continue
+                                fi
+
                                 module load openblas/0.3.13-gcc-10.2.0-openmp
-                            else
-                                module load mkl
                             fi
 
                             module list
