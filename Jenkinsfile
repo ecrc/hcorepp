@@ -34,7 +34,7 @@ pipeline {
 
                             # Skip NEC for now
                             if [ "${host}" = "stork" ]; then
-                                continue
+                                exit 0
                             fi
 
                             # modules
@@ -69,17 +69,17 @@ pipeline {
                                 # CentOS doesn't have OpenBLAS module, skip the
                                 # test
                                 if [ "${host}" = "Albatross" ]; then
-                                    continue
+                                    exit 0
                                 fi
                                 # CentOS doesn't have OpenBLAS module, skip the
                                 # test
                                 if [ "${host}" = "Condor" ]; then
-                                    continue
+                                    exit 0
                                 fi
                                 # Ubuntu 16 doesn't have OpenBLAS module, skip
                                 # the test
                                 if [ "${host}" = "Vulture" ]; then
-                                    continue
+                                    exit 0
                                 fi
 
                                 module load openblas/0.3.13-gcc-10.2.0-openmp
