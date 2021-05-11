@@ -276,7 +276,7 @@ endif()
 if (color)
     string(ASCII 27 Esc)
     set(red   "${Esc}[31m")
-    set(green "${Esc}[32m")
+    set(blue  "${Esc}[34m")
     set(plain "${Esc}[39m")
 endif()
 
@@ -291,8 +291,8 @@ if (build_tests)
     set(lapackpp_libraries_ ${lapackpp_libraries})
     message(DEBUG "lapackpp_libraries_: ${lapackpp_libraries_}")
 
-    # remove blaspp library from the linking path because the blaspp library doesn't 
-    # exist yet.
+    # remove blaspp library from the linking path because the blaspp library
+    # doesn't exist yet.
     list(REMOVE_ITEM lapackpp_libraries_ blaspp)
     message(DEBUG "lapackpp_libraries_: ${lapackpp_libraries_}")
     message(DEBUG "LAPACK_LATMS_LIBRARIES: ${LAPACK_LATMS_LIBRARIES}")
@@ -320,13 +320,17 @@ if (build_tests)
     endif()
 
     if (lapack_latms_found_)
-        message("   ${green} Found LAPACK LATMS${plain}")
-        message("   ${green} Tester will use LAPACK LATMS for the random "
+        if (NOT LAPACK_LATMS_LIBRARIES)
+            message("   ${blue}Found LAPACK LATMS in BLAS/LAPACK library${plain}")
+        else()
+            message("   ${blue}Found LAPACK LATMS in ${LAPACK_LATMS_LIBRARIES}${plain}")
+        endif()
+        message("   ${blue}Tester will use LAPACK LATMS for the random "
                 "matrix generation${plain}")
         target_compile_definitions(hcore PUBLIC "-DHCORE_HAVE_LAPACK_WITH_TMG")
     else()
-        message("   ${red} LAPACK LATMS not found${plain}")
-        message("   ${red} Tester will use LAPACK LARNV for the random "
+        message("   ${red}LAPACK LATMS not found${plain}")
+        message("   ${red}Tester will use LAPACK LARNV for the random "
                 "matrix generation${plain}")
     endif()
 
