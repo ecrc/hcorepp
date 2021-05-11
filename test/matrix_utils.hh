@@ -18,8 +18,8 @@
 
 template <typename T>
 void generate_dense_matrix(
-    int64_t m, int64_t n, T* A, int64_t lda,
-    int64_t* iseed, int64_t mode=0, blas::real_type<T> cond=1)
+    int64_t m, int64_t n, T* A, int64_t lda, int64_t* iseed, int64_t mode=0,
+    blas::real_type<T> cond=1)
 {
     int16_t min_m_n = std::min(m, n);
 

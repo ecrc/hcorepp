@@ -20,21 +20,20 @@ inline void lapack_latms(
     char pack, float* A, int64_t lda)
 {
     if (sizeof(int64_t) > sizeof(lapack_int)) {
-        assert( std::abs(m)    <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(n)    <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(kl)   <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(ku)   <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(lda)  <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(mode) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( m    ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( n    ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( kl   ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( ku   ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( lda  ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( mode ) <= std::numeric_limits<lapack_int>::max() );
     }
 
-    lapack_int m_    = (lapack_int) m;
-    lapack_int n_    = (lapack_int) n;
-    lapack_int kl_   = (lapack_int) kl;
-    lapack_int ku_   = (lapack_int) ku;
-    lapack_int lda_  = (lapack_int) lda;
+    lapack_int    m_ = (lapack_int)    m;
+    lapack_int    n_ = (lapack_int)    n;
+    lapack_int   kl_ = (lapack_int)   kl;
+    lapack_int   ku_ = (lapack_int)   ku;
+    lapack_int  lda_ = (lapack_int)  lda;
     lapack_int mode_ = (lapack_int) mode;
-    lapack_int info_ = 0;
 
     std::vector<float> work(3 * std::max(m, n));
 
@@ -46,6 +45,8 @@ inline void lapack_latms(
         lapack_int* iseed_ptr = iseed;
     #endif
 
+    lapack_int info_ = 0;
+
     LAPACK_slatms(
         &m_, &n_, &dist, iseed_ptr, &sym, d, &mode_, &cond, &dmax, &kl_, &ku_,
         &pack, A, &lda_,
@@ -55,36 +56,34 @@ inline void lapack_latms(
         #endif
     );
 
-    if (info_ != 0) {
-        throw std::runtime_error(
-            "LAPACK_slatms error " + std::to_string(info_) + ".");
-    }
+    if (info_ != 0)
+        throw std::runtime_error("lapack_latms error " + std::to_string(info_));
 
     #ifndef HCORE_WITH_LAPACK_ILP64
         std::copy(iseed_.begin(), iseed_.end(), iseed);
     #endif
 }
+
 inline void lapack_latms(
     int64_t m, int64_t n, char dist, int64_t* iseed, char sym,
     double* d, int64_t mode, double cond, double dmax, int64_t kl, int64_t ku,
     char pack, double* A, int64_t lda)
 {
     if (sizeof(int64_t) > sizeof(lapack_int)) {
-        assert( std::abs(m)    <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(n)    <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(kl)   <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(ku)   <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(lda)  <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(mode) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( m    ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( n    ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( kl   ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( ku   ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( lda  ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( mode ) <= std::numeric_limits<lapack_int>::max() );
     }
 
-    lapack_int m_    = (lapack_int) m;
-    lapack_int n_    = (lapack_int) n;
-    lapack_int kl_   = (lapack_int) kl;
-    lapack_int ku_   = (lapack_int) ku;
-    lapack_int lda_  = (lapack_int) lda;
+    lapack_int    m_ = (lapack_int)    m;
+    lapack_int    n_ = (lapack_int)    n;
+    lapack_int   kl_ = (lapack_int)   kl;
+    lapack_int   ku_ = (lapack_int)   ku;
+    lapack_int  lda_ = (lapack_int)  lda;
     lapack_int mode_ = (lapack_int) mode;
-    lapack_int info_ = 0;
 
     std::vector<double> work(3 * std::max(m, n));
 
@@ -96,6 +95,8 @@ inline void lapack_latms(
         lapack_int* iseed_ptr = iseed;
     #endif
 
+    lapack_int info_ = 0;
+
     LAPACK_dlatms(
         &m_, &n_, &dist, iseed_ptr, &sym, d, &mode_, &cond, &dmax, &kl_, &ku_,
         &pack, A, &lda_,
@@ -105,36 +106,34 @@ inline void lapack_latms(
         #endif
     );
 
-    if (info_ != 0) {
-        throw std::runtime_error(
-            "LAPACK_dlatms error " + std::to_string(info_) + ".");
-    }
+    if (info_ != 0)
+        throw std::runtime_error("lapack_latms error " + std::to_string(info_));
 
     #ifndef HCORE_WITH_LAPACK_ILP64
         std::copy(iseed_.begin(), iseed_.end(), iseed);
     #endif
 }
+
 inline void lapack_latms(
     int64_t m, int64_t n, char dist, int64_t* iseed, char sym,
     float* d, int64_t mode, float cond, float dmax, int64_t kl, int64_t ku,
     char pack, std::complex<float>* A, int64_t lda)
 {
     if (sizeof(int64_t) > sizeof(lapack_int)) {
-        assert( std::abs(m)    <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(n)    <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(kl)   <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(ku)   <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(lda)  <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(mode) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( m    ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( n    ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( kl   ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( ku   ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( lda  ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( mode ) <= std::numeric_limits<lapack_int>::max() );
     }
 
-    lapack_int m_    = (lapack_int) m;
-    lapack_int n_    = (lapack_int) n;
-    lapack_int kl_   = (lapack_int) kl;
-    lapack_int ku_   = (lapack_int) ku;
-    lapack_int lda_  = (lapack_int) lda;
+    lapack_int    m_ = (lapack_int)    m;
+    lapack_int    n_ = (lapack_int)    n;
+    lapack_int   kl_ = (lapack_int)   kl;
+    lapack_int   ku_ = (lapack_int)   ku;
+    lapack_int  lda_ = (lapack_int)  lda;
     lapack_int mode_ = (lapack_int) mode;
-    lapack_int info_ = 0;
 
     std::vector<std::complex<float>> work(3 * std::max(m, n));
 
@@ -146,6 +145,8 @@ inline void lapack_latms(
         lapack_int* iseed_ptr = iseed;
     #endif
 
+    lapack_int info_ = 0;
+
     LAPACK_clatms(
         &m_, &n_, &dist, iseed_ptr, &sym, d, &mode_, &cond, &dmax, &kl_, &ku_,
         &pack, (lapack_complex_float*)A, &lda_,
@@ -155,36 +156,34 @@ inline void lapack_latms(
         #endif
     );
 
-    if (info_ != 0) {
-        throw std::runtime_error(
-            "LAPACK_clatms error " + std::to_string(info_) + ".");
-    }
+    if (info_ != 0)
+        throw std::runtime_error("lapack_latms error " + std::to_string(info_));
 
     #ifndef HCORE_WITH_LAPACK_ILP64
         std::copy(iseed_.begin(), iseed_.end(), iseed);
     #endif
 }
+
 inline void lapack_latms(
     int64_t m, int64_t n, char dist, int64_t* iseed, char sym,
     double* d, int64_t mode, double cond, double dmax, int64_t kl, int64_t ku,
     char pack, std::complex<double>* A, int64_t lda)
 {
     if (sizeof(int64_t) > sizeof(lapack_int)) {
-        assert( std::abs(m)    <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(n)    <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(kl)   <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(ku)   <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(lda)  <= std::numeric_limits<lapack_int>::max() );
-        assert( std::abs(mode) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( m    ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( n    ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( kl   ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( ku   ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( lda  ) <= std::numeric_limits<lapack_int>::max() );
+        assert( std::abs( mode ) <= std::numeric_limits<lapack_int>::max() );
     }
 
-    lapack_int m_    = (lapack_int) m;
-    lapack_int n_    = (lapack_int) n;
-    lapack_int kl_   = (lapack_int) kl;
-    lapack_int ku_   = (lapack_int) ku;
-    lapack_int lda_  = (lapack_int) lda;
+    lapack_int    m_ = (lapack_int)    m;
+    lapack_int    n_ = (lapack_int)    n;
+    lapack_int   kl_ = (lapack_int)   kl;
+    lapack_int   ku_ = (lapack_int)   ku;
+    lapack_int  lda_ = (lapack_int)  lda;
     lapack_int mode_ = (lapack_int) mode;
-    lapack_int info_ = 0;
 
     std::vector<std::complex<double>> work(3 * std::max(m, n));
 
@@ -196,6 +195,8 @@ inline void lapack_latms(
         lapack_int* iseed_ptr = iseed;
     #endif
 
+    lapack_int info_ = 0;
+
     LAPACK_zlatms(
         &m_, &n_, &dist, iseed_ptr, &sym, d, &mode_, &cond, &dmax, &kl_, &ku_,
         &pack, (lapack_complex_double*)A, &lda_,
@@ -205,10 +206,8 @@ inline void lapack_latms(
         #endif
     );
 
-    if (info_ != 0) {
-        throw std::runtime_error(
-            "LAPACK_zlatms error " + std::to_string(info_) + ".");
-    }
+    if (info_ != 0)
+        throw std::runtime_error("lapack_latms error " + std::to_string(info_));
 
     #ifndef HCORE_WITH_LAPACK_ILP64
         std::copy(iseed_.begin(), iseed_.end(), iseed);

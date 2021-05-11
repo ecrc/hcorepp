@@ -114,8 +114,7 @@ if (hcore_is_project)
     # add 'make check' target
     add_custom_target(
         "check"
-        COMMAND
-            python run_tests.py --quick
+        COMMAND python run_tests.py --quick
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     )
 endif()
