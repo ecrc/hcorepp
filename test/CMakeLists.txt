@@ -88,7 +88,7 @@ target_link_libraries(
     ${tester}
     testsweeper
     hcore
-    ${LAPACK_LATMS_LIBRARIES}
+    ${LAPACK_MATGEN_LIBRARIES}
 #     ${blaspp_cblas_libraries} # todo
 #     ${lapack_libraries_} # todo
 #     ${lapacke_libraries} # todo
