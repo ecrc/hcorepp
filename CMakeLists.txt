@@ -273,9 +273,9 @@ target_link_libraries(hcore PUBLIC blaspp lapackpp)
 #     target_compile_definitions(hcore PUBLIC "-DHCORE_")
 # endif()
 
-if ("${lapackpp_defines}" MATCHES "LAPACK_ILP64")
-    target_compile_definitions(hcore PUBLIC "-DHCORE_HAVE_LAPACK_WITH_ILP64")
-endif()
+# if ("${lapackpp_defines}" MATCHES "LAPACK_ILP64")
+#     target_compile_definitions(hcore PUBLIC "-DHCORE_")
+# endif()
 
 if (color)
     string(ASCII 27 Esc)
@@ -299,13 +299,13 @@ if (build_tests)
     # doesn't exist yet.
     list(REMOVE_ITEM lapackpp_libraries_ blaspp)
     message(DEBUG "lapackpp_libraries_: ${lapackpp_libraries_}")
-    message(DEBUG "LAPACK_LATMS_LIBRARIES: ${LAPACK_LATMS_LIBRARIES}")
+    message(DEBUG "LAPACK_MATGEN_LIBRARIES: ${LAPACK_MATGEN_LIBRARIES}")
 
     try_run(run_result compile_result ${CMAKE_CURRENT_BINARY_DIR}
         SOURCES
             "${CMAKE_CURRENT_SOURCE_DIR}/config/lapack_matgen.cc"
         LINK_LIBRARIES
-            ${blaspp_libraries} ${lapackpp_libraries_} ${LAPACK_LATMS_LIBRARIES}
+            ${blaspp_libraries} ${lapackpp_libraries_} ${LAPACK_MATGEN_LIBRARIES}
         COMPILE_DEFINITIONS
             ${blaspp_defines} ${lapackpp_defines}
         COMPILE_OUTPUT_VARIABLE
@@ -320,22 +320,21 @@ if (build_tests)
     message(TRACE "lapack_matgen.cc run_output: '''\n${run_output}'''")
 
     if (compile_result AND "${run_output}" MATCHES "ok")
-        set(lapack_latms_found_ true CACHE INTERNAL "")
+        set(lapack_matgen_found_ true CACHE INTERNAL "")
     endif()
 
-    if (lapack_latms_found_)
-        if (NOT LAPACK_LATMS_LIBRARIES)
+    if (lapack_matgen_found_)
+        if (NOT LAPACK_MATGEN_LIBRARIES)
             message("   ${blue}Found LAPACK matrix generation routines (tmglib) in found BLAS/LAPACK libraries${plain}")
         else()
-            message("   ${blue}Found LAPACK matrix generation routines (tmglib) in ${LAPACK_LATMS_LIBRARIES}${plain}")
+            message("   ${blue}Found LAPACK matrix generation routines (tmglib) in ${LAPACK_MATGEN_LIBRARIES}${plain}")
         endif()
         message("   ${blue}Tester will use LAPACK LATMS for the random matrix generation${plain}")
-
-        target_compile_definitions(hcore PUBLIC "-DHCORE_HAVE_LAPACK_WITH_TMG")
+        # not needed at the moment
+        # target_compile_definitions(hcore PUBLIC "-DHCORE_")
     else()
-        message("   ${red}LAPACK LATMS not found${plain}")
-        message("   ${red}Tester will use LAPACK LARNV for the random "
-                "matrix generation${plain}")
+        message("   ${red}LAPACK matrix generation routines (tmglib) not found$. Tester cannot be built.{plain}")
+        # todo: download NETLIB reference LAPACK and build its matrix generation routines (tmglib)
     endif()
 
     message(STATUS "LAPACK MATGEN done")

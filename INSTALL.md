@@ -102,8 +102,9 @@ HCORE specific options include (all values are case insensitive):
         yes  (default)
         no
 
-    LAPACK_LATMS_LIBRARIES
-        Specify the LAPACK LATMS libraries, overriding the built-in search.
+    LAPACK_MATGEN_LIBRARIES
+        Specify the LAPACK matrix generation routines (tmglib) libraries,
+        overriding the built-in search.
 
 Besides the environment variables and options listed above, additional
 standard CMake options include:

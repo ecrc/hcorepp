@@ -16,11 +16,11 @@
 #     message(WARNING "LAPACKE not found; tester cannot be built.")
 #     return()
 # endif()
-# if (NOT lapack_latms_found_)
-#     message(WARNING
-#         "LAPACK LATMS not found; tester will use LAPACK LARNV instead.")
-#     return()
-# endif()
+
+if (NOT lapack_matgen_found_)
+    message(WARNING "LAPACK matrix generation routines (tmglib) not found; tester cannot be built.")
+    return()
+endif()
 
 # search for TestSweeper library, if not already included
 message("")
