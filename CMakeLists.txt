@@ -15,7 +15,6 @@ cmake_minimum_required(VERSION 3.15)
 # 3.14 install(LIBRARY DESTINATION lib) default
 # 3.15 $<$COMPILE_LANG_AND_ID
 # 3.15 message DEBUG, string REPEAT
-# 3.15 cmake_minimum_required(VERSION 3.15) of BLAS++, LAPACK++, and TestSweeper 
 
 project(
     hcore
@@ -288,7 +287,7 @@ endif()
 if (build_tests)
     message("")
     message("---------------------------------------- LAPACK MATGEN")
-    message(STATUS "Checking for LAPACK LATMS")
+    message(STATUS "Checking for LAPACK matrix generation routines (tmglib)")
 
     message(DEBUG "lapackpp_libraries: ${lapackpp_libraries}")
 
@@ -304,7 +303,7 @@ if (build_tests)
 
     try_run(run_result compile_result ${CMAKE_CURRENT_BINARY_DIR}
         SOURCES
-            "${CMAKE_CURRENT_SOURCE_DIR}/config/lapack_latms.cc"
+            "${CMAKE_CURRENT_SOURCE_DIR}/config/lapack_matgen.cc"
         LINK_LIBRARIES
             ${blaspp_libraries} ${lapackpp_libraries_} ${LAPACK_LATMS_LIBRARIES}
         COMPILE_DEFINITIONS
@@ -315,10 +314,10 @@ if (build_tests)
             run_output
     )
 
-    message(DEBUG "lapack_latms.cc compile result: '${compile_result}'")
-    message(DEBUG "lapack_latms.cc run result: '${run_result}'")
-    message(TRACE "lapack_latms.cc compile_output: '''\n${compile_output}'''")
-    message(TRACE "lapack_latms.cc run_output: '''\n${run_output}'''")
+    message(DEBUG "lapack_matgen.cc compile result: '${compile_result}'")
+    message(DEBUG "lapack_matgen.cc run result: '${run_result}'")
+    message(TRACE "lapack_matgen.cc compile_output: '''\n${compile_output}'''")
+    message(TRACE "lapack_matgen.cc run_output: '''\n${run_output}'''")
 
     if (compile_result AND "${run_output}" MATCHES "ok")
         set(lapack_latms_found_ true CACHE INTERNAL "")
@@ -326,12 +325,12 @@ if (build_tests)
 
     if (lapack_latms_found_)
         if (NOT LAPACK_LATMS_LIBRARIES)
-            message("   ${blue}Found LAPACK LATMS in BLAS/LAPACK library${plain}")
+            message("   ${blue}Found LAPACK matrix generation routines (tmglib) in found BLAS/LAPACK libraries${plain}")
         else()
-            message("   ${blue}Found LAPACK LATMS in ${LAPACK_LATMS_LIBRARIES}${plain}")
+            message("   ${blue}Found LAPACK matrix generation routines (tmglib) in ${LAPACK_LATMS_LIBRARIES}${plain}")
         endif()
-        message("   ${blue}Tester will use LAPACK LATMS for the random "
-                "matrix generation${plain}")
+        message("   ${blue}Tester will use LAPACK LATMS for the random matrix generation${plain}")
+
         target_compile_definitions(hcore PUBLIC "-DHCORE_HAVE_LAPACK_WITH_TMG")
     else()
         message("   ${red}LAPACK LATMS not found${plain}")
