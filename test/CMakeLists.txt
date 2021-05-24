@@ -18,7 +18,6 @@
 # endif()
 
 if (NOT lapack_matgen_found_)
-    message("")
     message(WARNING "LAPACK matrix generation routines (tmglib) not found; tester cannot be built.")
     return()
 endif()
