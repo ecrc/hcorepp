@@ -333,7 +333,7 @@ if (build_tests)
         # not needed at the moment
         # target_compile_definitions(hcore PUBLIC "-DHCORE_")
     else()
-        message("   ${red}LAPACK matrix generation routines (tmglib) not found$. Tester cannot be built.{plain}")
+        message("   ${red}LAPACK matrix generation routines (tmglib) not found$. Tester cannot be built.${plain}")
         # todo: download NETLIB reference LAPACK and build its matrix generation routines (tmglib)
     endif()
 
