@@ -2,7 +2,6 @@
 # (KAUST). All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
-# todo
 # can't build testers if CBLAS, LAPACK, LAPACKE, or TestSweeper are not found
 # if (NOT blaspp_cblas_found)
 #     message(WARNING "CBLAS not found; tester cannot be built.")
@@ -18,7 +17,8 @@
 # endif()
 
 if (NOT lapack_matgen_found_)
-    message(WARNING "LAPACK matrix generation routines (tmglib) not found; tester cannot be built.")
+    message(WARNING "LAPACK matrix generation routines (tmglib) not found; "
+                    "tester cannot be built.")
     return()
 endif()
 

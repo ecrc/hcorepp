@@ -305,7 +305,8 @@ if (build_tests)
         SOURCES
             "${CMAKE_CURRENT_SOURCE_DIR}/config/lapack_matgen.cc"
         LINK_LIBRARIES
-            ${blaspp_libraries} ${lapackpp_libraries_} ${LAPACK_MATGEN_LIBRARIES}
+            ${blaspp_libraries} ${lapackpp_libraries_}
+            ${LAPACK_MATGEN_LIBRARIES}
         COMPILE_DEFINITIONS
             ${blaspp_defines} ${lapackpp_defines}
         COMPILE_OUTPUT_VARIABLE
@@ -325,16 +326,21 @@ if (build_tests)
 
     if (lapack_matgen_found_)
         if (NOT LAPACK_MATGEN_LIBRARIES)
-            message("   ${blue}Found LAPACK matrix generation routines (tmglib) in found BLAS/LAPACK libraries${plain}")
+            message("   ${blue}Found LAPACK matrix generation routines "
+                    "(tmglib) in found BLAS/LAPACK libraries${plain}")
         else()
-            message("   ${blue}Found LAPACK matrix generation routines (tmglib) in ${LAPACK_MATGEN_LIBRARIES}${plain}")
+            message("   ${blue}Found LAPACK matrix generation routines "
+                    "(tmglib) in ${LAPACK_MATGEN_LIBRARIES}${plain}")
         endif()
-        message("   ${blue}Tester will use LAPACK LATMS for the random matrix generation${plain}")
+        message("   ${blue}Tester will use LAPACK LATMS for the random matrix "
+                "generation${plain}")
         # not needed at the moment
         # target_compile_definitions(hcore PUBLIC "-DHCORE_")
     else()
-        message("   ${red}LAPACK matrix generation routines (tmglib) not found. Tester cannot be built.${plain}")
-        # todo: download NETLIB reference LAPACK and build its matrix generation routines (tmglib)
+        message("   ${red}LAPACK matrix generation routines (tmglib) not "
+                "found. Tester cannot be built.${plain}")
+        # todo: download NETLIB reference LAPACK and build its matrix generation
+        #       routines (tmglib)
     endif()
 
     message(STATUS "LAPACK MATGEN done")
