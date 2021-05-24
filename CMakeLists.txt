@@ -160,10 +160,15 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
     target_compile_definitions(hcore PRIVATE HCORE_ID="${hcore_id}")
 endif()
 
-# use and export -std=c++17; don't allow -std=gnu++17 extensions
-target_compile_features(hcore PUBLIC cxx_std_17)
-set_target_properties(hcore
-    PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED true CXX_EXTENSIONS false)
+# use and export -std=c++11; don't allow -std=gnu++11 extensions.
+target_compile_features(hcore PUBLIC cxx_std_11)
+set_target_properties(hcore PROPERTIES CXX_EXTENSIONS OFF)
+
+# forcing specific CXX standard causing issues with NEC compiler
+# # use and export -std=c++17; don't allow -std=gnu++17 extensions
+# target_compile_features(hcore PUBLIC cxx_std_17)
+# set_target_properties(hcore
+#     PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED true CXX_EXTENSIONS false)
 
 if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.15)
     # conditionally add -Wall. See CMake tutorial

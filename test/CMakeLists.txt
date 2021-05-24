@@ -81,7 +81,7 @@ add_executable(
     ${tester_src}
 )
 
-# C++17 is inherited from hcore, but disabling extensions is not
+# C++11 is inherited from hcore, but disabling extensions is not
 set_target_properties(${tester} PROPERTIES CXX_EXTENSIONS false)
 
 target_link_libraries(
