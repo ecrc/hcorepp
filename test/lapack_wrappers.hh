@@ -38,7 +38,6 @@ inline void lapack_latms(
     std::vector<float> work(3 * std::max(m, n));
 
     #if ! defined(BLAS_ILP64) || ! defined(LAPACK_ILP64)
-        printf("32-bit copy\n");
         // 32-bit copy
         std::vector<lapack_int> iseed_(&iseed[0], &iseed[(4)]);
         lapack_int* iseed_ptr = &iseed_[0];
@@ -61,7 +60,6 @@ inline void lapack_latms(
         throw std::runtime_error("lapack_latms error " + std::to_string(info_));
 
     #if ! defined(BLAS_ILP64) || ! defined(LAPACK_ILP64)
-        printf("32-bit copy\n");
         std::copy(iseed_.begin(), iseed_.end(), iseed);
     #endif
 }
@@ -90,7 +88,6 @@ inline void lapack_latms(
     std::vector<double> work(3 * std::max(m, n));
 
     #if ! defined(BLAS_ILP64) || ! defined(LAPACK_ILP64)
-        printf("32-bit copy\n");
         // 32-bit copy
         std::vector<lapack_int> iseed_(&iseed[0], &iseed[(4)]);
         lapack_int* iseed_ptr = &iseed_[0];
@@ -113,7 +110,6 @@ inline void lapack_latms(
         throw std::runtime_error("lapack_latms error " + std::to_string(info_));
 
     #if ! defined(BLAS_ILP64) || ! defined(LAPACK_ILP64)
-        printf("32-bit copy\n");
         std::copy(iseed_.begin(), iseed_.end(), iseed);
     #endif
 }
@@ -142,7 +138,6 @@ inline void lapack_latms(
     std::vector<std::complex<float>> work(3 * std::max(m, n));
 
     #if ! defined(BLAS_ILP64) || ! defined(LAPACK_ILP64)
-        printf("32-bit copy\n");
         // 32-bit copy
         std::vector<lapack_int> iseed_(&iseed[0], &iseed[(4)]);
         lapack_int* iseed_ptr = &iseed_[0];
@@ -165,7 +160,6 @@ inline void lapack_latms(
         throw std::runtime_error("lapack_latms error " + std::to_string(info_));
 
     #if ! defined(BLAS_ILP64) || ! defined(LAPACK_ILP64)
-        printf("32-bit copy\n");
         std::copy(iseed_.begin(), iseed_.end(), iseed);
     #endif
 }
@@ -194,7 +188,6 @@ inline void lapack_latms(
     std::vector<std::complex<double>> work(3 * std::max(m, n));
 
     #if ! defined(BLAS_ILP64) || ! defined(LAPACK_ILP64)
-        printf("32-bit copy\n");
         // 32-bit copy
         std::vector<lapack_int> iseed_(&iseed[0], &iseed[(4)]);
         lapack_int* iseed_ptr = &iseed_[0];
@@ -217,7 +210,6 @@ inline void lapack_latms(
         throw std::runtime_error("lapack_latms error " + std::to_string(info_));
 
     #if ! defined(BLAS_ILP64) || ! defined(LAPACK_ILP64)
-        printf("32-bit copy\n");
         std::copy(iseed_.begin(), iseed_.end(), iseed);
     #endif
 }
