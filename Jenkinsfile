@@ -17,7 +17,7 @@ pipeline {
                         values 'Almaha', 'Buraq', 'Condor', 'Flamingo',
                             'Jasmine', 'Shihab', 'Vulture', 'Albatross',
                             'Tuwaiq'
-                            // 'stork'   // no modules
+                            // 'stork'   // todo: no modules
                             // 'Oqab',   // decommissioned
                             // 'P100',   // decommissioned
                             // 'Raed',   // decommissioned

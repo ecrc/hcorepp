@@ -19,7 +19,7 @@ cmake_minimum_required(VERSION 3.15)
 project(
     hcore
     VERSION 1.0.0 # major.minor.patch
-    LANGUAGES CXX
+    LANGUAGES CXX # todo: add fortran compiler for latms
 )
 
 # when built as a sub-project, add a namespace to make targets unique.
