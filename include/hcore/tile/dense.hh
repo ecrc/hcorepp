@@ -24,8 +24,7 @@ public:
     //
     /// Empty Dense tile.
     DenseTile() : Tile<T>()
-    {
-    }
+        {}
 
     // =========================================================================
     //
@@ -47,10 +46,9 @@ public:
     ///     blas::Layout::ColMajor: column elements are 1-strided (default), or
     ///     blas::Layout::RowMajor: row elements are 1-strided.
     DenseTile(int64_t m, int64_t n, T* A, int64_t ld,
-        blas::Layout layout = blas::Layout::ColMajor) : Tile<T>(m, n, A, ld,
+        blas::Layout layout=blas::Layout::ColMajor) : Tile<T>(m, n, A, ld,
         layout)
-    {
-    }
+        {}
 
     // =========================================================================
     //
@@ -60,27 +58,21 @@ public:
     /// @param[in,out] tile
     ///     Base tile.
     explicit DenseTile(Tile<T> const& tile) : Tile<T>(tile)
-    {
-    }
+        {}
 
     /// @return const pointer to array data buffer of this tile.
     T const* data() const
-    {
-        return this->data_;
-    }
+        { return this->data_; }
 
     /// @return pointer to array data buffer of this tile.
     T* data()
-    {
-        return this->data_;
-    }
+        { return this->data_; }
 
     /// @return column/row stride of this tile.
     int64_t ld() const
-    {
-        return this->ld_;
-    }
+        { return this->ld_; }
+
 }; // class DenseTile
-} // namespace hcore
+}  // namespace hcore
 
 #endif // HCORE_TILE_DENSE_HH
