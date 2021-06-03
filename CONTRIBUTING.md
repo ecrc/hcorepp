@@ -3,7 +3,7 @@ Contributing to HCORE
 
 - [Synopsis](#synopsis)
 - [Forking HCORE](#forking-hcore)
-- [C++ coding style](#c++-coding-style)
+- [C++ coding style](#c-coding-style)
 - [Developing new features](#developing-new-features)
 - [Developing bug fixes](#developing-bug-fixes)
 - [Creating pull requests](#creating-pull-requests)
