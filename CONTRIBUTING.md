@@ -3,6 +3,7 @@ Contributing to HCORE
 
 - [Synopsis](#synopsis)
 - [Forking HCORE](#forking-hcore)
+- [C++ coding style](#c++-coding-style)
 - [Developing new features](#developing-new-features)
 - [Developing bug fixes](#developing-bug-fixes)
 - [Creating pull requests](#creating-pull-requests)
@@ -15,6 +16,22 @@ This document is intended for developers who want to add new features or
 bugfixes to HCORE. It assumes you have some familiarity with git and GitHub. It
 will discuss what a good pull request looks like, and the tests that your
 pull request must pass before it can be merged into HCORE.
+
+C++ coding style
+--------------------------------------------------------------------------------
+
+Changes to HCORE C/C++ code should conform to the [Google C++ Style Guide]
+(https://google.github.io/styleguide/cppguide.html). Use clang-format to check
+your C/C++ changes.
+
+To install on Ubuntu 16+, do:
+
+    $ apt-get install -y clang-format
+
+You can check the format of a C/C++ file with the following:
+
+    $ clang-format <path/to/file.cc> --style=google > path/to/file_marked.cc
+    $ diff <path/to/file.cc> path/to/file_marked.cc
 
 Forking HCORE
 --------------------------------------------------------------------------------
