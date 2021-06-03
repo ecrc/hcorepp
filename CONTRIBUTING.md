@@ -22,7 +22,7 @@ C++ coding style
 
 Changes to HCORE C/C++ code should conform to the
 [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html).
-Use clang-format to check your C/C++ changes.
+Use `clang-format` to check your C/C++ changes.
 
 To install on Ubuntu 16+, do:
 
