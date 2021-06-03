@@ -5,8 +5,8 @@
 #ifndef HCORE_HH
 #define HCORE_HH
 
-#include "hcore/tile/dense.hh"
-#include "hcore/tile/compressed.hh"
+#include "hcore/dense_tile.hh"
+#include "hcore/compressed_tile.hh"
 
 #include "blas.hh"
 

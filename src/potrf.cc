@@ -1,11 +1,13 @@
-// Copyright (c) 2017-2021, King Abdullah University of Science and Technology
-// (KAUST). All rights reserved.
+// Copyright (c) 2017-2021,
+// King Abdullah University of Science and Technology (KAUST).
+// All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
 #include "hcore.hh"
+#include "hcore/check.hh"
 #include "hcore/exception.hh"
-#include "hcore/tile/dense.hh"
-#include "hcore/tile/compressed.hh"
+#include "hcore/dense_tile.hh"
+#include "hcore/compressed_tile.hh"
 
 #include "lapack.hh"
 

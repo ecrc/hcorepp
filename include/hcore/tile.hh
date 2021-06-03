@@ -1,9 +1,10 @@
-// Copyright (c) 2017-2021, King Abdullah University of Science and Technology
-// (KAUST). All rights reserved.
+// Copyright (c) 2017-2021,
+// King Abdullah University of Science and Technology (KAUST).
+// All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
-#ifndef HCORE_TILE_TILE_HH
-#define HCORE_TILE_TILE_HH
+#ifndef HCORE_TILE_HH
+#define HCORE_TILE_HH
 
 #include "hcore/exception.hh"
 
@@ -13,6 +14,8 @@
 
 namespace hcore {
 
+// =============================================================================
+//
 /// Tile C++ superclass.
 /// A tile is an m-by-n matrix, with a leading dimension.
 /// @tparam T
@@ -60,6 +63,8 @@ protected:
     }
 
 public:
+    /// @return true if the class template identifier is complex, and false
+    /// otherwise.
     static constexpr bool is_complex = blas::is_complex<T>::value;
 
     /// @return number of rows of this tile.
@@ -192,25 +197,22 @@ public:
     /// @param[in] j
     ///     Column index. 0 <= j < n.
     T& at(int64_t i, int64_t j)
-    {
-        // forward to const at() version
-        return const_cast<T&>(static_cast<const Tile>(*this).at(i, j));
-    }
+        { return const_cast<T&>(static_cast<const Tile>(*this).at(i, j)); }
 
 private:
     int64_t m_; ///> Number of rows.
     int64_t n_; ///> Number of columns.
 
 protected:
-    T* data_; ///> Data array buffer.
+    T* data_;    ///> Data array buffer.
     int64_t ld_; ///> Leading dimension.
 
 private:
-    blas::Op op_; ///> Transposition operation.
-    blas::Uplo uplo_; ///> Physical packed storage type.
+    blas::Op op_;         ///> Transposition operation.
+    blas::Uplo uplo_;     ///> Physical packed storage type.
     blas::Layout layout_; ///> Physical ordering of the matrix elements.
 
 }; // class Tile
-} // namespace hcore
+}  // namespace hcore
 
-#endif // HCORE_TILE_TILE_HH
+#endif // HCORE_TILE_HH

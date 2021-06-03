@@ -1,11 +1,12 @@
-// Copyright (c) 2017-2021, King Abdullah University of Science and Technology
-// (KAUST). All rights reserved.
+// Copyright (c) 2017-2021,
+// King Abdullah University of Science and Technology (KAUST).
+// All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
-#ifndef HCORE_TILE_DENSE_HH
-#define HCORE_TILE_DENSE_HH
+#ifndef HCORE_DENSE_TILE_HH
+#define HCORE_DENSE_TILE_HH
 
-#include "hcore/tile/tile.hh"
+#include "hcore/tile.hh"
 
 #include "blas.hh"
 
@@ -13,6 +14,8 @@
 
 namespace hcore {
 
+// =============================================================================
+//
 /// Dense tile class.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
@@ -75,4 +78,4 @@ public:
 }; // class DenseTile
 }  // namespace hcore
 
-#endif // HCORE_TILE_DENSE_HH
+#endif // HCORE_DENSE_TILE_HH

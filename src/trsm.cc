@@ -1,12 +1,14 @@
-// Copyright (c) 2017-2021, King Abdullah University of Science and Technology
-// (KAUST). All rights reserved.
+// Copyright (c) 2017-2021,
+// King Abdullah University of Science and Technology (KAUST).
+// All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
 #include "hcore.hh"
 #include "hcore/exception.hh"
-#include "hcore/tile/tile.hh"
-#include "hcore/tile/dense.hh"
-#include "hcore/tile/compressed.hh"
+#include "hcore/tile.hh"
+#include "hcore/check.hh"
+#include "hcore/dense_tile.hh"
+#include "hcore/compressed_tile.hh"
 
 #include "blas.hh"
 
@@ -15,21 +17,6 @@
 #include <cassert>
 
 namespace hcore {
-namespace internal {
-namespace check {
-
-template <typename T>
-void trsm(blas::Side side, Tile<T> const& A, Tile<T> const& B)
-{
-    hcore_error_if(A.m() != A.n());
-    hcore_error_if(A.layout() != B.layout());
-    hcore_error_if(B.uplo_physical() != blas::Uplo::General);
-    hcore_error_if(side == blas::Side::Left ? A.m() != B.m() : A.m() != B.n());
-}
-
-} // namespace check
-} // namespace internal
-
 
 // =============================================================================
 //

@@ -1,12 +1,14 @@
-// Copyright (c) 2017-2021, King Abdullah University of Science and Technology
-// (KAUST). All rights reserved.
+// Copyright (c) 2017-2021,
+// King Abdullah University of Science and Technology (KAUST).
+// All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
 #include "hcore.hh"
+#include "hcore/tile.hh"
+#include "hcore/check.hh"
 #include "hcore/exception.hh"
-#include "hcore/tile/tile.hh"
-#include "hcore/tile/dense.hh"
-#include "hcore/tile/compressed.hh"
+#include "hcore/dense_tile.hh"
+#include "hcore/compressed_tile.hh"
 
 #include "blas.hh"
 #include "lapack.hh"
@@ -21,22 +23,6 @@
 
 namespace hcore {
 namespace internal {
-namespace check {
-
-template <typename T>
-void gemm(Tile<T> const& A, Tile<T> const& B, Tile<T> const& C)
-{
-    hcore_error_if(A.m() != C.m());
-    hcore_error_if(B.n() != C.n());
-    hcore_error_if(A.n() != B.m());
-    hcore_error_if(A.layout() != B.layout());
-    hcore_error_if(B.layout() != C.layout());
-    hcore_error_if(A.uplo_physical() != blas::Uplo::General);
-    hcore_error_if(B.uplo_physical() != blas::Uplo::General);
-    hcore_error_if(C.uplo_physical() != blas::Uplo::General);
-}
-
-} // namespace check
 
 template <typename T>
 void reduced_svd(

@@ -5,6 +5,7 @@
 #include "test.hh"
 #include "hcore.hh"
 #include "tile_utils.hh"
+#include "hcore/flops.hh"
 #include "matrix_utils.hh"
 
 #include "blas.hh"
@@ -200,61 +201,66 @@ void gemm_test_execute(Params& params, bool run)
 
     if (params.routine == "gemm_ddd") {
         hcore::gemm<T>(alpha, A, B, beta, C);
-        gflops = blas::Gflop<T>::gemm(m, n, k);
+        gflops = hcore::Gflop<T>::gemm(A, B, C);
+        // gflops = blas::Gflop<T>::gemm(m, n, k);
     }
     else if (params.routine == "gemm_ddc") {
         hcore::gemm<T>(alpha, A, B, beta, CUV);
-        gflops = blas::Gflop<T>::gemm(Cm, Cn, An) +
-                 blas::Gflop<T>::gemm(Cm, Cn, Crk);
+        gflops = hcore::Gflop<T>::gemm(A, B, CUV, Crk);
+        // gflops = blas::Gflop<T>::gemm(Cm, Cn, An) +
+        //          blas::Gflop<T>::gemm(Cm, Cn, Crk);
     }
     else if (params.routine == "gemm_dcd") {
         hcore::gemm<T>(alpha, A, BUV, beta, C);
-        gflops = blas::Gflop<T>::gemm(Cm, Brk, An) +
-                 blas::Gflop<T>::gemm(Cm, Cn, Brk);
+        gflops = hcore::Gflop<T>::gemm(A, BUV, C);
+        // gflops = blas::Gflop<T>::gemm(Cm, Brk, An) +
+        //          blas::Gflop<T>::gemm(Cm, Cn, Brk);
     }
     else if (params.routine == "gemm_dcc") {
         hcore::gemm<T>(alpha, A, BUV, beta, CUV, 
                 use_trmm, use_ungqr, truncate_with_tol, truncate_with_fixed_rk);
-        // todo
+        gflops = hcore::Gflop<T>::gemm(A, BUV, CUV, Crk);
         // gflops = blas::Gflop<T>::gemm(Cm, Brk, An) +
-        //          internal::gemm;
+        //          hcore::internal::Gflop<T>::rsvd(Cm, Cn, Brk, Crk, CUV.rk());
     }
     else if (params.routine == "gemm_cdd") {
         hcore::gemm<T>(alpha, AUV, B, beta, C);
-        gflops = blas::Gflop<T>::gemm(Ark, Cn, An) +
-                 blas::Gflop<T>::gemm(Cm, Cn, Ark);
+        gflops = hcore::Gflop<T>::gemm(AUV, B, C);
+        // gflops = blas::Gflop<T>::gemm(Ark, Cn, An) +
+        //          blas::Gflop<T>::gemm(Cm, Cn, Ark);
     }
     else if (params.routine == "gemm_cdc") {
         hcore::gemm<T>(alpha, AUV, B, beta, CUV, 
                 use_trmm, use_ungqr, truncate_with_tol, truncate_with_fixed_rk);
-        // todo
+        gflops = hcore::Gflop<T>::gemm(AUV, B, CUV, Crk);
         // gflops = blas::Gflop<T>::gemm(Ark, Cn, An) +
-        //          internal::gemm;
+        //          hcore::internal::Gflop<T>::rsvd(Cm, Cn, Ark, Crk, CUV.rk());
     }
     else if (params.routine == "gemm_ccd") {
         hcore::gemm<T>(alpha, AUV, BUV, beta, C);
-        gflops = blas::Gflop<T>::gemm(Ark, Brk, An) +
-                 (Ark <= Brk ? blas::Gflop<T>::gemm(Ark, Cn, Brk) +
-                               blas::Gflop<T>::gemm(Cm, Cn, Ark)
-                             : blas::Gflop<T>::gemm(Cm, Brk, Ark) +
-                               blas::Gflop<T>::gemm(Cm, Cn, Brk));
+        gflops = hcore::Gflop<T>::gemm(AUV, BUV, C);
+        // gflops = blas::Gflop<T>::gemm(Ark, Brk, An) +
+        //          (Ark <= Brk ? blas::Gflop<T>::gemm(Ark, Cn, Brk) +
+        //                        blas::Gflop<T>::gemm(Cm, Cn, Ark)
+        //                      : blas::Gflop<T>::gemm(Cm, Brk, Ark) +
+        //                        blas::Gflop<T>::gemm(Cm, Cn, Brk));
     }
     else if (params.routine == "gemm_ccc") {
         hcore::gemm<T>(alpha, AUV, BUV, beta, CUV,
                 use_trmm, use_ungqr, truncate_with_tol, truncate_with_fixed_rk);
-        // todo: for now use PASC paper, which assumes square matrices
-        int64_t max_Ark_Brk_Crk = std::max({Ark, Brk, Crk});
-        int64_t max_m_n_k = std::max({m, n, k});
-        gflops = (1e-9 * ((blas::is_complex<T>::value ? 3 : 1)
-                     * 36 * max_m_n_k * (max_Ark_Brk_Crk
-                     * max_Ark_Brk_Crk) + 157 * (max_Ark_Brk_Crk
-                     * max_Ark_Brk_Crk * max_Ark_Brk_Crk)));
-        // todo
+        gflops = hcore::Gflop<T>::gemm(AUV, BUV, CUV, Crk);
         // gflops = blas::Gflop<T>::gemm(Ark, Brk, An) +
         //          (Ark <= Brk ? blas::Gflop<T>::gemm(Ark, Cn, Brk) +
-        //                        internal::gemm
+        //                        hcore::internal::Gflop<T>::rsvd(Cm, Cn, Ark, Crk, CUV.rk())
         //                      : blas::Gflop<T>::gemm(Cm, Brk, Ark) +
-        //                        internal::gemm;        
+        //                        hcore::internal::Gflop<T>::rsvd(Cm, Cn, Brk, Crk, CUV.rk()));
+        // todo: for now use PASC paper, which assumes square matrices
+        // int64_t max_Ark_Brk_Crk = std::max({Ark, Brk, Crk});
+        // int64_t max_m_n_k = std::max({m, n, k});
+        // gflops = (1e-9 * ((blas::is_complex<T>::value ? 3 : 1)
+        //              * 36 * max_m_n_k * (max_Ark_Brk_Crk
+        //              * max_Ark_Brk_Crk) + 157 * (max_Ark_Brk_Crk
+        //              * max_Ark_Brk_Crk * max_Ark_Brk_Crk)));
     }
 
     double time_end = testsweeper::get_wtime();
