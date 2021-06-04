@@ -28,7 +28,6 @@ void generate_dense_matrix(
     for (int64_t i = 0; i < min_m_n; ++i)
         D[i] = std::pow(10, -1*i);
 
-
     lapack::latms(
         m, n, lapack::Dist::Uniform, iseed, lapack::Sym::Nonsymmetric, &D[0],
         mode, cond, -1.0, m-1, n-1, lapack::Pack::NoPacking, A, lda);
