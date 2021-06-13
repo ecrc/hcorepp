@@ -55,10 +55,15 @@ protected:
         n_(n), data_(A), ld_(ld), op_(blas::Op::NoTrans),
         uplo_(blas::Uplo::General), layout_(layout)
     {
-        hcore_error_if(m < 0);
-        hcore_error_if(n < 0);
-        hcore_error_if(A == nullptr);
+        hcore_error_if(m < 0); // non-negative number of rows
+        hcore_error_if(n < 0); // non-negative number of columns
+        hcore_error_if(A == nullptr); // tile data buffer must not point to null
+
+        // if physical order of matrix elements is in column-major layout, then
+        // leading dimensions must greater than or equal to number of rows
         hcore_error_if(layout == blas::Layout::ColMajor && ld < m);
+        // if physical order of matrix elements is in row-major layout, then
+        // leading dimensions must greater than or equal to number of columns
         hcore_error_if(layout == blas::Layout::RowMajor && ld < n);
     }
 
@@ -86,10 +91,9 @@ public:
     ///     - NoTrans: this tile has no transposed structure.
     void op(blas::Op op)
     {
-        hcore_error_if(
-            op != blas::Op::Trans   &&
-            op != blas::Op::NoTrans &&
-            op != blas::Op::ConjTrans);
+        hcore_error_if(op != blas::Op::Trans
+                    && op != blas::Op::NoTrans
+                    && op != blas::Op::ConjTrans);
         op_ = op;
     }
 
@@ -126,12 +130,15 @@ public:
     /// @return the logical packed storage type of this tile.
     blas::Uplo uplo_logical() const
     {
-        if (uplo_ == blas::Uplo::General)
+        if (uplo_ == blas::Uplo::General) {
             return blas::Uplo::General;
-        else if ((uplo_ == blas::Uplo::Lower) == (op_ == blas::Op::NoTrans))
+        }
+        else if ((uplo_ == blas::Uplo::Lower) == (op_ == blas::Op::NoTrans)) {
             return blas::Uplo::Lower;
-        else
+        }
+        else {
             return blas::Uplo::Upper;
+        }
     }
 
     /// @return the physical ordering of the matrix elements in the data array
@@ -139,10 +146,9 @@ public:
     blas::Layout layout() const
         { return layout_; }
 
-    /// @return element {i, j} of this tile.
-    /// The actual value is returned, not a reference.
-    /// If op() == blas::Op::ConjTrans then data is conjugated; it takes
-    /// the layout into account.
+    /// @return element {i, j} of this tile. The actual value is returned, not a
+    /// reference. If op() == blas::Op::ConjTrans then data is conjugated; it
+    /// takes the layout into account.
     /// @param[in] i
     ///     Row index. 0 <= i < m.
     /// @param[in] j
@@ -155,17 +161,19 @@ public:
         using blas::conj;
 
         if (op_ == blas::Op::ConjTrans) {
-            if (layout_ == blas::Layout::ColMajor)
-                return conj(data_[j + i * ld_]);
-            else
-                return conj(data_[i + j * ld_]);
+            if (layout_ == blas::Layout::ColMajor) {
+                return conj(data_[j + i*ld_]);
+            }
+            else {
+                return conj(data_[i + j*ld_]);
+            }
         }
-        else if (
-            (op_ == blas::Op::NoTrans) == (layout_ == blas::Layout::ColMajor)) {
-            return data_[i + j * ld_];
+        else if ((op_ == blas::Op::NoTrans) ==
+                 (layout_ == blas::Layout::ColMajor)) {
+            return data_[i + j*ld_];
         }
         else {
-            return data_[j + i * ld_];
+            return data_[j + i*ld_];
         }
     }
 
@@ -182,10 +190,10 @@ public:
         hcore_error_if(0 > j || j >= n());
 
         if ((op_ == blas::Op::NoTrans) == (layout_ == blas::Layout::ColMajor)) {
-            return data_[i + j * ld_];
+            return data_[i + j*ld_];
         }
         else {
-            return data_[j + i * ld_];
+            return data_[j + i*ld_];
         }
     }
 
@@ -204,7 +212,8 @@ private:
     int64_t n_; ///> Number of columns.
 
 protected:
-    T* data_;    ///> Data array buffer.
+    T* data_; ///> Data array buffer.
+
     int64_t ld_; ///> Leading dimension.
 
 private:
