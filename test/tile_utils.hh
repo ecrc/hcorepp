@@ -21,7 +21,10 @@ void diff(T* Aref, int64_t lda_ref, hcore::Tile<T> const& A)
 {
     for (int64_t j = 0; j < A.n(); ++j) {
         for (int64_t i = 0; i < A.m(); ++i) {
-            Aref[i + j * lda_ref] -= A(i, j);
+            if (A.layout() == blas::Layout::ColMajor)
+                Aref[i + j * lda_ref] -= A(i, j);
+            else
+                Aref[j + i * lda_ref] -= A(i, j);
         }
     }
 }
@@ -31,7 +34,10 @@ void copy(T* Aref, int64_t lda_ref, hcore::Tile<T> const& A)
 {
     for (int64_t j = 0; j < A.n(); ++j) {
         for (int64_t i = 0; i < A.m(); ++i) {
-            Aref[i + j * lda_ref] = A(i, j);
+            if (A.layout() == blas::Layout::ColMajor)
+                Aref[i + j * lda_ref] = A(i, j);
+            else
+                Aref[j + i * lda_ref] = A(i, j);
         }
     }
 }
