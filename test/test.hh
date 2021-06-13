@@ -6,7 +6,6 @@
 #define HCORE_TEST_HH
 
 #include "testsweeper.hh"
-// #include "lapack.hh" // todo
 #include "blas.hh"
 
 class Params : public testsweeper::ParamsBase
@@ -15,15 +14,15 @@ public:
     Params();
 
     testsweeper::ParamEnum<testsweeper::DataType> datatype;
-    // testsweeper::ParamEnum<lapack::Norm> norm; // todo
-    // testsweeper::ParamEnum<blas::Layout> layout; // todo
-    testsweeper::ParamEnum<blas::Uplo> uplo;
-    testsweeper::ParamEnum<blas::Side> side;
-    testsweeper::ParamEnum<blas::Diag> diag;
-    testsweeper::ParamEnum<blas::Op> trans;
-    testsweeper::ParamEnum<blas::Op> transA;
-    testsweeper::ParamEnum<blas::Op> transB;
-    testsweeper::ParamEnum<blas::Op> transC;
+
+    testsweeper::ParamEnum<blas::Layout> layout;
+    testsweeper::ParamEnum<blas::Uplo>   uplo;
+    testsweeper::ParamEnum<blas::Side>   side;
+    testsweeper::ParamEnum<blas::Diag>   diag;
+    testsweeper::ParamEnum<blas::Op>     trans;
+    testsweeper::ParamEnum<blas::Op>     transA;
+    testsweeper::ParamEnum<blas::Op>     transB;
+    testsweeper::ParamEnum<blas::Op>     transC;
 
     testsweeper::ParamChar check;
     testsweeper::ParamChar use_trmm;

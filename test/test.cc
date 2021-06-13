@@ -71,18 +71,11 @@ Params::Params():
         testsweeper::datatype2str,
         "one of: s, r32, single, float; d, r64, double (default); "
                 "c, c32, 'complex<float>'; z, c64, 'complex<double>'"),
-    // todo
-    // norm(
-    //     // name, width, type, default, char2enum, enum2char, enum2str, help
-    //     "norm", 0, testsweeper::ParamType::Value, lapack::Norm::Inf,
-    //     lapack::char2norm, lapack::norm2char, lapack::norm2str,
-    //      "norm: o=one, 2=two, i=inf, f=fro, m=max"),
-    // todo
-    // layout(
-    //     // name, width, type, default, char2enum, enum2char, enum2str, help
-    //     "layout", 6, testsweeper::ParamType::List, blas::Layout::ColMajor,
-    //     blas::char2layout, blas::layout2char, blas::layout2str,
-    //      "layout: r=row major, c=column major (default)"),
+    layout(
+        // name, width, type, default, char2enum, enum2char, enum2str, help
+        "layout", 6, testsweeper::ParamType::List, blas::Layout::ColMajor,
+        blas::char2layout, blas::layout2char, blas::layout2str,
+        "layout: r=row major, c=column major (default)"),
     uplo(
         // name, width, type, default, char2enum, enum2char, enum2str, help
         "uplo", 6, testsweeper::ParamType::List, blas::Uplo::Lower,
