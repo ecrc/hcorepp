@@ -1,9 +1,10 @@
-// Copyright (c) 2017-2021, King Abdullah University of Science and Technology
-// (KAUST). All rights reserved.
+// Copyright (c) 2017-2021,
+// King Abdullah University of Science and Technology (KAUST).
+// All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
-#ifndef HCORE_TEST_HH
-#define HCORE_TEST_HH
+#ifndef HCORE_TEST_TEST_HH
+#define HCORE_TEST_TEST_HH
 
 #include "testsweeper.hh"
 #include "blas.hh"
@@ -65,4 +66,4 @@ void gemm_test_dispatch(Params& params, bool run);
 void syrk_test_dispatch(Params& params, bool run);
 void trsm_test_dispatch(Params& params, bool run);
 
-#endif // #ifndef HCORE_TEST_HH
+#endif // #ifndef HCORE_TEST_TEST_HH

@@ -1,5 +1,6 @@
-// Copyright (c) 2017-2021, King Abdullah University of Science and Technology
-// (KAUST). All rights reserved.
+// Copyright (c) 2017-2021,
+// King Abdullah University of Science and Technology (KAUST).
+// All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
 #include "test.hh"
