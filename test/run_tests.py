@@ -65,7 +65,7 @@ group_opt = parser.add_argument_group( 'options' )
 # BLAS and LAPACK
 # Empty defaults (check, ref, etc.) use the default in test.cc.
 group_opt.add_argument( '--type',   action='store', help='default=%(default)s', default='s,d,c,z' )
-# # group_opt.add_argument( '--layout', action='store', help='default=%(default)s', default='c,r' )
+group_opt.add_argument( '--layout', action='store', help='default=%(default)s', default='c,r' )
 group_opt.add_argument( '--transA', action='store', help='default=%(default)s', default='n,t,c' )
 group_opt.add_argument( '--transB', action='store', help='default=%(default)s', default='n,t,c' )
 group_opt.add_argument( '--transC', action='store', help='default=%(default)s', default='n,t,c' )
@@ -212,7 +212,7 @@ if (not opts.dim):
 
 # BLAS and LAPACK
 dtype  = ' --type '   + opts.type   if (opts.type)   else ''
-# layout = ' --layout ' + opts.layout if (opts.layout) else ''
+layout = ' --layout ' + opts.layout if (opts.layout) else ''
 transA = ' --transA ' + opts.transA if (opts.transA) else ''
 transB = ' --transB ' + opts.transB if (opts.transB) else ''
 transC = ' --transC ' + opts.transC if (opts.transC) else ''
@@ -319,14 +319,14 @@ if (opts.chol):
 # Level 3 BLAS -- GEMM
 if (opts.blas3_gemm):
     cmds += [
-        ['gemm_ddd', dtype + align + transA + transB + transC + mnk],
-        ['gemm_ddc', dtype + align + transA + transB + transC + mnk],
-        ['gemm_dcd', dtype + align + transA + transB + transC + mnk],
-        ['gemm_dcc', dtype + align + transA + transB + transC + mnk],
-        ['gemm_cdd', dtype + align + transA + transB + transC + mnk],
-        ['gemm_cdc', dtype + align + transA + transB + transC + mnk],
-        ['gemm_ccd', dtype + align + transA + transB + transC + mnk],
-        ['gemm_ccc', dtype + align + transA + transB + transC + mnk],
+        ['gemm_ddd', layout + dtype + align + transA + transB + transC + mnk],
+        ['gemm_ddc', layout + dtype + align + transA + transB + transC + mnk],
+        ['gemm_dcd', layout + dtype + align + transA + transB + transC + mnk],
+        ['gemm_dcc', layout + dtype + align + transA + transB + transC + mnk],
+        ['gemm_cdd', layout + dtype + align + transA + transB + transC + mnk],
+        ['gemm_cdc', layout + dtype + align + transA + transB + transC + mnk],
+        ['gemm_ccd', layout + dtype + align + transA + transB + transC + mnk],
+        ['gemm_ccc', layout + dtype + align + transA + transB + transC + mnk],
     ]
 
 # Level 3 BLAS -- SYRK
