@@ -15,29 +15,19 @@ namespace hcore {
 class Error : public std::exception {
 public:
     Error() : std::exception()
-    {
-    }
+        {}
     Error(const std::string& what_arg) : std::exception(), what_arg_(what_arg)
-    {
-    }
-    Error(
-        const std::string& what_arg, const char* function) : std::exception(),
+        {}
+    Error(const std::string& what_arg, const char* function) : std::exception(),
         what_arg_(what_arg + ", function " + function + ".")
-    {
-    }
-    Error(
-        const std::string& what_arg,
-        const char* function, const char* file, int line) : std::exception(),
-        what_arg_(what_arg
-            + ", function " + function
-            + ", file " + file
-            + ", line " + std::to_string(line) + ".")
-    {
-    }
+        {}
+    Error(const std::string& what_arg, const char* function, const char* file,
+        int line) : std::exception(),
+            what_arg_(what_arg + ", function " + function + ", file " + file
+                               + ", line " + std::to_string(line) + ".")
+        {}
     virtual const char* what() const noexcept override
-    {
-        return what_arg_.c_str();
-    }
+        { return what_arg_.c_str(); }
 
 private:
     std::string what_arg_;
