@@ -24,8 +24,7 @@ void gemm_test_execute(Params& params, bool run)
 {
     using real_t = blas::real_type<T>;
 
-    // todo
-    // blas::Layout layout = params.layout();
+    blas::Layout layout = params.layout();
 
     blas::Op transA = params.transA();
     blas::Op transB = params.transB();
@@ -86,6 +85,10 @@ void gemm_test_execute(Params& params, bool run)
             printf("skipping: only transC=NoTrans is supported.\n");
             return;
         }
+        if (layout != blas::Layout::ColMajor) {
+            printf("skipping: only layout=ColMajor is supported.\n");
+            return;
+        }
     }
 
     int64_t Am = transA == blas::Op::NoTrans ? m : k;
@@ -127,11 +130,11 @@ void gemm_test_execute(Params& params, bool run)
     real_t Bnorm = lapack::lange(norm, Bm, Bn, &Bdata[0], ldb);
     real_t Cnorm = lapack::lange(norm, Cm, Cn, &Cdata[0], ldc);
 
-    hcore::DenseTile<T> A(Am, An, &Adata[0], lda);
+    hcore::DenseTile<T> A(Am, An, &Adata[0], lda, layout);
     A.op(transA);
-    hcore::DenseTile<T> B(Bm, Bn, &Bdata[0], ldb);
+    hcore::DenseTile<T> B(Bm, Bn, &Bdata[0], ldb, layout);
     B.op(transB);
-    hcore::DenseTile<T> C(Cm, Cn, &Cdata[0], ldc);
+    hcore::DenseTile<T> C(Cm, Cn, &Cdata[0], ldc, layout);
     C.op(transC);
 
     int64_t ldcref = testsweeper::roundup(m, align);
@@ -297,7 +300,7 @@ void gemm_test_execute(Params& params, bool run)
         double ref_time_start = testsweeper::get_wtime();
         {
             blas::gemm(
-                blas::Layout::ColMajor, transA, transB,
+                layout, transA, transB,
                 m, n, k,
                 alpha, &Adata[0], lda,
                        &Bdata[0], ldb,
