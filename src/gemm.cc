@@ -282,13 +282,11 @@ void gemm(
              DenseTile<T> const& B,
     T beta,  DenseTile<T>      & C)
 {
-    assert(C.layout() == blas::Layout::ColMajor); // todo
-
     internal::check::gemm(A, B, C);
 
     if (C.op() == blas::Op::NoTrans) {
         blas::gemm(
-            blas::Layout::ColMajor, A.op(), B.op(),
+            C.layout(), A.op(), B.op(),
             C.m(), C.n(), A.n(),
             alpha, A.data(), A.ld(),
                    B.data(), B.ld(),
@@ -331,7 +329,7 @@ void gemm(
         }
 
         blas::gemm(
-            blas::Layout::ColMajor, opB, opA,
+            C.layout(), opB, opA,
             C.n(), C.m(), A.n(),
             alpha, B.data(), B.ld(),
                    A.data(), A.ld(),
