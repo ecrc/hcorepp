@@ -147,7 +147,7 @@ void gemm_test_execute(Params& params, bool run)
 
     std::vector<T> Cref;
     if (params.check() == 'y') {
-        Cref.resize(ldcref * (layout == blas::Layout::ColMajor ? m : n));
+        Cref.resize(ldcref * (layout == blas::Layout::ColMajor ? n : m));
         copy(&Cref[0], ldcref, C);
     }
 
