@@ -142,11 +142,12 @@ void gemm_test_execute(Params& params, bool run)
     hcore::DenseTile<T> C(Cm, Cn, &Cdata[0], ldc, layout);
     C.op(transC);
 
-    int64_t ldcref = testsweeper::roundup(m, align);
+    int64_t ldcref =
+        testsweeper::roundup((layout == blas::Layout::ColMajor ? m : n), align);
 
     std::vector<T> Cref;
     if (params.check() == 'y') {
-        Cref.resize(ldcref * n);
+        Cref.resize(ldcref * (layout == blas::Layout::ColMajor ? m : n));
         copy(&Cref[0], ldcref, C);
     }
 
