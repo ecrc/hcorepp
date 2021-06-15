@@ -142,12 +142,18 @@ void gemm_test_execute(Params& params, bool run)
     hcore::DenseTile<T> C(Cm, Cn, &Cdata[0], ldc, layout);
     C.op(transC);
 
-    int64_t ldcref =
-        testsweeper::roundup((layout == blas::Layout::ColMajor ? m : n), align);
+    int64_t Cref_m = m;
+    int64_t Cref_n = n;
+
+    if (layout == blas::Layout::RowMajor) {
+        std::swap(Cref_m, Cref_n);
+    }
+
+    int64_t ldcref = testsweeper::roundup(Cref_m, align);
 
     std::vector<T> Cref;
     if (params.check() == 'y') {
-        Cref.resize(ldcref * (layout == blas::Layout::ColMajor ? n : m));
+        Cref.resize(ldcref * Cref_n);
         copy(&Cref[0], ldcref, C);
     }
 
@@ -157,7 +163,7 @@ void gemm_test_execute(Params& params, bool run)
         pretty_print(C, "C");
 
         if (verbose > 1) {
-            pretty_print(m, n, &Cref[0], ldcref, "Cref");
+            pretty_print(Cref_m, Cref_n, &Cref[0], ldcref, "Cref");
         }
     }
 
@@ -318,7 +324,7 @@ void gemm_test_execute(Params& params, bool run)
             blas::Gflop<T>::gemm(m, n, k) / params.ref_time();
 
         if (verbose) {
-            pretty_print(m, n, &Cref[0], ldcref, "Cref");
+            pretty_print(Cref_m, Cref_n, &Cref[0], ldcref, "Cref");
         }
 
         if (params.routine == "gemm_dcc" ||
@@ -338,10 +344,10 @@ void gemm_test_execute(Params& params, bool run)
         diff(&Cref[0], ldcref, C);
 
         if (verbose) {
-            pretty_print(m, n, &Cref[0], ldcref, "Cref_diff_C");
+            pretty_print(Cref_m, Cref_n, &Cref[0], ldcref, "Cref_diff_C");
         }
 
-        params.error() = lapack::lange(norm, m, n, &Cref[0], ldcref)
+        params.error() = lapack::lange(norm, Cref_m, Cref_n, &Cref[0], ldcref)
                         / (sqrt(real_t(k) + 2) * std::abs(alpha) *
                            Anorm * Bnorm + 2 * std::abs(beta) * Cnorm);
 
