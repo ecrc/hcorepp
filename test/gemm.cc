@@ -98,12 +98,11 @@ void gemm_test_execute(Params& params, bool run)
     int64_t Cm = transC == blas::Op::NoTrans ? m : n;
     int64_t Cn = transC == blas::Op::NoTrans ? n : m;
 
-    // todo
-    // if (layout == blas::Layout::RowMajor) {
-    //     std::swap(Am, An);
-    //     std::swap(Bm, Bn);
-    //     std::swap(Cm, Cn);
-    // }
+    if (layout == blas::Layout::RowMajor) {
+        std::swap(Am, An);
+        std::swap(Bm, Bn);
+        std::swap(Cm, Cn);
+    }
 
     int64_t lda = testsweeper::roundup(Am, align);
     int64_t ldb = testsweeper::roundup(Bm, align);
@@ -129,6 +128,12 @@ void gemm_test_execute(Params& params, bool run)
     real_t Anorm = lapack::lange(norm, Am, An, &Adata[0], lda);
     real_t Bnorm = lapack::lange(norm, Bm, Bn, &Bdata[0], ldb);
     real_t Cnorm = lapack::lange(norm, Cm, Cn, &Cdata[0], ldc);
+
+    if (layout == blas::Layout::RowMajor) {
+        std::swap(Am, An);
+        std::swap(Bm, Bn);
+        std::swap(Cm, Cn);
+    }
 
     hcore::DenseTile<T> A(Am, An, &Adata[0], lda, layout);
     A.op(transA);
