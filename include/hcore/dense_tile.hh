@@ -63,17 +63,53 @@ public:
     explicit DenseTile(Tile<T> const& tile) : Tile<T>(tile)
         {}
 
+    // =========================================================================
+    //
     /// @return const pointer to array data buffer of this tile.
     T const* data() const
         { return this->data_; }
 
+    // =========================================================================
+    //
     /// @return pointer to array data buffer of this tile.
     T* data()
         { return this->data_; }
 
+    // =========================================================================
+    //
     /// @return column/row stride of this tile.
     int64_t ld() const
         { return this->ld_; }
+
+    // =========================================================================
+    //
+    /// @return the number of locations in memory between beginnings of
+    /// successive array elements of a row, accounting for row/column major
+    /// data layout and transposed tiles.
+    int64_t row_stride() const {
+        if ((this->op() == blas::Op::NoTrans) ==
+            (this->layout() == blas::Layout::ColMajor)) {
+            return this->ld_;
+        }
+        else {
+            return 1;
+        }
+    }
+
+    // =========================================================================
+    //
+    /// @return the number of locations in memory between beginnings of
+    /// successive array elements of a column), accounting for row/column major
+    /// data layout and transposed tiles.
+    int64_t column_stride() const {
+        if ((this->op() == blas::Op::NoTrans) ==
+            (this->layout() == blas::Layout::ColMajor)) {
+            return 1;
+        }
+        else {
+            return this->ld_;
+        }
+    }
 
 }; // class DenseTile
 }  // namespace hcore

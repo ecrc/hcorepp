@@ -68,22 +68,32 @@ protected:
     }
 
 public:
+    // =========================================================================
+    //
     /// @return true if the class template identifier is complex, and false
     /// otherwise.
     static constexpr bool is_complex = blas::is_complex<T>::value;
 
+    // =========================================================================
+    //
     /// @return number of rows of this tile.
     int64_t m() const
         { return (op_ == blas::Op::NoTrans ? m_ : n_); }
 
+    // =========================================================================
+    //
     /// @return number of columns of this tile.
     int64_t n() const
         { return (op_ == blas::Op::NoTrans ? n_ : m_); }
 
+    // =========================================================================
+    //
     /// @return transposition operation of this tile.
     blas::Op op() const
         { return op_; }
 
+    // =========================================================================
+    //
     /// Set transposition operation of this tile.
     /// @param[in] op
     ///     - Trans: this tile has a transposed structure.
@@ -97,6 +107,8 @@ public:
         op_ = op;
     }
 
+    // =========================================================================
+    //
     /// @param[in] logical
     ///     If true (default), @return the logical packed storage type of this
     ///     tile; see @uplo_logical, otherwise @return the physical packed
@@ -109,6 +121,8 @@ public:
             return uplo_physical();
     }
 
+    // =========================================================================
+    //
     /// Set the physical packed storage type of this tile.
     /// @param[in] uplo
     ///     - General: both triangles of this tile are stored.
@@ -123,10 +137,14 @@ public:
         uplo_ = uplo;
     }
 
+    // =========================================================================
+    //
     /// @return the physical packed storage type of this tile.
     blas::Uplo uplo_physical() const
         { return uplo_; }
 
+    // =========================================================================
+    //
     /// @return the logical packed storage type of this tile.
     blas::Uplo uplo_logical() const
     {
@@ -141,11 +159,15 @@ public:
         }
     }
 
+    // =========================================================================
+    //
     /// @return the physical ordering of the matrix elements in the data array
     /// buffer of this tile.
     blas::Layout layout() const
         { return layout_; }
 
+    // =========================================================================
+    //
     /// @return element {i, j} of this tile. The actual value is returned, not a
     /// reference. If op() == blas::Op::ConjTrans then data is conjugated; it
     /// takes the layout into account.
@@ -177,6 +199,8 @@ public:
         }
     }
 
+    // =========================================================================
+    //
     /// @return a const reference to element {i, j} of this tile.
     /// If op() == blas::Op::ConjTrans then data isn't conjugated, because a
     /// reference is returned; it takes the layout into account.
@@ -197,6 +221,8 @@ public:
         }
     }
 
+    // =========================================================================
+    //
     /// @return a reference to element {i, j} of this tile.
     /// If op() == blas::Op::ConjTrans then data isn't conjugated, because a
     /// reference is returned; it takes the layout into account.

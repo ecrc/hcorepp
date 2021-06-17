@@ -341,7 +341,23 @@ void gemm_test_execute(Params& params, bool run)
 
         // Compute the Residual ||Cref - C||_inf.        
 
-        diff(&Cref[0], ldcref, C);
+        T const* C00 = &C.at(0, 0);
+
+        if (C.column_stride() == 1) {
+            for (int64_t j = 0; j < C.n(); ++j) {
+                blas::axpy(
+                    C.m(), -1, &C00[j * C.row_stride()], C.column_stride(),
+                    &Cref[j * ldcref], 1);
+            }
+        }
+        else {
+            for (int64_t i = 0; i < C.m(); ++i) {
+                blas::axpy(
+                    C.n(), -1, &C00[i * C.column_stride()], C.row_stride(),
+                    &Cref[i * ldcref], 1);
+            }
+        }
+
 
         if (verbose) {
             pretty_print(Cref_m, Cref_n, &Cref[0], ldcref, "Cref_diff_C");
