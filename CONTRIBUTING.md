@@ -21,7 +21,12 @@ C++ coding style
 --------------------------------------------------------------------------------
 
 Changes to HCORE C/C++ code should conform to the
-[Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html).
+[Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html) and
+the following HiCMA specific style details:
+
+- Function naming convention is snake case.
+- Default indentation is 4 spaces, and wrapped parameters have 4 spaces indent.
+
 Use `clang-format` to check your C/C++ changes.
 
 To install on Ubuntu 16+, do:
