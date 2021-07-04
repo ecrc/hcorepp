@@ -26,6 +26,10 @@ the following HiCMA specific style details:
 
 - Function naming convention is snake case.
 - Default indentation is 4 spaces, and wrapped parameters have 4 spaces indent.
+- Using the preprocessor macros and their naming rules follow the same
+  instructions as the [Google C++ Style Guide Preprocessor Macros](https://google.github.io/styleguide/cppguide.html#Preprocessor_Macros)
+  and [Google C++ Style Guide Macros Names](https://google.github.io/styleguide/cppguide.html#Macro_Names),
+  except the ones that are defined in the HCORE exception class.
 
 Use `clang-format` to check your C/C++ changes.
 
