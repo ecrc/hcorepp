@@ -373,6 +373,7 @@ void gemm(
                   DenseTile<T> const& B,
     T beta,  CompressedTile<T>      & C)
 {
+    assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
     internal::check::gemm(A, B, C);

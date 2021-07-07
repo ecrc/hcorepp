@@ -83,13 +83,13 @@ void gemm_test_execute(Params& params, bool run)
             printf("skipping: only transB=NoTrans is supported.\n");
             return;
         }
+    }
+
+    if (params.routine != "gemm_ddd") {
         if (transC != blas::Op::NoTrans) {
             printf("skipping: only transC=NoTrans is supported.\n");
             return;
         }
-    }
-
-    if (params.routine != "gemm_ddd") {
         if (layout != blas::Layout::ColMajor) {
             printf("skipping: only layout=ColMajor is supported.\n");
             return;
