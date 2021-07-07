@@ -7,7 +7,7 @@
 #include "hcore/exception.hh"
 #include "hcore/tile.hh"
 #include "hcore/check.hh"
-#include "hcore/dense_tile.hh"
+#include "hcore/base_tile.hh"
 #include "hcore/compressed_tile.hh"
 
 #include "blas.hh"
@@ -36,8 +36,8 @@ namespace hcore {
 ///              alpha * A.' * A + beta * C.
 template <typename T>
 void syrk(
-    T alpha, DenseTile<T> const& A,
-    T beta,  DenseTile<T>      & C)
+    T alpha, Tile<T> const& A,
+    T beta,  Tile<T>      & C)
 {
     internal::check::syrk(A, C);
 
@@ -52,20 +52,20 @@ void syrk(
 
 template
 void syrk(
-    float alpha, DenseTile<float> const& A,
-    float beta,  DenseTile<float>      & C);
+    float alpha, Tile<float> const& A,
+    float beta,  Tile<float>      & C);
 template
 void syrk(
-    double alpha, DenseTile<double> const& A,
-    double beta,  DenseTile<double>      & C);
+    double alpha, Tile<double> const& A,
+    double beta,  Tile<double>      & C);
 template
 void syrk(
-    std::complex<float> alpha, DenseTile<std::complex<float>> const& A,
-    std::complex<float> beta,  DenseTile<std::complex<float>>      & C);
+    std::complex<float> alpha, Tile<std::complex<float>> const& A,
+    std::complex<float> beta,  Tile<std::complex<float>>      & C);
 template
 void syrk(
-    std::complex<double> alpha, DenseTile<std::complex<double>> const& A,
-    std::complex<double> beta,  DenseTile<std::complex<double>>      & C);
+    std::complex<double> alpha, Tile<std::complex<double>> const& A,
+    std::complex<double> beta,  Tile<std::complex<double>>      & C);
 
 // =============================================================================
 //
@@ -88,7 +88,7 @@ void syrk(
 ///              alpha * A.' * A + beta * C.
 template <typename T>
 void syrk(
-    T alpha,      DenseTile<T> const& A,
+    T alpha,      Tile<T> const& A,
     T beta,  CompressedTile<T>      & C)
 {
     assert(false); // todo
@@ -96,19 +96,19 @@ void syrk(
 
 template
 void syrk(
-    float alpha,     DenseTile<float> const& A,
+    float alpha,     Tile<float> const& A,
     float beta, CompressedTile<float>      & C);
 template
 void syrk(
-    double alpha,     DenseTile<double> const& A,
+    double alpha,     Tile<double> const& A,
     double beta, CompressedTile<double>      & C);
 template
 void syrk(
-    std::complex<float> alpha,     DenseTile<std::complex<float>> const& A,
+    std::complex<float> alpha,     Tile<std::complex<float>> const& A,
     std::complex<float> beta, CompressedTile<std::complex<float>>      & C);
 template
 void syrk(
-    std::complex<double> alpha,     DenseTile<std::complex<double>> const& A,
+    std::complex<double> alpha,     Tile<std::complex<double>> const& A,
     std::complex<double> beta, CompressedTile<std::complex<double>>      & C);
 
 // =============================================================================
@@ -132,7 +132,7 @@ void syrk(
 template <typename T>
 void syrk(
     T alpha, CompressedTile<T> const& A,
-    T beta,      DenseTile<T>       & C)
+    T beta,      Tile<T>       & C)
 {
     assert(A.op() == blas::Op::NoTrans); // todo
     assert(C.op() == blas::Op::NoTrans); // todo
@@ -176,19 +176,19 @@ void syrk(
 template
 void syrk(
     float alpha, CompressedTile<float> const& A,
-    float beta,       DenseTile<float>      & C);
+    float beta,       Tile<float>      & C);
 template
 void syrk(
     double alpha, CompressedTile<double> const& A,
-    double beta,       DenseTile<double>      & C);
+    double beta,       Tile<double>      & C);
 template
 void syrk(
     std::complex<float> alpha, CompressedTile<std::complex<float>> const& A,
-    std::complex<float> beta,       DenseTile<std::complex<float>>      & C);
+    std::complex<float> beta,       Tile<std::complex<float>>      & C);
 template
 void syrk(
     std::complex<double> alpha, CompressedTile<std::complex<double>> const& A,
-    std::complex<double> beta,       DenseTile<std::complex<double>>      & C);
+    std::complex<double> beta,       Tile<std::complex<double>>      & C);
 
 // =============================================================================
 //

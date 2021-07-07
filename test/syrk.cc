@@ -110,9 +110,9 @@ void syrk_test_execute(Params& params, bool run)
         std::swap(Am, An);
     }
 
-    hcore::DenseTile<T> A(Am, An, &Adata[0], lda, layout);
+    hcore::Tile<T> A(Am, An, &Adata[0], lda, layout);
     A.op(transA);
-    hcore::DenseTile<T> C(n, n, &Cdata[0], ldc, layout);
+    hcore::Tile<T> C(n, n, &Cdata[0], ldc, layout);
     C.op(transC);
     C.uplo(uplo);
 

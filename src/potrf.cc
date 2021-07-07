@@ -6,7 +6,7 @@
 #include "hcore.hh"
 #include "hcore/check.hh"
 #include "hcore/exception.hh"
-#include "hcore/dense_tile.hh"
+#include "hcore/base_tile.hh"
 #include "hcore/compressed_tile.hh"
 
 #include "lapack.hh"
@@ -27,7 +27,7 @@ namespace hcore {
 ///     On entry, the n-by-n Hermitian positive definite dense tile.
 ///     On exit, the factor U or L from the Cholesky factorization.
 template <typename T>
-void potrf(DenseTile<T>& A)
+void potrf(Tile<T>& A)
 {
     int64_t info = lapack::potrf(A.uplo_physical(), A.n(), A.data(), A.ld());
 
@@ -36,13 +36,13 @@ void potrf(DenseTile<T>& A)
 }
 
 template
-void potrf(DenseTile<float>& A);
+void potrf(Tile<float>& A);
 template
-void potrf(DenseTile<double>& A);
+void potrf(Tile<double>& A);
 template
-void potrf(DenseTile<std::complex<float>>& A);
+void potrf(Tile<std::complex<float>>& A);
 template
-void potrf(DenseTile<std::complex<double>>& A);
+void potrf(Tile<std::complex<double>>& A);
 
 // =============================================================================
 //

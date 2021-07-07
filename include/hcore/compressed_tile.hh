@@ -7,7 +7,7 @@
 #define HCORE_TILE_COMPRESSED_HH
 
 #include "hcore/exception.hh"
-#include "hcore/tile.hh"
+#include "hcore/base_tile.hh"
 
 #include "blas.hh"
 

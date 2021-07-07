@@ -6,7 +6,7 @@
 #ifndef HCORE_CHECK_HH
 #define HCORE_CHECK_HH
 
-#include "hcore/tile.hh"
+#include "hcore/base_tile.hh"
 #include "hcore/exception.hh"
 
 #include "blas.hh"

@@ -59,7 +59,7 @@ void gemm_test_execute(Params& params, bool run)
     if (!run) return;
 
     // quick returns
-    if (params.routine != "gemm_ddd") {
+    if (params.routine == "gemm_ddd") {
         if (blas::is_complex<T>::value) {
             if ((transC == blas::Op::Trans &&
                  (transA == blas::Op::ConjTrans || transB == blas::Op::ConjTrans)
@@ -140,11 +140,11 @@ void gemm_test_execute(Params& params, bool run)
         std::swap(Cm, Cn);
     }
 
-    hcore::DenseTile<T> A(Am, An, &Adata[0], lda, layout);
+    hcore::Tile<T> A(Am, An, &Adata[0], lda, layout);
     A.op(transA);
-    hcore::DenseTile<T> B(Bm, Bn, &Bdata[0], ldb, layout);
+    hcore::Tile<T> B(Bm, Bn, &Bdata[0], ldb, layout);
     B.op(transB);
-    hcore::DenseTile<T> C(Cm, Cn, &Cdata[0], ldc, layout);
+    hcore::Tile<T> C(Cm, Cn, &Cdata[0], ldc, layout);
     C.op(transC);
 
     int64_t Cref_m = m;
@@ -288,7 +288,7 @@ void gemm_test_execute(Params& params, bool run)
     params.gflops() = gflops / params.time();
 
     if (params.routine == "gemm_ddc") {
-        C = hcore::DenseTile<T>(CUV);
+        C = hcore::Tile<T>(CUV);
     }
 
     if (verbose) {

@@ -53,7 +53,7 @@ void potrf_test_execute(Params& params, bool run)
 
     dense_to_positive_definite(n, &Adata[0], lda);
 
-    hcore::DenseTile<T> A(n, n, &Adata[0], lda);
+    hcore::Tile<T> A(n, n, &Adata[0], lda);
     A.op(trans);
     A.uplo(uplo);
 

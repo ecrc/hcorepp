@@ -7,7 +7,7 @@
 #include "hcore/tile.hh"
 #include "hcore/check.hh"
 #include "hcore/exception.hh"
-#include "hcore/dense_tile.hh"
+#include "hcore/base_tile.hh"
 #include "hcore/compressed_tile.hh"
 
 #include "blas.hh"
@@ -276,9 +276,9 @@ void reduced_svd(
 ///     On exit, overwritten by the result: alpha * op(A) * op(B) + beta C.
 template <typename T>
 void gemm(
-    T alpha, DenseTile<T> const& A,
-             DenseTile<T> const& B,
-    T beta,  DenseTile<T>      & C) {
+    T alpha, Tile<T> const& A,
+             Tile<T> const& B,
+    T beta,  Tile<T>      & C) {
     internal::check::gemm(A, B, C);
 
     if (C.op() == blas::Op::NoTrans) {
@@ -334,24 +334,24 @@ void gemm(
 
 template
 void gemm(
-    float alpha, DenseTile<float> const& A,
-                 DenseTile<float> const& B,
-    float beta,  DenseTile<float>      & C);
+    float alpha, Tile<float> const& A,
+                 Tile<float> const& B,
+    float beta,  Tile<float>      & C);
 template
 void gemm(
-    double alpha, DenseTile<double> const& A,
-                  DenseTile<double> const& B,
-    double beta,  DenseTile<double>      & C);
+    double alpha, Tile<double> const& A,
+                  Tile<double> const& B,
+    double beta,  Tile<double>      & C);
 template
 void gemm(
-    std::complex<float> alpha, DenseTile<std::complex<float>> const& A,
-                               DenseTile<std::complex<float>> const& B,
-    std::complex<float> beta,  DenseTile<std::complex<float>>      & C);
+    std::complex<float> alpha, Tile<std::complex<float>> const& A,
+                               Tile<std::complex<float>> const& B,
+    std::complex<float> beta,  Tile<std::complex<float>>      & C);
 template
 void gemm(
-    std::complex<double> alpha, DenseTile<std::complex<double>> const& A,
-                                DenseTile<std::complex<double>> const& B,
-    std::complex<double> beta,  DenseTile<std::complex<double>>      & C);
+    std::complex<double> alpha, Tile<std::complex<double>> const& A,
+                                Tile<std::complex<double>> const& B,
+    std::complex<double> beta,  Tile<std::complex<double>>      & C);
 
 /// General matrix-matrix multiplication, C = alpha * op(A) * op(B) + beta * C.
 /// @tparam T
@@ -369,8 +369,8 @@ void gemm(
 ///     On exit, overwritten by the result: alpha * op(A) * op(B) + beta C.
 template <typename T>
 void gemm(
-    T alpha,      DenseTile<T> const& A,
-                  DenseTile<T> const& B,
+    T alpha,      Tile<T> const& A,
+                  Tile<T> const& B,
     T beta,  CompressedTile<T>      & C)
 {
     assert(C.op() == blas::Op::NoTrans); // todo
@@ -405,23 +405,23 @@ void gemm(
 // explicit instantaiton
 template
 void gemm(
-    float alpha,      DenseTile<float> const& A,
-                      DenseTile<float> const& B,
+    float alpha,      Tile<float> const& A,
+                      Tile<float> const& B,
     float beta,  CompressedTile<float>      & C);
 template
 void gemm(
-    double alpha,      DenseTile<double> const& A,
-                       DenseTile<double> const& B,
+    double alpha,      Tile<double> const& A,
+                       Tile<double> const& B,
     double beta,  CompressedTile<double>      & C);
 template
 void gemm(
-    std::complex<float> alpha,      DenseTile<std::complex<float>> const& A,
-                                    DenseTile<std::complex<float>> const& B,
+    std::complex<float> alpha,      Tile<std::complex<float>> const& A,
+                                    Tile<std::complex<float>> const& B,
     std::complex<float> beta,  CompressedTile<std::complex<float>>      & C);
 template
 void gemm(
-    std::complex<double> alpha,      DenseTile<std::complex<double>> const& A,
-                                     DenseTile<std::complex<double>> const& B,
+    std::complex<double> alpha,      Tile<std::complex<double>> const& A,
+                                     Tile<std::complex<double>> const& B,
     std::complex<double> beta,  CompressedTile<std::complex<double>>      & C);
 
 // =============================================================================
@@ -442,9 +442,9 @@ void gemm(
 ///     On exit, overwritten by the result: alpha * op(A) * op(B) + beta C.
 template <typename T>
 void gemm(
-    T alpha,      DenseTile<T> const& A,
+    T alpha,      Tile<T> const& A,
              CompressedTile<T> const& B,
-    T beta,       DenseTile<T>      & C)
+    T beta,       Tile<T>      & C)
 {
     assert(A.op() == blas::Op::NoTrans); // todo
     assert(B.op() == blas::Op::NoTrans); // todo
@@ -478,24 +478,24 @@ void gemm(
 // explicit instantaiton
 template
 void gemm(
-    float alpha,      DenseTile<float> const& A,
+    float alpha,      Tile<float> const& A,
                  CompressedTile<float> const& B,
-    float beta,      DenseTile<float>      & C);
+    float beta,      Tile<float>      & C);
 template
 void gemm(
-    double alpha,      DenseTile<double> const& A,
+    double alpha,      Tile<double> const& A,
                   CompressedTile<double> const& B,
-    double beta,       DenseTile<double>      & C);
+    double beta,       Tile<double>      & C);
 template
 void gemm(
-    std::complex<float> alpha,      DenseTile<std::complex<float>> const& A,
+    std::complex<float> alpha,      Tile<std::complex<float>> const& A,
                                CompressedTile<std::complex<float>> const& B,
-    std::complex<float> beta,       DenseTile<std::complex<float>>      & C);
+    std::complex<float> beta,       Tile<std::complex<float>>      & C);
 template
 void gemm(
-    std::complex<double> alpha,      DenseTile<std::complex<double>> const& A,
+    std::complex<double> alpha,      Tile<std::complex<double>> const& A,
                                 CompressedTile<std::complex<double>> const& B,
-    std::complex<double> beta,       DenseTile<std::complex<double>>      & C);
+    std::complex<double> beta,       Tile<std::complex<double>>      & C);
 
 // =============================================================================
 //
@@ -523,7 +523,7 @@ void gemm(
 ///     Truncation to fixed rank. fixed_rk >= 0. Default 0 (false).
 template <typename T>
 void gemm(
-    T alpha,      DenseTile<T> const& A,
+    T alpha,      Tile<T> const& A,
              CompressedTile<T> const& B,
     T beta,  CompressedTile<T>      & C,
     bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk)
@@ -555,25 +555,25 @@ void gemm(
 // explicit instantaiton
 template
 void gemm(
-    float alpha,      DenseTile<float> const& A,
+    float alpha,      Tile<float> const& A,
                  CompressedTile<float> const& B,
     float beta,  CompressedTile<float>      & C,
     bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
 void gemm(
-    double alpha,      DenseTile<double> const& A,
+    double alpha,      Tile<double> const& A,
                   CompressedTile<double> const& B,
     double beta,  CompressedTile<double>      & C,
     bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
 void gemm(
-    std::complex<float> alpha,      DenseTile<std::complex<float>> const& A,
+    std::complex<float> alpha,      Tile<std::complex<float>> const& A,
                                CompressedTile<std::complex<float>> const& B,
     std::complex<float> beta,  CompressedTile<std::complex<float>>      & C,
     bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
 void gemm(
-    std::complex<double> alpha,      DenseTile<std::complex<double>> const& A,
+    std::complex<double> alpha,      Tile<std::complex<double>> const& A,
                                 CompressedTile<std::complex<double>> const& B,
     std::complex<double> beta,  CompressedTile<std::complex<double>>      & C,
     bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
@@ -597,8 +597,8 @@ void gemm(
 template <typename T>
 void gemm(
     T alpha, CompressedTile<T> const& A,
-                  DenseTile<T> const& B,
-    T beta,       DenseTile<T>      & C)
+                  Tile<T> const& B,
+    T beta,       Tile<T>      & C)
 {
     assert(A.op() == blas::Op::NoTrans); // todo
     assert(B.op() == blas::Op::NoTrans); // todo
@@ -633,23 +633,23 @@ void gemm(
 template
 void gemm(
     float alpha, CompressedTile<float> const& A,
-                      DenseTile<float> const& B,
-    float beta,       DenseTile<float>      & C);
+                      Tile<float> const& B,
+    float beta,       Tile<float>      & C);
 template
 void gemm(
     double alpha, CompressedTile<double> const& A,
-                       DenseTile<double> const& B,
-    double beta,       DenseTile<double>      & C);
+                       Tile<double> const& B,
+    double beta,       Tile<double>      & C);
 template
 void gemm(
     std::complex<float> alpha, CompressedTile<std::complex<float>> const& A,
-                                    DenseTile<std::complex<float>> const& B,
-    std::complex<float> beta,       DenseTile<std::complex<float>>      & C);
+                                    Tile<std::complex<float>> const& B,
+    std::complex<float> beta,       Tile<std::complex<float>>      & C);
 template
 void gemm(
     std::complex<double> alpha, CompressedTile<std::complex<double>> const& A,
-                                     DenseTile<std::complex<double>> const& B,
-    std::complex<double> beta,       DenseTile<std::complex<double>>      & C);
+                                     Tile<std::complex<double>> const& B,
+    std::complex<double> beta,       Tile<std::complex<double>>      & C);
 
 // =============================================================================
 //
@@ -678,7 +678,7 @@ void gemm(
 template <typename T>
 void gemm(
     T alpha, CompressedTile<T> const& A,
-                  DenseTile<T> const& B,
+                  Tile<T> const& B,
     T beta,  CompressedTile<T>      & C,
     bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk)
 {
@@ -710,25 +710,25 @@ void gemm(
 template
 void gemm(
     float alpha, CompressedTile<float> const& A,
-                      DenseTile<float> const& B,
+                      Tile<float> const& B,
     float beta,  CompressedTile<float>      & C,
     bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
 void gemm(
     double alpha, CompressedTile<double> const& A,
-                       DenseTile<double> const& B,
+                       Tile<double> const& B,
     double beta,  CompressedTile<double>      & C,
     bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
 void gemm(
     std::complex<float> alpha, CompressedTile<std::complex<float>> const& A,
-                                    DenseTile<std::complex<float>> const& B,
+                                    Tile<std::complex<float>> const& B,
     std::complex<float> beta,  CompressedTile<std::complex<float>>      & C,
     bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 template
 void gemm(
     std::complex<double> alpha, CompressedTile<std::complex<double>> const& A,
-                                     DenseTile<std::complex<double>> const& B,
+                                     Tile<std::complex<double>> const& B,
     std::complex<double> beta,  CompressedTile<std::complex<double>>      & C,
     bool use_trmm, bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
 
@@ -752,7 +752,7 @@ template <typename T>
 void gemm(
     T alpha, CompressedTile<T> const& A,
              CompressedTile<T> const& B,
-    T beta,       DenseTile<T>      & C)
+    T beta,       Tile<T>      & C)
 {
     assert(A.op() == blas::Op::NoTrans); // todo
     assert(B.op() == blas::Op::NoTrans); // todo
@@ -819,22 +819,22 @@ template
 void gemm(
     float alpha, CompressedTile<float> const& A,
                  CompressedTile<float> const& B,
-    float beta,       DenseTile<float>      & C);
+    float beta,       Tile<float>      & C);
 template
 void gemm(
     double alpha, CompressedTile<double> const& A,
                   CompressedTile<double> const& B,
-    double beta,       DenseTile<double>      & C);
+    double beta,       Tile<double>      & C);
 template
 void gemm(
     std::complex<float> alpha, CompressedTile<std::complex<float>> const& A,
                                CompressedTile<std::complex<float>> const& B,
-    std::complex<float> beta,       DenseTile<std::complex<float>>      & C);
+    std::complex<float> beta,       Tile<std::complex<float>>      & C);
 template
 void gemm(
     std::complex<double> alpha, CompressedTile<std::complex<double>> const& A,
                                 CompressedTile<std::complex<double>> const& B,
-    std::complex<double> beta,       DenseTile<std::complex<double>>      & C);
+    std::complex<double> beta,       Tile<std::complex<double>>      & C);
 
 // =============================================================================
 //

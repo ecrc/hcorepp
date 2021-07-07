@@ -5,7 +5,7 @@
 #ifndef HCORE_HH
 #define HCORE_HH
 
-#include "hcore/dense_tile.hh"
+#include "hcore/tile.hh"
 #include "hcore/compressed_tile.hh"
 
 #include "blas.hh"
@@ -19,15 +19,15 @@ const char* id();
 
 template <typename T>
 void gemm(
-    T alpha, DenseTile<T> const& A,
-             DenseTile<T> const& B,
-    T beta,  DenseTile<T>      & C);
+    T alpha, Tile<T> const& A,
+             Tile<T> const& B,
+    T beta,  Tile<T>      & C);
 // converts rvalue references to lvalue references
 template <typename T>
 void gemm(
-    T alpha, DenseTile<T> const&& A,
-             DenseTile<T> const&& B,
-    T beta,  DenseTile<T>      && C)
+    T alpha, Tile<T> const&& A,
+             Tile<T> const&& B,
+    T beta,  Tile<T>      && C)
 {
     // forward
     hcore::gemm(alpha, A, B, beta, C);
@@ -35,14 +35,14 @@ void gemm(
 
 template <typename T>
 void gemm(
-    T alpha,      DenseTile<T> const& A,
-                  DenseTile<T> const& B,
+    T alpha,      Tile<T> const& A,
+                  Tile<T> const& B,
     T beta,  CompressedTile<T>      & C);
 // converts rvalue references to lvalue references
 template <typename T>
 void gemm(
-    T alpha,      DenseTile<T> const&& A,
-                  DenseTile<T> const&& B,
+    T alpha,      Tile<T> const&& A,
+                  Tile<T> const&& B,
     T beta,  CompressedTile<T>      && C)
 {
     // forward
@@ -51,15 +51,15 @@ void gemm(
 
 template <typename T>
 void gemm(
-    T alpha,      DenseTile<T> const& A,
+    T alpha,      Tile<T> const& A,
              CompressedTile<T> const& B,
-    T beta,       DenseTile<T>      & C);
+    T beta,       Tile<T>      & C);
 // converts rvalue references to lvalue references
 template <typename T>
 void gemm(
-    T alpha,      DenseTile<T> const&& A,
+    T alpha,      Tile<T> const&& A,
              CompressedTile<T> const&& B,
-    T beta,       DenseTile<T>      && C)
+    T beta,       Tile<T>      && C)
 {
     // forward
     hcore::gemm(alpha, A, B, beta, C);
@@ -67,7 +67,7 @@ void gemm(
 
 template <typename T>
 void gemm(
-    T alpha,      DenseTile<T> const& A,
+    T alpha,      Tile<T> const& A,
              CompressedTile<T> const& B,
     T beta,  CompressedTile<T>      & C,
     bool use_trmm=false, bool use_ungqr=true, bool truncation_with_tol=false,
@@ -75,7 +75,7 @@ void gemm(
 // converts rvalue references to lvalue references
 template <typename T>
 void gemm(
-    T alpha,      DenseTile<T> const&& A,
+    T alpha,      Tile<T> const&& A,
              CompressedTile<T> const&& B,
     T beta,  CompressedTile<T>      && C,
     bool use_trmm=false, bool use_ungqr=true, bool truncation_with_tol=false,
@@ -89,14 +89,14 @@ void gemm(
 template <typename T>
 void gemm(
     T alpha, CompressedTile<T> const& A,
-                  DenseTile<T> const& B,
-    T beta,       DenseTile<T>      & C);
+                  Tile<T> const& B,
+    T beta,       Tile<T>      & C);
 // converts rvalue references to lvalue references
 template <typename T>
 void gemm(
     T alpha, CompressedTile<T> const&& A,
-                  DenseTile<T> const&& B,
-    T beta,       DenseTile<T>      && C)
+                  Tile<T> const&& B,
+    T beta,       Tile<T>      && C)
 {
     // forward
     hcore::gemm(alpha, A, B, beta, C);
@@ -105,7 +105,7 @@ void gemm(
 template <typename T>
 void gemm(
     T alpha, CompressedTile<T> const& A,
-                  DenseTile<T> const& B,
+                  Tile<T> const& B,
     T beta,  CompressedTile<T>      & C,
     bool use_trmm=false, bool use_ungqr=true, bool truncation_with_tol=false,
     int64_t rk=0);
@@ -113,7 +113,7 @@ void gemm(
 template <typename T>
 void gemm(
     T alpha, CompressedTile<T> const&& A,
-                  DenseTile<T> const&& B,
+                  Tile<T> const&& B,
     T beta,  CompressedTile<T>      && C,
     bool use_trmm=false, bool use_ungqr=true, bool truncation_with_tol=false,
     int64_t rk=0)
@@ -127,13 +127,13 @@ template <typename T>
 void gemm(
     T alpha, CompressedTile<T> const& A,
              CompressedTile<T> const& B,
-    T beta,       DenseTile<T>      & C);
+    T beta,       Tile<T>      & C);
 // converts rvalue references to lvalue references
 template <typename T>
 void gemm(
     T alpha, CompressedTile<T> const&& A,
              CompressedTile<T> const&& B,
-    T beta,       DenseTile<T>      && C)
+    T beta,       Tile<T>      && C)
 {
     // forward
     hcore::gemm(alpha, A, B, beta, C);
@@ -161,13 +161,13 @@ void gemm(
 
 template <typename T>
 void syrk(
-    T alpha, DenseTile<T> const& A,
-    T beta,  DenseTile<T>      & C);
+    T alpha, Tile<T> const& A,
+    T beta,  Tile<T>      & C);
 // converts rvalue references to lvalue references
 template <typename T>
 void syrk(
-    T alpha, DenseTile<T> const&& A,
-    T beta,  DenseTile<T>      && C)
+    T alpha, Tile<T> const&& A,
+    T beta,  Tile<T>      && C)
 {
     // forward
     hcore::syrk(alpha, A, beta, C);
@@ -176,12 +176,12 @@ void syrk(
 template <typename T>
 void syrk(
     T alpha, CompressedTile<T> const& A,
-    T beta,      DenseTile<T>       & C);
+    T beta,      Tile<T>       & C);
 // converts rvalue references to lvalue references
 template <typename T>
 void syrk(
     T alpha, CompressedTile<T> const&& A,
-    T beta,      DenseTile<T>       && C)
+    T beta,      Tile<T>       && C)
 {
     // forward
     hcore::syrk(alpha, A, beta, C);
@@ -189,12 +189,12 @@ void syrk(
 
 template <typename T>
 void syrk(
-    T alpha,      DenseTile<T> const& A,
+    T alpha,      Tile<T> const& A,
     T beta,  CompressedTile<T>      & C);
 // converts rvalue references to lvalue references
 template <typename T>
 void syrk(
-    T alpha,      DenseTile<T> const&& A,
+    T alpha,      Tile<T> const&& A,
     T beta,  CompressedTile<T>      && C)
 {
     // forward
@@ -218,14 +218,14 @@ void syrk(
 template <typename T>
 void trsm(
     blas::Side side, blas::Diag diag,
-    T alpha, DenseTile<T> const& A,
-             DenseTile<T>      & B);
+    T alpha, Tile<T> const& A,
+             Tile<T>      & B);
 // converts rvalue references to lvalue references
 template <typename T>
 void trsm(
     blas::Side side, blas::Diag diag,
-    T alpha, DenseTile<T> const&& A,
-             DenseTile<T>      && B)
+    T alpha, Tile<T> const&& A,
+             Tile<T>      && B)
 {
     // forward
     hcore::trsm(side, diag, alpha, A, B);
@@ -235,13 +235,13 @@ template <typename T>
 void trsm(
     blas::Side side, blas::Diag diag,
     T alpha, CompressedTile<T> const& A,
-                  DenseTile<T>      & B);
+                  Tile<T>      & B);
 // converts rvalue references to lvalue references
 template <typename T>
 void trsm(
     blas::Side side, blas::Diag diag,
     T alpha, CompressedTile<T> const&& A,
-                  DenseTile<T>      && B)
+                  Tile<T>      && B)
 {
     // forward
     hcore::trsm(side, diag, alpha, A, B);
@@ -250,13 +250,13 @@ void trsm(
 template <typename T>
 void trsm(
     blas::Side side, blas::Diag diag,
-    T alpha,      DenseTile<T> const& A,
+    T alpha,      Tile<T> const& A,
              CompressedTile<T>      & B);
 // converts rvalue references to lvalue references
 template <typename T>
 void trsm(
     blas::Side side, blas::Diag diag,
-    T alpha,      DenseTile<T> const&& A,
+    T alpha,      Tile<T> const&& A,
              CompressedTile<T>      && B)
 {
     // forward
@@ -280,10 +280,10 @@ void trsm(
 }
 
 template <typename T>
-void potrf(DenseTile<T>& A);
+void potrf(Tile<T>& A);
 // converts rvalue references to lvalue references
 template <typename T>
-void potrf(DenseTile<T>&& A)
+void potrf(Tile<T>&& A)
 {
     // forward
     hcore::potrf(A);

@@ -6,7 +6,7 @@
 #ifndef HCORE_TEST_TILE_UTILS_HH
 #define HCORE_TEST_TILE_UTILS_HH
 
-#include "hcore/dense_tile.hh"
+#include "hcore/tile.hh"
 #include "hcore/compressed_tile.hh"
 
 #include "blas.hh"
@@ -16,7 +16,7 @@
 #include <cstdint>
 
 template <typename T>
-void diff(T* Aref, int64_t lda_ref, hcore::DenseTile<T> const& A)
+void diff(T* Aref, int64_t lda_ref, hcore::Tile<T> const& A)
 {
     for (int64_t j = 0; j < A.n(); ++j) {
         for (int64_t i = 0; i < A.m(); ++i) {
@@ -29,7 +29,7 @@ void diff(T* Aref, int64_t lda_ref, hcore::DenseTile<T> const& A)
 }
 
 template <typename T>
-void copy(T* Aref, int64_t lda_ref, hcore::DenseTile<T> const& A)
+void copy(T* Aref, int64_t lda_ref, hcore::Tile<T> const& A)
 {
     for (int64_t j = 0; j < A.n(); ++j) {
         for (int64_t i = 0; i < A.m(); ++i) {
@@ -86,7 +86,7 @@ void pretty_print(
 
 template <typename T>
 void pretty_print(
-    hcore::DenseTile<T> const& A,
+    hcore::Tile<T> const& A,
     char const* label, int width=12, int precision=9)
 {
     // forward

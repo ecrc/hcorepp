@@ -95,10 +95,10 @@ void trsm_test_execute(Params& params, bool run)
     real_t Anorm = lapack::lantr(norm, uplo, diag, An, An, &Adata[0], lda);
     real_t Bnorm = lapack::lange(norm, Bm, Bn, &Bdata[0], ldb);
 
-    hcore::DenseTile<T> A(An, An, &Adata[0], lda);
+    hcore::Tile<T> A(An, An, &Adata[0], lda);
     A.op(transA);
     A.uplo(uplo);
-    hcore::DenseTile<T> B(Bm, Bn, &Bdata[0], ldb);
+    hcore::Tile<T> B(Bm, Bn, &Bdata[0], ldb);
     B.op(transB);
 
     int64_t ldbref = testsweeper::roundup(m, align);

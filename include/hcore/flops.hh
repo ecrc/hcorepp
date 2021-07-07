@@ -7,7 +7,7 @@
 #define HCORE_FLOPS_HH
 
 #include "hcore/check.hh"
-#include "hcore/dense_tile.hh"
+#include "hcore/tile.hh"
 #include "hcore/compressed_tile.hh"
 
 #include "blas/flops.hh"
@@ -67,14 +67,14 @@ class Gflop
 {
 public:
     static double gemm(
-        DenseTile<T> A, DenseTile<T> B, DenseTile<T> C)
+        Tile<T> A, Tile<T> B, Tile<T> C)
     {
         internal::check::gemm(A, B, C);
 
         return blas::Gflop<T>::gemm(C.m(), C.n(), A.n());
     }
     static double gemm(
-        DenseTile<T> A, DenseTile<T> B, CompressedTile<T> C,
+        Tile<T> A, Tile<T> B, CompressedTile<T> C,
         int64_t Crk_org)
     {
         internal::check::gemm(A, B, C);
@@ -83,7 +83,7 @@ public:
                blas::Gflop<T>::gemm(C.m(), C.n(), Crk_org);
     }
     static double gemm(
-        DenseTile<T> A, CompressedTile<T> B, DenseTile<T> C)
+        Tile<T> A, CompressedTile<T> B, Tile<T> C)
     {
         internal::check::gemm(A, B, C);
 
@@ -91,7 +91,7 @@ public:
                blas::Gflop<T>::gemm(C.m(), C.n(), B.rk());
     }
     static double gemm(
-        DenseTile<T> A, CompressedTile<T> B, CompressedTile<T> C,
+        Tile<T> A, CompressedTile<T> B, CompressedTile<T> C,
         int64_t Crk_org)
     {
         internal::check::gemm(A, B, C);
@@ -101,7 +101,7 @@ public:
 
     }
     static double gemm(
-        CompressedTile<T> A, DenseTile<T> B, DenseTile<T> C)
+        CompressedTile<T> A, Tile<T> B, Tile<T> C)
     {
         internal::check::gemm(A, B, C);
 
@@ -110,7 +110,7 @@ public:
 
     }
     static double gemm(
-        CompressedTile<T> A, DenseTile<T> B, CompressedTile<T> C,
+        CompressedTile<T> A, Tile<T> B, CompressedTile<T> C,
         int64_t Crk_org)
     {
         internal::check::gemm(A, B, C);
@@ -119,7 +119,7 @@ public:
                internal::Gflop<T>::rsvd(A.rk(), Crk_org, C);
     }
     static double gemm(
-        CompressedTile<T> A, CompressedTile<T> B, DenseTile<T> C)
+        CompressedTile<T> A, CompressedTile<T> B, Tile<T> C)
     {
         internal::check::gemm(A, B, C);
 

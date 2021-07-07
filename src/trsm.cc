@@ -7,7 +7,7 @@
 #include "hcore/exception.hh"
 #include "hcore/tile.hh"
 #include "hcore/check.hh"
-#include "hcore/dense_tile.hh"
+#include "hcore/base_tile.hh"
 #include "hcore/compressed_tile.hh"
 
 #include "blas.hh"
@@ -41,8 +41,8 @@ namespace hcore {
 template <typename T>
 void trsm(
     blas::Side side, blas::Diag diag,
-    T alpha, DenseTile<T> const& A,
-             DenseTile<T>      & B)
+    T alpha, Tile<T> const& A,
+             Tile<T>      & B)
 {
     assert(B.layout() == blas::Layout::ColMajor); // todo
 
@@ -90,23 +90,23 @@ void trsm(
 template
 void trsm(
     blas::Side side, blas::Diag diag,
-    float alpha, DenseTile<float> const& A,
-                 DenseTile<float>      & B);
+    float alpha, Tile<float> const& A,
+                 Tile<float>      & B);
 template
 void trsm(
     blas::Side side, blas::Diag diag,
-    double alpha, DenseTile<double> const& A,
-                  DenseTile<double>      & B);
+    double alpha, Tile<double> const& A,
+                  Tile<double>      & B);
 template
 void trsm(
     blas::Side side, blas::Diag diag,
-    std::complex<float> alpha, DenseTile<std::complex<float>> const& A,
-                               DenseTile<std::complex<float>>      & B);
+    std::complex<float> alpha, Tile<std::complex<float>> const& A,
+                               Tile<std::complex<float>>      & B);
 template
 void trsm(
     blas::Side side, blas::Diag diag,
-    std::complex<double> alpha, DenseTile<std::complex<double>> const& A,
-                                DenseTile<std::complex<double>>      & B);
+    std::complex<double> alpha, Tile<std::complex<double>> const& A,
+                                Tile<std::complex<double>>      & B);
 
 // =============================================================================
 //
@@ -131,7 +131,7 @@ void trsm(
 template <typename T>
 void trsm(
     blas::Side side, blas::Diag diag,
-    T alpha,      DenseTile<T> const& A,
+    T alpha,      Tile<T> const& A,
              CompressedTile<T>      & B)
 {
     assert(false); // todo
@@ -140,22 +140,22 @@ void trsm(
 template
 void trsm(
     blas::Side side, blas::Diag diag,
-    float alpha,      DenseTile<float> const& A,
+    float alpha,      Tile<float> const& A,
                  CompressedTile<float>      & B);
 template
 void trsm(
     blas::Side side, blas::Diag diag,
-    double alpha,      DenseTile<double> const& A,
+    double alpha,      Tile<double> const& A,
                   CompressedTile<double>      & B);
 template
 void trsm(
     blas::Side side, blas::Diag diag,
-    std::complex<float> alpha,      DenseTile<std::complex<float>> const& A,
+    std::complex<float> alpha,      Tile<std::complex<float>> const& A,
                                CompressedTile<std::complex<float>>      & B);
 template
 void trsm(
     blas::Side side, blas::Diag diag,
-    std::complex<double> alpha,      DenseTile<std::complex<double>> const& A,
+    std::complex<double> alpha,      Tile<std::complex<double>> const& A,
                                 CompressedTile<std::complex<double>>      & B);
 
 // =============================================================================
@@ -184,7 +184,7 @@ template <typename T>
 void trsm(
     blas::Side side, blas::Diag diag,
     T alpha, CompressedTile<T> const& A,
-                  DenseTile<T>      & B)
+                  Tile<T>      & B)
 {
     assert(false); // todo
 }
@@ -193,22 +193,22 @@ template
 void trsm(
     blas::Side side, blas::Diag diag,
     float alpha, CompressedTile<float> const& A,
-                      DenseTile<float>      & B);
+                      Tile<float>      & B);
 template
 void trsm(
     blas::Side side, blas::Diag diag,
     double alpha, CompressedTile<double> const& A,
-                       DenseTile<double>      & B);
+                       Tile<double>      & B);
 template
 void trsm(
     blas::Side side, blas::Diag diag,
     std::complex<float> alpha, CompressedTile<std::complex<float>> const& A,
-                                    DenseTile<std::complex<float>>      & B);
+                                    Tile<std::complex<float>>      & B);
 template
 void trsm(
     blas::Side side, blas::Diag diag,
     std::complex<double> alpha, CompressedTile<std::complex<double>> const& A,
-                                     DenseTile<std::complex<double>>      & B);
+                                     Tile<std::complex<double>>      & B);
 
 // =============================================================================
 //
