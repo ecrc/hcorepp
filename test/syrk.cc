@@ -22,8 +22,7 @@ void syrk_test_execute(Params& params, bool run)
 {
     using real_t = blas::real_type<T>;
 
-    // todo
-    // blas::Layout layout = params.layout();
+    blas::Layout layout = params.layout();
 
     blas::Uplo uplo = params.uplo();
     blas::Op transA = params.transA();
@@ -75,15 +74,18 @@ void syrk_test_execute(Params& params, bool run)
             printf("skipping: only transC=NoTrans is supported.\n");
             return;
         }
+        if (layout != blas::Layout::ColMajor) {
+            printf("skipping: only layout=ColMajor is supported.\n");
+            return;
+        }
     }
 
     int64_t Am = transA == blas::Op::NoTrans ? n : k;
     int64_t An = transA == blas::Op::NoTrans ? k : n;
 
-    // todo
-    // if (layout == blas::Layout::RowMajor) {
-    //     std::swap(Am, An);
-    // }
+    if (layout == blas::Layout::RowMajor) {
+        std::swap(Am, An);
+    }
 
     int64_t lda = testsweeper::roundup(Am, align);
     int64_t ldc = testsweeper::roundup(n,  align);
@@ -104,9 +106,13 @@ void syrk_test_execute(Params& params, bool run)
     real_t Anorm = lapack::lange(norm, Am, An, &Adata[0], lda);
     real_t Cnorm = lapack::lansy(norm, uplo, n, &Cdata[0], ldc);
 
-    hcore::DenseTile<T> A(Am, An, &Adata[0], lda);
+    if (layout == blas::Layout::RowMajor) {
+        std::swap(Am, An);
+    }
+
+    hcore::DenseTile<T> A(Am, An, &Adata[0], lda, layout);
     A.op(transA);
-    hcore::DenseTile<T> C(n, n, &Cdata[0], ldc);
+    hcore::DenseTile<T> C(n, n, &Cdata[0], ldc, layout);
     C.op(transC);
     C.uplo(uplo);
 
@@ -207,7 +213,7 @@ void syrk_test_execute(Params& params, bool run)
         double ref_time_start = testsweeper::get_wtime();
         {
             blas::syrk(
-                blas::Layout::ColMajor, uplo_, transA,
+                layout, uplo_, transA,
                 n, k,
                 alpha, &Adata[0], lda,
                 beta,  &Cref[0],  ldc);

@@ -18,8 +18,6 @@
 
 namespace hcore {
 
-// =============================================================================
-//
 /// Symmetric rank-k update:
 /// C = alpha * A * A.' + beta * C, or
 /// C = alpha * A.' * A + beta * C.
@@ -28,11 +26,11 @@ namespace hcore {
 /// @param[in] alpha
 ///     The scalar alpha.
 /// @param[in] A
-///     The n-by-k dense tile.
+///     The n-by-k matrix.
 /// @param[in] beta
 ///     The scalar beta.
 /// @param[in,out] C
-///     On entry, the n-by-n symmetric dense tile.
+///     On entry, the n-by-n symmetric matrix.
 ///     On exit, overwritten by the result:
 ///              alpha * A * A.' + beta * C, or
 ///              alpha * A.' * A + beta * C.
@@ -41,18 +39,15 @@ void syrk(
     T alpha, DenseTile<T> const& A,
     T beta,  DenseTile<T>      & C)
 {
-    assert(C.layout() == blas::Layout::ColMajor); // todo
-
     internal::check::syrk(A, C);
 
     hcore_error_if(C.is_complex &&
-            (A.op() == blas::Op::ConjTrans || C.op() == blas::Op::ConjTrans));
+                   (A.op() == blas::Op::ConjTrans ||
+                    C.op() == blas::Op::ConjTrans));
 
-    blas::syrk(
-        blas::Layout::ColMajor, C.uplo_physical(), A.op(),
-        C.n(), A.n(),
-        alpha, A.data(), A.ld(),
-        beta,  C.data(), C.ld());
+    blas::syrk(C.layout(), C.uplo_physical(), A.op(),
+               C.n(), A.n(), alpha, A.data(), A.ld(),
+                             beta,  C.data(), C.ld());
 }
 
 template
