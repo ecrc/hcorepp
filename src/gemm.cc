@@ -260,41 +260,37 @@ void reduced_svd(
 
 } // namespace internal
 
-// =============================================================================
-//
 /// General matrix-matrix multiplication, C = alpha * op(A) * op(B) + beta * C.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] alpha
 ///     The scalar alpha.
 /// @param[in] A
-///     The m-by-k dense tile.
+///     The m-by-k matrix.
 /// @param[in] B
-///     The k-by-n dense tile.
+///     The k-by-n matrix.
 /// @param[in] beta
 ///     The scalar beta.
 /// @param[in,out] C
-///     On entry, the m-by-n dense tile.
+///     On entry, the m-by-n matrix.
 ///     On exit, overwritten by the result: alpha * op(A) * op(B) + beta C.
 template <typename T>
 void gemm(
     T alpha, DenseTile<T> const& A,
              DenseTile<T> const& B,
-    T beta,  DenseTile<T>      & C)
-{
+    T beta,  DenseTile<T>      & C) {
     internal::check::gemm(A, B, C);
 
     if (C.op() == blas::Op::NoTrans) {
-        blas::gemm(
-            C.layout(), A.op(), B.op(),
-            C.m(), C.n(), A.n(),
-            alpha, A.data(), A.ld(),
-                   B.data(), B.ld(),
-            beta,  C.data(), C.ld());
+        blas::gemm(C.layout(), A.op(), B.op(),
+                   C.m(), C.n(), A.n(),
+                   alpha, A.data(), A.ld(),
+                          B.data(), B.ld(),
+                   beta,  C.data(), C.ld());
     }
     else {
-        hcore_error_if(
-            C.is_complex && A.op() != blas::Op::NoTrans && A.op() != C.op());
+        hcore_error_if(C.is_complex &&
+                       A.op() != blas::Op::NoTrans && A.op() != C.op());
 
         blas::Op opA;
         if (A.op() == blas::Op::NoTrans) {
@@ -307,8 +303,8 @@ void gemm(
             throw hcore::Error();
         }
 
-        hcore_error_if(
-            C.is_complex && B.op() != blas::Op::NoTrans && B.op() != C.op());
+        hcore_error_if(C.is_complex &&
+                       B.op() != blas::Op::NoTrans && B.op() != C.op());
 
         blas::Op opB;
         if (B.op() == blas::Op::NoTrans) {
@@ -328,16 +324,14 @@ void gemm(
             beta  = conj(beta);
         }
 
-        blas::gemm(
-            C.layout(), opB, opA,
-            C.n(), C.m(), A.n(),
-            alpha, B.data(), B.ld(),
-                   A.data(), A.ld(),
-            beta,  C.data(), C.ld());
+        blas::gemm(C.layout(), opB, opA,
+                   C.n(), C.m(), A.n(),
+                   alpha, B.data(), B.ld(),
+                          A.data(), A.ld(),
+                   beta,  C.data(), C.ld());
     }
 }
 
-// explicit instantaiton
 template
 void gemm(
     float alpha, DenseTile<float> const& A,
@@ -359,21 +353,19 @@ void gemm(
                                 DenseTile<std::complex<double>> const& B,
     std::complex<double> beta,  DenseTile<std::complex<double>>      & C);
 
-// =============================================================================
-//
 /// General matrix-matrix multiplication, C = alpha * op(A) * op(B) + beta * C.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] alpha
 ///     The scalar alpha.
 /// @param[in] A
-///     The m-by-k dense tile.
+///     The m-by-k matrix.
 /// @param[in] B
-///     The k-by-n dense tile.
+///     The k-by-n matrix.
 /// @param[in] beta
 ///     The scalar beta.
 /// @param[in,out] C
-///     On entry, the m-by-n compressed tile (U: m-by-Crk; V: Crk-by-n).
+///     On entry, the m-by-n compressed matrix (A=UV), U: m-by-Crk; V: Crk-by-n.
 ///     On exit, overwritten by the result: alpha * op(A) * op(B) + beta C.
 template <typename T>
 void gemm(
@@ -381,9 +373,6 @@ void gemm(
                   DenseTile<T> const& B,
     T beta,  CompressedTile<T>      & C)
 {
-    assert(A.op() == blas::Op::NoTrans); // todo
-    assert(B.op() == blas::Op::NoTrans); // todo
-    assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
     internal::check::gemm(A, B, C);
@@ -394,20 +383,19 @@ void gemm(
     T* W = new T[C.ldu() * C.n()];
 
     // W = alpha * A * B
-    blas::gemm(
-        blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
-        C.m(), C.n(), A.n(),
-        alpha, A.data(), A.ld(),
-               B.data(), B.ld(),
-        zero,  &W[0],    C.ldu());
+    blas::gemm(C.layout(), A.op(), B.op(),
+               A.m(), B.n(), A.n(),
+               alpha, A.data(), A.ld(),
+                      B.data(), B.ld(),
+               zero,  &W[0],    C.ldu());
 
-    // W += beta * CU * VC
-    blas::gemm(
-        blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
-        C.m(), C.n(), C.rk(),
-        beta, C.Udata(), C.ldu(),
-              C.Vdata(), C.ldv(),
-        one,  &W[0],     C.ldu());
+    // W += beta * CU * CV
+    blas::gemm(C.layout(), blas::Op::NoTrans, blas::Op::NoTrans,
+               C.m(), C.n(), C.rk(),
+               beta, C.Udata(), C.ldu(),
+                     C.Vdata(), C.ldv(),
+               one,  &W[0],     C.ldu());
+
 
     C.UVdata(W);
     C.to_full_rk();

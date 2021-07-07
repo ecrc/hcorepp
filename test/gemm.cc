@@ -59,20 +59,22 @@ void gemm_test_execute(Params& params, bool run)
     if (!run) return;
 
     // quick returns
-    if (blas::is_complex<T>::value) {
-        if ((transC == blas::Op::Trans &&
-             (transA == blas::Op::ConjTrans || transB == blas::Op::ConjTrans)
-            ) ||
-            (transC == blas::Op::ConjTrans &&
-             (transA == blas::Op::Trans || transB == blas::Op::Trans)
-            )) {
-            printf("skipping: wrong combinations of transA/transB/transC.\n");
-            return;
+    if (params.routine != "gemm_ddd") {
+        if (blas::is_complex<T>::value) {
+            if ((transC == blas::Op::Trans &&
+                 (transA == blas::Op::ConjTrans || transB == blas::Op::ConjTrans)
+                ) ||
+                (transC == blas::Op::ConjTrans &&
+                 (transA == blas::Op::Trans || transB == blas::Op::Trans)
+                )) {
+                printf("skipping: wrong combinations of transA/transB/transC.\n");
+                return;
+            }
         }
     }
 
     // todo: relax these assumptions
-    if (params.routine != "gemm_ddd") {
+    if (params.routine != "gemm_ddd" && params.routine != "gemm_ddc") {
         if (transA != blas::Op::NoTrans) {
             printf("skipping: only transA=NoTrans is supported.\n");
             return;
@@ -85,6 +87,9 @@ void gemm_test_execute(Params& params, bool run)
             printf("skipping: only transC=NoTrans is supported.\n");
             return;
         }
+    }
+
+    if (params.routine != "gemm_ddd") {
         if (layout != blas::Layout::ColMajor) {
             printf("skipping: only layout=ColMajor is supported.\n");
             return;
@@ -177,7 +182,7 @@ void gemm_test_execute(Params& params, bool run)
         params.routine == "gemm_ccc") {
         compress_dense_matrix(Am, An, Adata, lda, AUVdata, Ark, accuracy);
 
-        AUV = hcore::CompressedTile<T>(Am, An, &AUVdata[0], lda, Ark, accuracy);
+        AUV = hcore::CompressedTile<T>(Am, An, &AUVdata[0], lda, Ark, accuracy, layout);
         AUV.op(transA);
 
         if (verbose) {
@@ -190,7 +195,7 @@ void gemm_test_execute(Params& params, bool run)
         params.routine == "gemm_ccc") {
         compress_dense_matrix(Bm, Bn, Bdata, ldb, BUVdata, Brk, accuracy);
 
-        BUV = hcore::CompressedTile<T>(Bm, Bn, &BUVdata[0], ldb, Brk, accuracy);
+        BUV = hcore::CompressedTile<T>(Bm, Bn, &BUVdata[0], ldb, Brk, accuracy, layout);
         BUV.op(transB);
 
         if (verbose) {
@@ -203,7 +208,7 @@ void gemm_test_execute(Params& params, bool run)
         params.routine == "gemm_ccc") {
         compress_dense_matrix(Cm, Cn, Cdata, ldc, CUVdata, Crk, accuracy);
 
-        CUV = hcore::CompressedTile<T>(Cm, Cn, &CUVdata[0], ldc, Crk, accuracy);
+        CUV = hcore::CompressedTile<T>(Cm, Cn, &CUVdata[0], ldc, Crk, accuracy, layout);
         CUV.op(transC);
 
         if (verbose) {
