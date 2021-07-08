@@ -18,7 +18,7 @@ namespace check {
 // =============================================================================
 //
 template <typename T>
-void gemm(Tile<T> const& A, Tile<T> const& B, Tile<T> const& C)
+void gemm(BaseTile<T> const& A, BaseTile<T> const& B, BaseTile<T> const& C)
 {
     hcore_error_if(A.m() != C.m());
     hcore_error_if(B.n() != C.n());
@@ -35,7 +35,7 @@ void gemm(Tile<T> const& A, Tile<T> const& B, Tile<T> const& C)
 // =============================================================================
 //
 template <typename T>
-void syrk(Tile<T> const& A, Tile<T> const& C)
+void syrk(BaseTile<T> const& A, BaseTile<T> const& C)
 {
     hcore_error_if(C.m() != C.n());
     hcore_error_if(C.m() != A.m());
@@ -49,7 +49,7 @@ void syrk(Tile<T> const& A, Tile<T> const& C)
 // =============================================================================
 //
 template <typename T>
-void trsm(blas::Side side, Tile<T> const& A, Tile<T> const& B)
+void trsm(blas::Side side, BaseTile<T> const& A, BaseTile<T> const& B)
 {
     hcore_error_if(A.m() != A.n());
 

@@ -3,71 +3,59 @@
 // All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
-#include "hcore.hh"
-#include "hcore/check.hh"
-#include "hcore/exception.hh"
-#include "hcore/base_tile.hh"
-#include "hcore/compressed_tile.hh"
+#include <cstdint>
+#include <complex>
+#include <cassert>
 
 #include "lapack.hh"
 
-#include <complex>
-#include <cassert>
-#include <cstdint>
+#include "hcore/compressed_tile.hh"
+#include "hcore/tile.hh"
+#include "hcore.hh"
 
 namespace hcore {
 
-// =============================================================================
-//
-/// Cholesky factorization of a Hermitian positive definite tile:
+/// Cholesky factorization of a Hermitian positive definite matrix:
 /// A = L * L^H or A = U^H * U.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] A
-///     On entry, the n-by-n Hermitian positive definite dense tile.
+///     On entry, the n-by-n Hermitian positive definite matrix.
 ///     On exit, the factor U or L from the Cholesky factorization.
 template <typename T>
-void potrf(Tile<T>& A)
-{
-    int64_t info = lapack::potrf(A.uplo_physical(), A.n(), A.data(), A.ld());
-
-    hcore_error_if_msg(
-        info != 0, "lapack::potrf returned error %lld", (long long)info);
+int64_t potrf(Tile<T>& A) {
+    return lapack::potrf(A.uplo_physical(), A.n(), A.data(), A.ld());
 }
 
 template
-void potrf(Tile<float>& A);
+int64_t potrf(Tile<float>& A);
 template
-void potrf(Tile<double>& A);
+int64_t potrf(Tile<double>& A);
 template
-void potrf(Tile<std::complex<float>>& A);
+int64_t potrf(Tile<std::complex<float>>& A);
 template
-void potrf(Tile<std::complex<double>>& A);
+int64_t potrf(Tile<std::complex<double>>& A);
 
-// =============================================================================
-//
-/// Cholesky factorization of a Hermitian positive definite tile:
+/// Cholesky factorization of a Hermitian positive definite matrix:
 /// A = L * L^H or A = U^H * U.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] A
-///     On entry, the n-by-n Hermitian positive definite compressed tile:
-///               (U: n-by-Ark; V: Ark-by-n).
+///     On entry, the n-by-n Hermitian positive definite compressed matrix
+///                (A=UV), U: n-by-Ark; V: Ark-by-n.
 ///     On exit, the factor U or L from the Cholesky factorization.
 template <typename T>
-void potrf(CompressedTile<T>& A)
-{
-    // todo
-    assert(false);
+int64_t potrf(CompressedTile<T>& A) {
+    assert(false); // todo
 }
 
 template
-void potrf(CompressedTile<float>& A);
+int64_t potrf(CompressedTile<float>& A);
 template
-void potrf(CompressedTile<double>& A);
+int64_t potrf(CompressedTile<double>& A);
 template
-void potrf(CompressedTile<std::complex<float>>& A);
+int64_t potrf(CompressedTile<std::complex<float>>& A);
 template
-void potrf(CompressedTile<std::complex<double>>& A);
+int64_t potrf(CompressedTile<std::complex<double>>& A);
 
 } // namespace hcore

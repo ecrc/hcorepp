@@ -21,8 +21,7 @@ void trsm_test_execute(Params& params, bool run)
 {
     using real_t = blas::real_type<T>;
 
-    // todo
-    // blas::Layout layout = params.layout();
+    blas::Layout layout = params.layout();
 
     blas::Side side = params.side();
     blas::Uplo uplo = params.uplo();
@@ -54,10 +53,9 @@ void trsm_test_execute(Params& params, bool run)
     int64_t Bm = transB == blas::Op::NoTrans ? m : n;
     int64_t Bn = transB == blas::Op::NoTrans ? n : m;
 
-    // todo
-    // if (layout == Layout::RowMajor) {
-    //     std::swap(Bm, Bn);
-    // }
+    if (layout == blas::Layout::RowMajor) {
+        std::swap(Bm, Bn);
+    }
 
     int64_t lda = testsweeper::roundup(An, align);
     int64_t ldb = testsweeper::roundup(Bm, align);
@@ -78,16 +76,6 @@ void trsm_test_execute(Params& params, bool run)
     // factor to get well-conditioned triangle
     lapack::potrf(uplo, An, &Adata[0], lda);
 
-    // todo
-    // if row major, transpose A
-    // if (layout == blas::Layout::RowMajor) {
-    //     for (int64_t j = 0; j < Am; ++j) {
-    //         for (int64_t i = 0; i < j; ++i) {
-    //             std::swap(A[i + j * lda], A[j + i * lda]);
-    //         }
-    //     }
-    // }
-
     // lapack::larnv(idist, iseed, ldb * Bn, &Bdata[0]);
     generate_dense_matrix(Bm, Bn, &Bdata[0], ldb, iseed, mode, cond);
 
@@ -95,17 +83,35 @@ void trsm_test_execute(Params& params, bool run)
     real_t Anorm = lapack::lantr(norm, uplo, diag, An, An, &Adata[0], lda);
     real_t Bnorm = lapack::lange(norm, Bm, Bn, &Bdata[0], ldb);
 
-    hcore::Tile<T> A(An, An, &Adata[0], lda);
+    // if row major, transpose A
+    if (layout == blas::Layout::RowMajor) {
+        for (int64_t j = 0; j < An; ++j)
+            for (int64_t i = 0; i < j; ++i)
+                std::swap(Adata[i + j*lda], Adata[j + i*lda]);
+    }
+
+    if (layout == blas::Layout::RowMajor) {
+        std::swap(Bm, Bn);
+    }
+
+    hcore::Tile<T> A(An, An, &Adata[0], lda, layout);
     A.op(transA);
     A.uplo(uplo);
-    hcore::Tile<T> B(Bm, Bn, &Bdata[0], ldb);
+    hcore::Tile<T> B(Bm, Bn, &Bdata[0], ldb, layout);
     B.op(transB);
 
-    int64_t ldbref = testsweeper::roundup(m, align);
+    int64_t Bref_m = m;
+    int64_t Bref_n = n;
+
+    if (layout == blas::Layout::RowMajor) {
+        std::swap(Bref_m, Bref_n);
+    }
+
+    int64_t ldbref = testsweeper::roundup(Bref_m, align);
 
     std::vector<T> Bref;
     if (params.check() == 'y') {
-        Bref.resize(ldbref * n);
+        Bref.resize(ldbref * Bref_n);
         copy(&Bref[0], ldbref, B);
     }
 
@@ -114,7 +120,7 @@ void trsm_test_execute(Params& params, bool run)
         pretty_print(B, "B");
 
         if (verbose > 1) {
-            pretty_print(m, n, &Bref[0], ldbref, "Bref");
+            pretty_print(Bref_m, Bref_n, &Bref[0], ldbref, "Bref");
         }
     }
 
@@ -136,7 +142,7 @@ void trsm_test_execute(Params& params, bool run)
         double ref_time_start = testsweeper::get_wtime();
         {
             blas::trsm(
-                blas::Layout::ColMajor, side, uplo, transA, diag,
+                layout, side, uplo, transA, diag,
                 m, n,
                 alpha, &Adata[0], lda,
                        &Bref[0],  ldbref);
@@ -147,7 +153,7 @@ void trsm_test_execute(Params& params, bool run)
             blas::Gflop<T>::trsm(side, m, n) / params.ref_time();
 
         if (verbose) {
-            pretty_print(m, n, &Bref[0], ldbref, "Bref");
+            pretty_print(Bref_m, Bref_n, &Bref[0], ldbref, "Bref");
         }
 
         // Compute the Residual ||Bref - B||_inf.
@@ -155,10 +161,10 @@ void trsm_test_execute(Params& params, bool run)
         diff(&Bref[0], ldbref, B);
 
         if (verbose) {
-            pretty_print(m, n, &Bref[0], ldbref, "Bref_diff_B");
+            pretty_print(Bref_m, Bref_n, &Bref[0], ldbref, "Bref_diff_B");
         }
 
-        params.error() = lapack::lange(norm, m, n, &Bref[0], ldbref)
+        params.error() = lapack::lange(norm, Bref_m, Bref_n, &Bref[0], ldbref)
                         / (sqrt(real_t(An) + 2) * std::abs(alpha) *
                            Anorm * Bnorm + 2 * std::abs(0.0) * 0.0);
 

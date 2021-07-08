@@ -3,18 +3,17 @@
 // All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
-#include "hcore.hh"
-#include "hcore/exception.hh"
-#include "hcore/tile.hh"
-#include "hcore/check.hh"
-#include "hcore/base_tile.hh"
-#include "hcore/compressed_tile.hh"
+#include <complex>
+#include <cassert>
+#include <vector>
 
 #include "blas.hh"
 
-#include <vector>
-#include <complex>
-#include <cassert>
+#include "hcore/compressed_tile.hh"
+#include "hcore/exception.hh"
+#include "hcore/check.hh"
+#include "hcore/tile.hh"
+#include "hcore.hh"
 
 namespace hcore {
 
@@ -35,10 +34,8 @@ namespace hcore {
 ///              alpha * A * A.' + beta * C, or
 ///              alpha * A.' * A + beta * C.
 template <typename T>
-void syrk(
-    T alpha, Tile<T> const& A,
-    T beta,  Tile<T>      & C)
-{
+void syrk(T alpha, Tile<T> const& A,
+          T beta,  Tile<T>      & C) {
     internal::check::syrk(A, C);
 
     hcore_error_if(C.is_complex &&
@@ -51,24 +48,18 @@ void syrk(
 }
 
 template
-void syrk(
-    float alpha, Tile<float> const& A,
-    float beta,  Tile<float>      & C);
+void syrk(float alpha, Tile<float> const& A,
+          float beta,  Tile<float>      & C);
 template
-void syrk(
-    double alpha, Tile<double> const& A,
-    double beta,  Tile<double>      & C);
+void syrk(double alpha, Tile<double> const& A,
+          double beta,  Tile<double>      & C);
 template
-void syrk(
-    std::complex<float> alpha, Tile<std::complex<float>> const& A,
-    std::complex<float> beta,  Tile<std::complex<float>>      & C);
+void syrk(std::complex<float> alpha, Tile<std::complex<float>> const& A,
+          std::complex<float> beta,  Tile<std::complex<float>>      & C);
 template
-void syrk(
-    std::complex<double> alpha, Tile<std::complex<double>> const& A,
-    std::complex<double> beta,  Tile<std::complex<double>>      & C);
+void syrk(std::complex<double> alpha, Tile<std::complex<double>> const& A,
+          std::complex<double> beta,  Tile<std::complex<double>>      & C);
 
-// =============================================================================
-//
 /// Symmetric rank-k update:
 /// C = alpha * A * A.' + beta * C, or
 /// C = alpha * A.' * A + beta * C.
@@ -77,42 +68,36 @@ void syrk(
 /// @param[in] alpha
 ///     The scalar alpha.
 /// @param[in] A
-///     The n-by-k dense tile.
+///     The n-by-k matrix.
 /// @param[in] beta
 ///     The scalar beta.
 /// @param[in,out] C
-///     On entry, the n-by-n symmetric compressed tile
-///               (U: n-by-Ark; V: Ark-by-n).
+///     On entry, the n-by-n symmetric compressed matrix (C=UV),
+///               U: n-by-Crk; V: Crk-by-n.
 ///     On exit, overwritten by the result:
 ///              alpha * A * A.' + beta * C, or
 ///              alpha * A.' * A + beta * C.
 template <typename T>
-void syrk(
-    T alpha,      Tile<T> const& A,
-    T beta,  CompressedTile<T>      & C)
-{
+void syrk(T alpha,           Tile<T> const& A,
+          T beta,  CompressedTile<T>      & C) {
     assert(false); // todo
 }
 
 template
-void syrk(
-    float alpha,     Tile<float> const& A,
-    float beta, CompressedTile<float>      & C);
+void syrk(float alpha,          Tile<float> const& A,
+          float beta, CompressedTile<float>      & C);
+template
+void syrk(double alpha,          Tile<double> const& A,
+          double beta, CompressedTile<double>      & C);
 template
 void syrk(
-    double alpha,     Tile<double> const& A,
-    double beta, CompressedTile<double>      & C);
-template
-void syrk(
-    std::complex<float> alpha,     Tile<std::complex<float>> const& A,
+    std::complex<float> alpha,          Tile<std::complex<float>> const& A,
     std::complex<float> beta, CompressedTile<std::complex<float>>      & C);
 template
 void syrk(
-    std::complex<double> alpha,     Tile<std::complex<double>> const& A,
+    std::complex<double> alpha,           Tile<std::complex<double>> const& A,
     std::complex<double> beta, CompressedTile<std::complex<double>>      & C);
 
-// =============================================================================
-//
 /// Symmetric rank-k update:
 /// C = alpha * A * A.' + beta * C, or
 /// C = alpha * A.' * A + beta * C.
@@ -121,19 +106,17 @@ void syrk(
 /// @param[in] alpha
 ///     The scalar alpha.
 /// @param[in] A
-///     The n-by-k compressed tile (U: n-by-Ark; V: Ark-by-k).
+///     The n-by-k compressed matrix (A=UV), U: n-by-Ark; V: Ark-by-k.
 /// @param[in] beta
 ///     The scalar beta.
 /// @param[in,out] C
-///     On entry, the n-by-n symmetric dense tile.
+///     On entry, the n-by-n symmetric matrix.
 ///     On exit, overwritten by the result:
 ///              alpha * A * A.' + beta * C, or
 ///              alpha * A.' * A + beta * C.
 template <typename T>
-void syrk(
-    T alpha, CompressedTile<T> const& A,
-    T beta,      Tile<T>       & C)
-{
+void syrk(T alpha, CompressedTile<T> const& A,
+          T beta,           Tile<T>       & C) {
     assert(A.op() == blas::Op::NoTrans); // todo
     assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
@@ -166,7 +149,7 @@ void syrk(
 
     // C = W1 * AU.' + beta * C
     blas::gemm(
-        blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::Trans, 
+        blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::Trans,
         A.m(), A.m(), A.rk(),
         one,  &W1[0],    A.m(),
               A.Udata(), A.ldu(),
@@ -174,24 +157,20 @@ void syrk(
 }
 
 template
-void syrk(
-    float alpha, CompressedTile<float> const& A,
-    float beta,       Tile<float>      & C);
+void syrk(float alpha, CompressedTile<float> const& A,
+          float beta,            Tile<float>      & C);
 template
-void syrk(
-    double alpha, CompressedTile<double> const& A,
-    double beta,       Tile<double>      & C);
+void syrk(double alpha, CompressedTile<double> const& A,
+          double beta,            Tile<double>      & C);
 template
 void syrk(
     std::complex<float> alpha, CompressedTile<std::complex<float>> const& A,
-    std::complex<float> beta,       Tile<std::complex<float>>      & C);
+    std::complex<float> beta,            Tile<std::complex<float>>      & C);
 template
 void syrk(
     std::complex<double> alpha, CompressedTile<std::complex<double>> const& A,
-    std::complex<double> beta,       Tile<std::complex<double>>      & C);
+    std::complex<double> beta,            Tile<std::complex<double>>      & C);
 
-// =============================================================================
-//
 /// Symmetric rank-k update:
 /// C = alpha * A * A.' + beta * C, or
 /// C = alpha * A.' * A + beta * C.
@@ -200,31 +179,27 @@ void syrk(
 /// @param[in] alpha
 ///     The scalar alpha.
 /// @param[in] A
-///     The n-by-k compressed tile (U: n-by-Ark; V: Ark-by-k).
+///     The n-by-k compressed matrix (A=UV), U: n-by-Ark; V: Ark-by-k.
 /// @param[in] beta
 ///     The scalar beta.
 /// @param[in,out] C
-///     On entry, the n-by-n symmetric compressed tile
-///               (U: n-by-Ark; V: Ark-by-n).
+///     On entry, the n-by-n symmetric compressed matrix (C=UV),
+///               U: n-by-Crk; V: Crk-by-n.
 ///     On exit, overwritten by the result:
 ///              alpha * A * A.' + beta * C, or
 ///              alpha * A.' * A + beta * C.
 template <typename T>
-void syrk(
-    T alpha, CompressedTile<T> const& A,
-    T beta,  CompressedTile<T>      & C)
-{
+void syrk(T alpha, CompressedTile<T> const& A,
+          T beta,  CompressedTile<T>      & C) {
     assert(false); // todo
 }
 
 template
-void syrk(
-    float alpha, CompressedTile<float> const& A,
-    float beta,  CompressedTile<float>      & C);
+void syrk(float alpha, CompressedTile<float> const& A,
+          float beta,  CompressedTile<float>      & C);
 template
-void syrk(
-    double alpha, CompressedTile<double> const& A,
-    double beta,  CompressedTile<double>      & C);
+void syrk(double alpha, CompressedTile<double> const& A,
+          double beta,  CompressedTile<double>      & C);
 template
 void syrk(
     std::complex<float> alpha, CompressedTile<std::complex<float>> const& A,

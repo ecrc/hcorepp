@@ -22,7 +22,7 @@ namespace hcore {
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 template <typename T>
-class CompressedTile : public Tile<T>
+class CompressedTile : public BaseTile<T>
 {
     using real_t = blas::real_type<T>;
 
@@ -33,7 +33,7 @@ public:
     // =========================================================================
     //
     /// Empty compressed tile.
-    CompressedTile() : Tile<T>(), rk_(0), accuracy_(0)
+    CompressedTile() : BaseTile<T>(), rk_(0), accuracy_(0)
         {}
 
     // =========================================================================
@@ -66,7 +66,7 @@ public:
     ///     blas::Layout::RowMajor: row elements are 1-strided.
     CompressedTile(int64_t m, int64_t n, T* UV, int64_t ld, int64_t rk,
         real_t accuracy, blas::Layout layout=blas::Layout::ColMajor)
-        : Tile<T>(m, n, UV, ld, layout), rk_(rk), accuracy_(accuracy)
+        : BaseTile<T>(m, n, UV, ld, layout), rk_(rk), accuracy_(accuracy)
     {
         hcore_error_if(rk < 0);
         hcore_error_if(accuracy < 0);

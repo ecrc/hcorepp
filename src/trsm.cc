@@ -3,23 +3,19 @@
 // All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
-#include "hcore.hh"
-#include "hcore/exception.hh"
-#include "hcore/tile.hh"
-#include "hcore/check.hh"
-#include "hcore/base_tile.hh"
-#include "hcore/compressed_tile.hh"
-
-#include "blas.hh"
-
-#include <vector>
 #include <complex>
 #include <cassert>
 
+#include "blas.hh"
+
+#include "hcore/compressed_tile.hh"
+#include "hcore/exception.hh"
+#include "hcore/check.hh"
+#include "hcore/tile.hh"
+#include "hcore.hh"
+
 namespace hcore {
 
-// =============================================================================
-//
 /// Triangular matrix-matrix multiplication that solves one of the matrix
 /// equations: op(A) * X = alpha * B or X * op(A) = alpha * B.
 /// @tparam T
@@ -33,35 +29,28 @@ namespace hcore {
 /// @param[in] alpha
 ///     The scalar alpha.
 /// @param[in] A
-///     - Side::Left: the m-by-m triangular dense tile.
-///     - Side::Right: the n-by-n triangular dense tile.
+///     - Side::Left: the m-by-m triangular matrix.
+///     - Side::Right: the n-by-n triangular matrix.
 /// @param[in,out] B
-///     On entry, the m-by-n dense tile.
+///     On entry, the m-by-n matrix.
 ///     On exit, overwritten by the result X.
 template <typename T>
-void trsm(
-    blas::Side side, blas::Diag diag,
-    T alpha, Tile<T> const& A,
-             Tile<T>      & B)
-{
-    assert(B.layout() == blas::Layout::ColMajor); // todo
-
+void trsm(blas::Side side, blas::Diag diag,
+          T alpha, Tile<T> const& A,
+                   Tile<T>      & B) {
     internal::check::trsm(side, A, B);
 
     if (B.op() == blas::Op::NoTrans) {
-        blas::trsm(
-            blas::Layout::ColMajor, side, A.uplo_physical(), A.op(), diag,
-            B.m(), B.n(),
-            alpha, A.data(), A.ld(),
-                   B.data(), B.ld());
+        blas::trsm(A.layout(), side, A.uplo_physical(), A.op(), diag,
+                   B.m(), B.n(), alpha, A.data(), A.ld(),
+                                        B.data(), B.ld());
     }
     else {
-        hcore_error_if(
-            B.is_complex && A.op() != blas::Op::NoTrans && A.op() != B.op());
+        hcore_error_if(B.is_complex && A.op() != blas::Op::NoTrans &&
+                       A.op() != B.op());
 
-        blas::Side side_ =
-            side == blas::Side::Left ? blas::Side::Right : blas::Side::Left;
-
+        blas::Side side_ = (side == blas::Side::Left ? blas::Side::Right
+                                                     : blas::Side::Left);
         blas::Op opA;
         if (A.op() == blas::Op::NoTrans) {
             opA = B.op();
@@ -79,37 +68,29 @@ void trsm(
             alpha = conj(alpha);
         }
 
-        blas::trsm(
-            blas::Layout::ColMajor, side_, A.uplo_physical(), opA, diag,
-            B.n(), B.m(),
-            alpha, A.data(), A.ld(),
-                   B.data(), B.ld());
+        blas::trsm(A.layout(), side_, A.uplo_physical(), opA, diag,
+                   B.n(), B.m(), alpha, A.data(), A.ld(),
+                                        B.data(), B.ld());
     }
 }
 
 template
-void trsm(
-    blas::Side side, blas::Diag diag,
-    float alpha, Tile<float> const& A,
-                 Tile<float>      & B);
+void trsm(blas::Side side, blas::Diag diag,
+          float alpha, Tile<float> const& A,
+                       Tile<float>      & B);
 template
-void trsm(
-    blas::Side side, blas::Diag diag,
-    double alpha, Tile<double> const& A,
-                  Tile<double>      & B);
+void trsm(blas::Side side, blas::Diag diag,
+          double alpha, Tile<double> const& A,
+                        Tile<double>      & B);
 template
-void trsm(
-    blas::Side side, blas::Diag diag,
-    std::complex<float> alpha, Tile<std::complex<float>> const& A,
-                               Tile<std::complex<float>>      & B);
+void trsm(blas::Side side, blas::Diag diag,
+          std::complex<float> alpha, Tile<std::complex<float>> const& A,
+                                     Tile<std::complex<float>>      & B);
 template
-void trsm(
-    blas::Side side, blas::Diag diag,
-    std::complex<double> alpha, Tile<std::complex<double>> const& A,
-                                Tile<std::complex<double>>      & B);
+void trsm(blas::Side side, blas::Diag diag,
+          std::complex<double> alpha, Tile<std::complex<double>> const& A,
+                                      Tile<std::complex<double>>      & B);
 
-// =============================================================================
-//
 /// Triangular matrix-matrix multiplication that solves one of the matrix
 /// equations: op(A) * X = alpha * B or X * op(A) = alpha * B.
 /// @tparam T
@@ -123,43 +104,35 @@ void trsm(
 /// @param[in] alpha
 ///     The scalar alpha.
 /// @param[in] A
-///     - Side::Left: the m-by-m triangular dense tile.
-///     - Side::Right: the n-by-n triangular dense tile.
+///     - Side::Left: the m-by-m triangular matrix.
+///     - Side::Right: the n-by-n triangular matrix.
 /// @param[in,out] B
-///     On entry, the m-by-n compressed tile (U: m-by-Brk; V: Brk-by-n).
+///     On entry, the m-by-n compressed matrix (A=UV), U: m-by-Brk; V: Brk-by-n.
 ///     On exit, overwritten by the result X.
 template <typename T>
-void trsm(
-    blas::Side side, blas::Diag diag,
-    T alpha,      Tile<T> const& A,
-             CompressedTile<T>      & B)
-{
+void trsm(blas::Side side, blas::Diag diag,
+          T alpha,           Tile<T> const& A,
+                   CompressedTile<T>      & B) {
     assert(false); // todo
 }
 
 template
-void trsm(
-    blas::Side side, blas::Diag diag,
-    float alpha,      Tile<float> const& A,
-                 CompressedTile<float>      & B);
+void trsm(blas::Side side, blas::Diag diag,
+          float alpha,           Tile<float> const& A,
+                       CompressedTile<float>      & B);
 template
-void trsm(
-    blas::Side side, blas::Diag diag,
-    double alpha,      Tile<double> const& A,
-                  CompressedTile<double>      & B);
+void trsm(blas::Side side, blas::Diag diag,
+          double alpha,           Tile<double> const& A,
+                        CompressedTile<double>      & B);
 template
-void trsm(
-    blas::Side side, blas::Diag diag,
-    std::complex<float> alpha,      Tile<std::complex<float>> const& A,
+void trsm(blas::Side side, blas::Diag diag,
+    std::complex<float> alpha,           Tile<std::complex<float>> const& A,
                                CompressedTile<std::complex<float>>      & B);
 template
-void trsm(
-    blas::Side side, blas::Diag diag,
-    std::complex<double> alpha,      Tile<std::complex<double>> const& A,
+void trsm(blas::Side side, blas::Diag diag,
+    std::complex<double> alpha,           Tile<std::complex<double>> const& A,
                                 CompressedTile<std::complex<double>>      & B);
 
-// =============================================================================
-//
 /// Triangular matrix-matrix multiplication that solves one of the matrix
 /// equations: op(A) * X = alpha * B or X * op(A) = alpha * B.
 /// @tparam T
@@ -173,45 +146,37 @@ void trsm(
 /// @param[in] alpha
 ///     The scalar alpha.
 /// @param[in] A
-///     - Side::Left: the m-by-m triangular compressed tile
-///       (U: m-by-Ark; V: Ark-by-m).
-///     - Side::Right: the n-by-n triangular compressed tile
-///       (U: n-by-Ark; V: Ark-by-n).
+///     - Side::Left: the m-by-m triangular compressed matrix (A=UV),
+///       U: m-by-Ark; V: Ark-by-m.
+///     - Side::Right: the n-by-n triangular compressed matrix (A=UV),
+///       U: n-by-Ark; V: Ark-by-n.
 /// @param[in,out] B
-///     On entry, the m-by-n dense tile.
+///     On entry, the m-by-n matrix.
 ///     On exit, overwritten by the result X.
 template <typename T>
-void trsm(
-    blas::Side side, blas::Diag diag,
-    T alpha, CompressedTile<T> const& A,
-                  Tile<T>      & B)
-{
+void trsm(blas::Side side, blas::Diag diag,
+          T alpha, CompressedTile<T> const& A,
+                             Tile<T>      & B) {
     assert(false); // todo
 }
 
 template
-void trsm(
-    blas::Side side, blas::Diag diag,
-    float alpha, CompressedTile<float> const& A,
-                      Tile<float>      & B);
+void trsm(blas::Side side, blas::Diag diag,
+          float alpha, CompressedTile<float> const& A,
+                                 Tile<float>      & B);
 template
-void trsm(
-    blas::Side side, blas::Diag diag,
-    double alpha, CompressedTile<double> const& A,
-                       Tile<double>      & B);
+void trsm(blas::Side side, blas::Diag diag,
+          double alpha, CompressedTile<double> const& A,
+                                  Tile<double>      & B);
 template
-void trsm(
-    blas::Side side, blas::Diag diag,
-    std::complex<float> alpha, CompressedTile<std::complex<float>> const& A,
-                                    Tile<std::complex<float>>      & B);
+void trsm(blas::Side side, blas::Diag diag,
+       std::complex<float> alpha, CompressedTile<std::complex<float>> const& A,
+                                            Tile<std::complex<float>>      & B);
 template
-void trsm(
-    blas::Side side, blas::Diag diag,
-    std::complex<double> alpha, CompressedTile<std::complex<double>> const& A,
-                                     Tile<std::complex<double>>      & B);
+void trsm(blas::Side side, blas::Diag diag,
+     std::complex<double> alpha, CompressedTile<std::complex<double>> const& A,
+                                           Tile<std::complex<double>>      & B);
 
-// =============================================================================
-//
 /// Triangular matrix-matrix multiplication that solves one of the matrix
 /// equations: op(A) * X = alpha * B or X * op(A) = alpha * B.
 /// @tparam T
@@ -225,40 +190,34 @@ void trsm(
 /// @param[in] alpha
 ///     The scalar alpha.
 /// @param[in] A
-///     - Side::Left: the m-by-m triangular compressed tile
-///       (U: m-by-Ark; V: Ark-by-m).
-///     - Side::Right: the n-by-n triangular compressed tile
-///       (U: n-by-Ark; V: Ark-by-n).
+///     - Side::Left: the m-by-m triangular compressed matrix (A=UV),
+///       U: m-by-Ark; V: Ark-by-m.
+///     - Side::Right: the n-by-n triangular compressed matrix (A=UV),
+///       U: n-by-Ark; V: Ark-by-n.
 /// @param[in,out] B
-///     On entry, the m-by-n compressed tile (U: m-by-Brk; V: Brk-by-n).
+///     On entry, the m-by-n compressed matrix (A=UV), U: m-by-Brk; V: Brk-by-n.
 ///     On exit, overwritten by the result X.
 template <typename T>
-void trsm(
-    blas::Side side, blas::Diag diag,
-    T alpha, CompressedTile<T> const& A,
-             CompressedTile<T>      & B)
-{
+void trsm(blas::Side side, blas::Diag diag,
+          T alpha, CompressedTile<T> const& A,
+                   CompressedTile<T>      & B) {
     assert(false); // todo
 }
 
 template
-void trsm(
-    blas::Side side, blas::Diag diag,
-    float alpha, CompressedTile<float> const& A,
-                 CompressedTile<float>      & B);
+void trsm(blas::Side side, blas::Diag diag,
+          float alpha, CompressedTile<float> const& A,
+                       CompressedTile<float>      & B);
 template
-void trsm(
-    blas::Side side, blas::Diag diag,
-    double alpha, CompressedTile<double> const& A,
-                  CompressedTile<double>      & B);
+void trsm(blas::Side side, blas::Diag diag,
+          double alpha, CompressedTile<double> const& A,
+                        CompressedTile<double>      & B);
 template
-void trsm(
-    blas::Side side, blas::Diag diag,
-    std::complex<float> alpha, CompressedTile<std::complex<float>> const& A,
-                               CompressedTile<std::complex<float>>      & B);
+void trsm(blas::Side side, blas::Diag diag,
+       std::complex<float> alpha, CompressedTile<std::complex<float>> const& A,
+                                  CompressedTile<std::complex<float>>      & B);
 template
-void trsm(
-    blas::Side side, blas::Diag diag,
+void trsm(blas::Side side, blas::Diag diag,
     std::complex<double> alpha, CompressedTile<std::complex<double>> const& A,
                                 CompressedTile<std::complex<double>>      & B);
 
