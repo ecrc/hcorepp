@@ -22,8 +22,7 @@ void potrf_test_execute(Params& params, bool run)
 {
     using real_t = blas::real_type<T>;
 
-    // todo
-    // blas::Layout layout = params.layout();
+    blas::Layout layout = params.layout();
 
     blas::Uplo uplo = params.uplo();
     blas::Op trans = params.trans();
@@ -53,7 +52,7 @@ void potrf_test_execute(Params& params, bool run)
 
     dense_to_positive_definite(n, &Adata[0], lda);
 
-    hcore::Tile<T> A(n, n, &Adata[0], lda);
+    hcore::Tile<T> A(n, n, &Adata[0], lda, layout);
     A.op(trans);
     A.uplo(uplo);
 
@@ -72,12 +71,15 @@ void potrf_test_execute(Params& params, bool run)
     }
 
     double gflops = 0.0;
+
     double time_start = testsweeper::get_wtime();
-    {
-        hcore::potrf<T>(A);
-        gflops = lapack::Gflop<T>::potrf(n);
-    }
+    int64_t info = hcore::potrf<T>(A);
     double time_end = testsweeper::get_wtime();
+    if (info != 0) {
+        throw hcore::Error("lapack::potrf returned error " + info);
+    }
+
+    gflops = lapack::Gflop<T>::potrf(n);
     params.time() = time_end - time_start;
     params.gflops() = gflops / params.time();
 
@@ -95,7 +97,7 @@ void potrf_test_execute(Params& params, bool run)
         {
             int64_t info = lapack::potrf(uplo_, n, &Aref[0], lda);
             if (info != 0) {
-                throw hcore::Error("lapack::potrf error " + info);
+                throw hcore::Error("lapack::potrf returned error " + info);
             }
         }
         double ref_time_end = testsweeper::get_wtime();
@@ -115,7 +117,10 @@ void potrf_test_execute(Params& params, bool run)
             for (int64_t i = 0; i < A.m(); ++i) {
                 if ((uplo_ == blas::Uplo::Lower && i >= j) ||
                     (uplo_ == blas::Uplo::Upper && i <= j)) {
-                    temp = std::abs(A(i, j) - Aref[i + j * lda]);
+                    T Aij = layout == blas::Layout::ColMajor ? A(i, j)
+                                                             : A(j, i);
+
+                    temp = std::abs(Aij - Aref[i + j * lda]);
                     diff += temp * temp;
 
                     temp = std::abs(Aref[i + j * lda]);
