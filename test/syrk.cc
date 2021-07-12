@@ -1,5 +1,6 @@
-// Copyright (c) 2017-2021, King Abdullah University of Science and Technology
-// (KAUST). All rights reserved.
+// Copyright (c) 2017-2021,
+// King Abdullah University of Science and Technology (KAUST).
+// All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
 #include "test.hh"
@@ -17,8 +18,11 @@
 #include <complex>
 #include <stdexcept>
 
+namespace hcore {
+namespace test {
+
 template <typename T>
-void syrk_test_execute(Params& params, bool run)
+void syrk(Params& params, bool run)
 {
     using real_t = blas::real_type<T>;
 
@@ -266,23 +270,25 @@ void syrk_test_execute(Params& params, bool run)
 
 }
 
-void syrk_test_dispatch(Params& params, bool run)
-{
+void syrk_dispatch(Params& params, bool run) {
     switch(params.datatype()) {
         case testsweeper::DataType::Single:
-            syrk_test_execute<float>(params, run);
+            hcore::test::syrk<float>(params, run);
             break;
         case testsweeper::DataType::Double:
-            syrk_test_execute<double>(params, run);
+            hcore::test::syrk<double>(params, run);
             break;
         case testsweeper::DataType::SingleComplex:
-            syrk_test_execute<std::complex<float>>(params, run);
+            hcore::test::syrk<std::complex<float>>(params, run);
             break;
         case testsweeper::DataType::DoubleComplex:
-            syrk_test_execute<std::complex<double>>(params, run);
+            hcore::test::syrk<std::complex<double>>(params, run);
             break;
         default:
             throw hcore::Error("Unsupported data type.");
             break;
     }
 }
+
+} // namespace test
+} // namespace hcore

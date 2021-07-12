@@ -33,7 +33,7 @@ public:
     // =========================================================================
     //
     /// Empty compressed tile.
-    CompressedTile() : BaseTile<T>(), rk_(0), accuracy_(0)
+    CompressedTile() : BaseTile<T>(), ld_(0), rk_(0), accuracy_(0)
         {}
 
     // =========================================================================
@@ -66,7 +66,7 @@ public:
     ///     blas::Layout::RowMajor: row elements are 1-strided.
     CompressedTile(int64_t m, int64_t n, T* UV, int64_t ld, int64_t rk,
         real_t accuracy, blas::Layout layout=blas::Layout::ColMajor)
-        : BaseTile<T>(m, n, UV, ld, layout), rk_(rk), accuracy_(accuracy)
+        : BaseTile<T>(m, n, UV, layout), rk_(rk), ld_(ld), accuracy_(accuracy)
     {
         hcore_error_if(rk < 0);
         hcore_error_if(accuracy < 0);
@@ -137,6 +137,7 @@ public:
         { return accuracy_; }
 
 private:
+    int64_t ld_;
     int64_t rk_; ///> Linear algebra matrix rank.
     real_t accuracy_; ///> Numerical error threshold.
 

@@ -61,9 +61,18 @@ public:
 
 }; // class Params
 
-void potrf_test_dispatch(Params& params, bool run);
-void gemm_test_dispatch(Params& params, bool run);
-void syrk_test_dispatch(Params& params, bool run);
-void trsm_test_dispatch(Params& params, bool run);
+namespace hcore {
+namespace test {
+
+// BLAS 3
+void gemm_dispatch(Params& params, bool run);
+void syrk_dispatch(Params& params, bool run);
+void trsm_dispatch(Params& params, bool run);
+
+// LAPACK
+void potrf_dispatch(Params& params, bool run);
+
+} // namespace test
+} // namespace hcore
 
 #endif // #ifndef HCORE_TEST_TEST_HH

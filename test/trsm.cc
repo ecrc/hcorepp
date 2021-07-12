@@ -16,9 +16,11 @@
 #include <cstdint>
 #include <complex>
 
+namespace hcore {
+namespace test {
+
 template <typename T>
-void trsm_test_execute(Params& params, bool run)
-{
+void trsm(Params& params, bool run) {
     using real_t = blas::real_type<T>;
 
     blas::Layout layout = params.layout();
@@ -180,23 +182,25 @@ void trsm_test_execute(Params& params, bool run)
 
 }
 
-void trsm_test_dispatch(Params& params, bool run)
-{
+void trsm_dispatch(Params& params, bool run) {
     switch(params.datatype()) {
         case testsweeper::DataType::Single:
-            trsm_test_execute<float>(params, run);
+            hcore::test::trsm<float>(params, run);
             break;
         case testsweeper::DataType::Double:
-            trsm_test_execute<double>(params, run);
+            hcore::test::trsm<double>(params, run);
             break;
         case testsweeper::DataType::SingleComplex:
-            trsm_test_execute<std::complex<float>>(params, run);
+            hcore::test::trsm<std::complex<float>>(params, run);
             break;
         case testsweeper::DataType::DoubleComplex:
-            trsm_test_execute<std::complex<double>>(params, run);
+            hcore::test::trsm<std::complex<double>>(params, run);
             break;
         default:
             throw hcore::Error("Unsupported data type.");
             break;
     }
 }
+
+} // namespace test
+} // namespace hcore

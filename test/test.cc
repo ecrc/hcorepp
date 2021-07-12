@@ -34,32 +34,32 @@ const char* section_names[] = {
 };
 
 std::vector<testsweeper::routines_t> routines = {
-    { "potrf",    potrf_test_dispatch, Section::chol       },
-    // { "potrf_c",    potrf_test_dispatch, Section::chol       }, // todo
-    // { "potrf_d",    potrf_test_dispatch, Section::chol       }, // todo
+    { "potrf",    hcore::test::potrf_dispatch, Section::chol       },
+    // { "potrf_c",    hcore::test::potrf_dispatch, Section::chol       }, // todo
+    // { "potrf_d",    hcore::test::potrf_dispatch, Section::chol       }, // todo
     { "",         nullptr,             Section::newline    },
 
-    { "gemm_ddd", gemm_test_dispatch,  Section::blas3_gemm },
-    { "gemm_ddc", gemm_test_dispatch,  Section::blas3_gemm },
-    { "gemm_dcd", gemm_test_dispatch,  Section::blas3_gemm },
-    { "gemm_dcc", gemm_test_dispatch,  Section::blas3_gemm },
-    { "gemm_cdd", gemm_test_dispatch,  Section::blas3_gemm },
-    { "gemm_cdc", gemm_test_dispatch,  Section::blas3_gemm },
-    { "gemm_ccd", gemm_test_dispatch,  Section::blas3_gemm },
-    { "gemm_ccc", gemm_test_dispatch,  Section::blas3_gemm },
+    { "gemm_ddd", hcore::test::gemm_dispatch,  Section::blas3_gemm },
+    { "gemm_ddc", hcore::test::gemm_dispatch,  Section::blas3_gemm },
+    { "gemm_dcd", hcore::test::gemm_dispatch,  Section::blas3_gemm },
+    { "gemm_dcc", hcore::test::gemm_dispatch,  Section::blas3_gemm },
+    { "gemm_cdd", hcore::test::gemm_dispatch,  Section::blas3_gemm },
+    { "gemm_cdc", hcore::test::gemm_dispatch,  Section::blas3_gemm },
+    { "gemm_ccd", hcore::test::gemm_dispatch,  Section::blas3_gemm },
+    { "gemm_ccc", hcore::test::gemm_dispatch,  Section::blas3_gemm },
     { "",         nullptr,             Section::newline    },
 
-    { "syrk_dd",  syrk_test_dispatch,  Section::blas3_syrk },
-    // { "syrk_dc",  syrk_test_dispatch,  Section::blas3_syrk }, // todo
-    { "syrk_cd",  syrk_test_dispatch,  Section::blas3_syrk },
-    // { "syrk_cc",  syrk_test_dispatch,  Section::blas3_syrk }, // todo
+    { "syrk_dd",  hcore::test::syrk_dispatch,  Section::blas3_syrk },
+    // { "syrk_dc",  hcore::test::syrk_dispatch,  Section::blas3_syrk }, // todo
+    { "syrk_cd",  hcore::test::syrk_dispatch,  Section::blas3_syrk },
+    // { "syrk_cc",  hcore::test::syrk_dispatch,  Section::blas3_syrk }, // todo
     { "",         nullptr,             Section::newline    },
 
-    { "trsm",  trsm_test_dispatch,  Section::blas3_trsm },
-    // { "trsm_dd",  trsm_test_dispatch,  Section::blas3_trsm }, // todo
-    // { "trsm_dc",  trsm_test_dispatch,  Section::blas3_trsm }, // todo
-    // { "trsm_cd",  trsm_test_dispatch,  Section::blas3_trsm }, // todo
-    // { "trsm_cc",  trsm_test_dispatch,  Section::blas3_trsm }, // todo
+    { "trsm",  hcore::test::trsm_dispatch,  Section::blas3_trsm },
+    // { "trsm_dd",  hcore::test::trsm_dispatch,  Section::blas3_trsm }, // todo
+    // { "trsm_dc",  hcore::test::trsm_dispatch,  Section::blas3_trsm }, // todo
+    // { "trsm_cd",  hcore::test::trsm_dispatch,  Section::blas3_trsm }, // todo
+    // { "trsm_cc",  hcore::test::trsm_dispatch,  Section::blas3_trsm }, // todo
     { "",         nullptr,             Section::newline    },
 };
 

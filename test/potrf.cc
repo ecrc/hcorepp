@@ -17,9 +17,11 @@
 #include <complex>
 #include <cassert>
 
+namespace hcore {
+namespace test {
+
 template <typename T>
-void potrf_test_execute(Params& params, bool run)
-{
+void potrf(Params& params, bool run) {
     using real_t = blas::real_type<T>;
 
     blas::Layout layout = params.layout();
@@ -145,23 +147,25 @@ void potrf_test_execute(Params& params, bool run)
 
 }
 
-void potrf_test_dispatch(Params& params, bool run)
-{
+void potrf_dispatch(Params& params, bool run) {
     switch(params.datatype()) {
         case testsweeper::DataType::Single:
-            potrf_test_execute<float>(params, run);
+            hcore::test::potrf<float>(params, run);
             break;
         case testsweeper::DataType::Double:
-            potrf_test_execute<double>(params, run);
+            hcore::test::potrf<double>(params, run);
             break;
         case testsweeper::DataType::SingleComplex:
-            potrf_test_execute<std::complex<float>>(params, run);
+            hcore::test::potrf<std::complex<float>>(params, run);
             break;
         case testsweeper::DataType::DoubleComplex:
-            potrf_test_execute<std::complex<double>>(params, run);
+            hcore::test::potrf<std::complex<double>>(params, run);
             break;
         default:
             throw hcore::Error("Unsupported data type.");
             break;
     }
 }
+
+} // namespace test
+} // namespace hcore

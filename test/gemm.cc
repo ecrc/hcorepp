@@ -19,9 +19,11 @@
 #include <algorithm>
 #include <initializer_list>
 
+namespace hcore {
+namespace test {
+
 template <typename T>
-void gemm_test_execute(Params& params, bool run)
-{
+void gemm(Params& params, bool run) {
     using real_t = blas::real_type<T>;
 
     blas::Layout layout = params.layout();
@@ -373,23 +375,25 @@ void gemm_test_execute(Params& params, bool run)
 
 }
 
-void gemm_test_dispatch(Params& params, bool run)
-{
+void gemm_dispatch(Params& params, bool run) {
     switch(params.datatype()) {
         case testsweeper::DataType::Single:
-            gemm_test_execute<float>(params, run);
+            hcore::test::gemm<float>(params, run);
             break;
         case testsweeper::DataType::Double:
-            gemm_test_execute<double>(params, run);
+            hcore::test::gemm<double>(params, run);
             break;
         case testsweeper::DataType::SingleComplex:
-            gemm_test_execute<std::complex<float>>(params, run);
+            hcore::test::gemm<std::complex<float>>(params, run);
             break;
         case testsweeper::DataType::DoubleComplex:
-            gemm_test_execute<std::complex<double>>(params, run);
+            hcore::test::gemm<std::complex<double>>(params, run);
             break;
         default:
             throw hcore::Error("Unsupported data type.");
             break;
     }
 }
+
+} // namespace test
+} // namespace hcore
