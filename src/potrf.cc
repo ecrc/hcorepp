@@ -5,7 +5,6 @@
 
 #include <cstdint>
 #include <complex>
-#include <cassert>
 
 #include "lapack.hh"
 
@@ -46,7 +45,7 @@ int64_t potrf(Tile<std::complex<double>>& A);
 ///     On exit, the factor U or L from the Cholesky factorization.
 template <typename T>
 int64_t potrf(CompressedTile<T>& A) {
-    assert(false); // todo
+    throw hcore::Error("Not supported.");
 }
 
 template

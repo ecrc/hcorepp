@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
 #include <complex>
-#include <cassert>
 #include <vector>
 
 #include "blas.hh"
@@ -80,7 +79,7 @@ void syrk(std::complex<double> alpha, Tile<std::complex<double>> const& A,
 template <typename T>
 void syrk(T alpha,           Tile<T> const& A,
           T beta,  CompressedTile<T>      & C) {
-    assert(false); // todo
+    throw hcore::Error("Not supported.");
 }
 
 template
@@ -116,7 +115,7 @@ void syrk(
 ///              alpha * A.' * A + beta * C.
 template <typename T>
 void syrk(T alpha, CompressedTile<T> const& A,
-          T beta,           Tile<T>       & C) {
+          T beta,            Tile<T>      & C) {
     assert(A.op() == blas::Op::NoTrans); // todo
     assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
@@ -191,7 +190,7 @@ void syrk(
 template <typename T>
 void syrk(T alpha, CompressedTile<T> const& A,
           T beta,  CompressedTile<T>      & C) {
-    assert(false); // todo
+    throw hcore::Error("Not supported.");
 }
 
 template

@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
 #include <complex>
-#include <cassert>
 
 #include "blas.hh"
 
@@ -113,7 +112,7 @@ template <typename T>
 void trsm(blas::Side side, blas::Diag diag,
           T alpha,           Tile<T> const& A,
                    CompressedTile<T>      & B) {
-    assert(false); // todo
+    throw hcore::Error("Not supported.");
 }
 
 template
@@ -157,7 +156,7 @@ template <typename T>
 void trsm(blas::Side side, blas::Diag diag,
           T alpha, CompressedTile<T> const& A,
                              Tile<T>      & B) {
-    assert(false); // todo
+    throw hcore::Error("Not supported.");
 }
 
 template
@@ -201,7 +200,7 @@ template <typename T>
 void trsm(blas::Side side, blas::Diag diag,
           T alpha, CompressedTile<T> const& A,
                    CompressedTile<T>      & B) {
-    assert(false); // todo
+    throw hcore::Error("Not supported.");
 }
 
 template
