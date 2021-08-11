@@ -30,11 +30,6 @@ individually allocated, destroyed, and passed to low-level tile routines (e.g., 
 HCORE tile routines rely on the tile low-rank compression, which replaces the dense operations
 with the equivalent low-rank operations, to reduce the memory footprint and/or the time-to-solution
 
-From the original block structure, adapting the solver to block . Still, different variants of the final algorithm can
-be obtained by changing when and how the low-rank compression is applied. We introduce two scenarios : Minimal
-Memory, which compresses the blocks before any other operations, and Just-In-Time which compresses the blocks
-after they received all their contributions.
-
 The objective of HCORE is to provide a convenient, performance-oriented API for development in the
 C++ language, that, for the most part, preserves established conventions, while, at the same time,
 takes advantages of modern C++ features, e.g., classes, namespaces, templates, exceptions,
