@@ -24,9 +24,9 @@
 
 HCORE software library implements BLAS and LAPACK functionality in the form of tile routines,
 which update one or a small number of individual tiles, generally sequentially on a single
-compute unit. An m-by-n matrix of a collection of individual tiles, each of size mb-by-nb.
+compute unit. An m-by-n matrix is a collection of individual mb-by-nb tiles.
 In the context of C++, HCORE tiles are first class objects, i.e., entities that can be
-individually allocated, destroyed, and passed to to low-level tile routines.
+individually allocated, destroyed, and passed to to low-level tile routines (e.g., GEMM).
 
 The objective of HCORE is to provide a convenient, performance-oriented API for development in the
 C++ language, that, for the most part, preserves established conventions, while, at the same time,
