@@ -1,7 +1,7 @@
 # HCORE
 
 **C++ software library provides the Basic Linear Algebra Subroutines (BLAS)**
-**operations for matrices in tile low-rank format**
+**operations and Linear Algebra PACKage (LAPACK) for matrices in tile low-rank format**
 
 **Extreme Computing Research Center (ECRC)**
 
@@ -22,16 +22,22 @@
 
 ### About
 
-The **Hierarchical Computations on Manycore Architectures (HiCMA)** library aims
-to redesign existing  dense linear algebra libraries to exploit the data sparsity
-of the matrix operator. Data sparse matrices arise in many scientific problems
-(e.g., in statistics-based weather forecasting, seismic imaging, and materials
-science applications) and are characterized by low-rank off-diagonal tile structure.
-Numerical low-rank approximations have demonstrated attractive theoretical bounds,
-both in memory footprint and arithmetic complexity. The core idea of HiCMA is to
-develop fast linear algebra computations operating on the underlying tile low-rank
-data format, while satisfying a specified numerical accuracy and leveraging
-performance from massively parallel hardware architectures. 
+HCORE software library implements BLAS and LAPACK functionality in the form of tile routines,
+which update one or a small number of individual tiles, generally sequentially on a single
+compute unit. An m-by-n matrix of a collection of individual tiles, each of size mb-by-nb.
+In the context of C++, HCORE tiles are first class objects, i.e., entities that can be
+individually allocated, destroyed, and passed to to low-level tile routines.
+
+The objective of HCORE is to provide a convenient, performance-oriented API for development in the
+C++ language, that, for the most part, preserves established conventions, while, at the same time,
+takes advantages of modern C++ features, e.g., classes, namespaces, templates, exceptions,
+standard containers, etc.
+
+HCORE is part of the HiCMA project (Hierarchical Computations on Manycore Architectures (HiCMA)),
+which aims to redesign existing dense linear algebra libraries to exploit the data sparsity
+of the matrix operator. The core idea of HiCMA is to develop fast linear algebra computations
+operating on the underlying tile low-rank data format, while satisfying a specified numerical
+accuracy and leveraging performance from massively parallel hardware architectures. 
 
 * * *
 
