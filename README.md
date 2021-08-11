@@ -1,7 +1,8 @@
 # HCORE
 
 **C++ software library provides the Basic Linear Algebra Subroutines (BLAS)**
-**operations and Linear Algebra PACKage (LAPACK) for matrices in tile low-rank format**
+**operations and Linear Algebra PACKage (LAPACK) for matrices in tile**
+**low-rank format**
 
 **Extreme Computing Research Center (ECRC)**
 
@@ -22,24 +23,27 @@
 
 ### About
 
-HCORE software library implements BLAS and LAPACK functionality in the form of tile routines,
-which update one or a small number of individual tiles, generally sequentially on a single
-compute unit. Notebly, an m-by-n matrix is a collection of individual mb-by-nb tiles.
-In the context of C++, HCORE tiles are first class objects, which are entities that can be
-individually allocated, destroyed, and passed to low-level tile routines (e.g., GEMM).
-HCORE tile routines rely on the tile low-rank compression, which replaces the dense operations
-with the equivalent low-rank operations, to reduce the memory footprint and/or the time-to-solution
+HCORE software library implements BLAS and LAPACK functionality in the form of
+tile routines, which update one or a small number of individual tiles, generally
+sequentially on a single compute unit. Notably, an m-by-n matrix is a collection
+of individual mb-by-nb tiles. In the context of C++, HCORE tiles are first class
+objects, which are entities that can be individually allocated, destroyed, and
+passed to low-level tile routines (e.g., GEMM). HCORE tile routines rely on the
+tile low-rank compression, which replaces the dense operations with the
+equivalent low-rank operations, to reduce the memory footprint and/or the
+time-to-solution.
 
-The objective of HCORE is to provide a convenient, performance-oriented API for development in the
-C++ language, that, for the most part, preserves established conventions, while, at the same time,
-takes advantages of modern C++ features, e.g., classes, namespaces, templates, exceptions,
-standard containers, etc.
+The objective of HCORE is to provide a convenient, performance-oriented API for
+development in the C++ language, that, for the most part, preserves established
+conventions, while, at the same time, takes advantages of modern C++ features,
+e.g., classes, namespaces, templates, exceptions, standard containers, etc.
 
-HCORE is part of the HiCMA project (Hierarchical Computations on Manycore Architectures (HiCMA)),
-which aims to redesign existing dense linear algebra libraries to exploit the data sparsity
-of the matrix operator. The core idea of HiCMA is to develop fast linear algebra computations
-operating on the underlying tile low-rank data format, while satisfying a specified numerical
-accuracy and leveraging performance from massively parallel hardware architectures. 
+HCORE is part of the HiCMA project (Hierarchical Computations on Manycore
+Architectures (HiCMA)), which aims to redesign existing dense linear algebra
+libraries to exploit the data sparsity of the matrix operator. The core idea of
+HiCMA is to develop fast linear algebra computations operating on the underlying
+tile low-rank data format, while satisfying a specified numerical accuracy and
+leveraging performance from massively parallel hardware architectures.
 
 * * *
 
