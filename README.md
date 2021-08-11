@@ -25,11 +25,10 @@
 HCORE software library implements BLAS and LAPACK functionality in the form of tile routines,
 which update one or a small number of individual tiles, generally sequentially on a single
 compute unit. Notebly, an m-by-n matrix is a collection of individual mb-by-nb tiles.
-In the context of C++, HCORE tiles are first class objects, i.e., entities that can be
-individually allocated, destroyed, and passed to to low-level tile routines (e.g., GEMM).
-HCORE tile routines relys on the tile low-rank compression, which replaces the dense operations
-with the equivalent low-rank operations, using the compression techniques to reduce the memory footprint
-and/or the time-to-solution
+In the context of C++, HCORE tiles are first class objects, which are entities that can be
+individually allocated, destroyed, and passed to low-level tile routines (e.g., GEMM).
+HCORE tile routines rely on the tile low-rank compression, which replaces the dense operations
+with the equivalent low-rank operations, to reduce the memory footprint and/or the time-to-solution
 
 From the original block structure, adapting the solver to block . Still, different variants of the final algorithm can
 be obtained by changing when and how the low-rank compression is applied. We introduce two scenarios : Minimal
