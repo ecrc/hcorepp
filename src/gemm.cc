@@ -24,7 +24,7 @@
 
 namespace hcore {
 
-/// General matrix-matrix multiplication, C = alpha * op(A) * op(B) + beta * C.
+/// General matrix-matrix multiplication: C = alpha * op(A) * op(B) + beta * C.
 /// @tparam T
 ///     Data type: float, double, std::complex<float>, or std::complex<double>.
 /// @param[in] alpha
@@ -39,10 +39,9 @@ namespace hcore {
 ///     On entry, the m-by-n matrix.
 ///     On exit, overwritten by the result: alpha * op(A) * op(B) + beta C.
 template <typename T>
-void gemm(
-    T alpha, Tile<T> const& A,
-             Tile<T> const& B,
-    T beta,  Tile<T>      & C) {
+void gemm(T alpha, Tile<T> const& A,
+                   Tile<T> const& B,
+          T beta,  Tile<T>&       C) {
     internal::check::gemm(A, B, C);
 
     if (C.op() == blas::Op::NoTrans) {
@@ -57,29 +56,23 @@ void gemm(
                        A.op() != blas::Op::NoTrans && A.op() != C.op());
 
         blas::Op opA;
-        if (A.op() == blas::Op::NoTrans) {
+        if (A.op() == blas::Op::NoTrans)
             opA = C.op();
-        }
-        else if (A.op() == C.op() || !C.is_complex) {
+        else if (A.op() == C.op() || !C.is_complex)
             opA = blas::Op::NoTrans;
-        }
-        else {
-            throw hcore::Error();
-        }
+        else
+            throw Error();
 
         hcore_error_if(C.is_complex &&
                        B.op() != blas::Op::NoTrans && B.op() != C.op());
 
         blas::Op opB;
-        if (B.op() == blas::Op::NoTrans) {
+        if (B.op() == blas::Op::NoTrans)
             opB = C.op();
-        }
-        else if (B.op() == C.op() || !C.is_complex) {
+        else if (B.op() == C.op() || !C.is_complex)
             opB = blas::Op::NoTrans;
-        }
-        else {
-            throw hcore::Error();
-        }
+        else
+            throw Error();
 
         using blas::conj;
 
