@@ -103,6 +103,29 @@ protected:
         hcore_error_if(A == nullptr);
     }
 
+    /// Sets number of rows.
+    /// @param[in] new_mb
+    ///     Number of rows.
+    void mb(int64_t new_mb) {
+        hcore_error_if(0 > new_mb || new_mb >= m());
+
+        if (op_ == blas::Op::NoTrans)
+            m_ = new_mb;
+        else
+            n_ = new_mb;
+    }
+    /// Sets number of columns.
+    /// @param[in] new_nb
+    ///     Number of columns.
+    void nb(int64_t new_nb) {
+        hcore_error_if(0 > new_nb || new_nb >= n());
+
+        if (op_ == blas::Op::NoTrans)
+            n_ = new_nb;
+        else
+            m_ = new_nb;
+    }
+
     /// Set transposition operation.
     /// @param[in] new_op
     ///     - blas::Op::NoTrans: tile has no transposed structure.
@@ -152,32 +175,8 @@ public:
     /// @return number of rows.
     int64_t m() const { return (op_ == blas::Op::NoTrans ? m_ : n_); }
 
-    /// Sets number of rows.
-    /// @param[in] m
-    ///     Number of rows.
-    void m(int64_t m) {
-        hcore_error_if(0 > m || m >= this->m());
-
-        if (op_ == blas::Op::NoTrans)
-            m_ = m;
-        else
-            n_ = m;
-    }
-
     /// @return number of columns.
     int64_t n() const { return (op_ == blas::Op::NoTrans ? n_ : m_); }
-
-    /// Sets number of columns.
-    /// @param[in] n
-    ///     Number of columns.
-    void n(int64_t n) {
-        hcore_error_if(0 > n || n >= this->n());
-
-        if (op_ == blas::Op::NoTrans)
-            n_ = n;
-        else
-            m_ = n;
-    }
 
     /// @return transposition operation.
     blas::Op op() const { return op_; }
