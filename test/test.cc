@@ -226,51 +226,47 @@ Params::Params():
     verbose();
 }
 
-int main(int argc, char* argv[])
-{
-    assert(sizeof(section_names) / sizeof(*section_names)
-        == Section::num_sections);
+std::string version2str(int version) {
+    char buf[1024];
+    snprintf(buf, sizeof(buf), "%d.%02d.%02d",
+             version / 10000, (version % 10000) / 100, version % 100);
+    return std::string(buf);
+}
+
+int main(int argc, char* argv[]) {
+    assert((sizeof(section_names) / sizeof(*section_names)) ==
+           (Section::num_sections));
 
     int status = 0;
     try {
-        std::printf("HCORE version %s, id %s\n", hcore::version(), hcore::id());
+        printf("HCORE version %s, git id %s\n", hcore::version(), hcore::id());
+        printf("BLAS++ version %s, id %s\n",
+               version2str(blas::blaspp_version()).c_str(),
+               blas::blaspp_id());
+        printf("LAPACK++ version %s, id %s\n",
+               version2str(lapack::lapackpp_version()).c_str(),
+               lapack::lapackpp_id());
+        printf("TestSweeper version %s, id %s\n",
+               version2str(testsweeper::version()).c_str(),
+               testsweeper::id());
 
-        int blaspp_version = blas::blaspp_version();
-        std::printf("BLAS++ version %d.%02d.%02d, id %s\n",
-                 blaspp_version / 10000, 
-                (blaspp_version % 10000) / 100,
-                 blaspp_version % 100, blas::blaspp_id());
-
-        int lapackpp_version = lapack::lapackpp_version();
-        std::printf("LAPACK++ version %d.%02d.%02d, id %s\n",
-                 lapackpp_version / 10000,
-                (lapackpp_version % 10000) / 100,
-                 lapackpp_version % 100, lapack::lapackpp_id());
-
-        int testsweeper_version = testsweeper::version();
-        std::printf("TestSweeper version %d.%02d.%02d, id %s\n",
-                 testsweeper_version / 10000,
-                (testsweeper_version % 10000) / 100,
-                 testsweeper_version % 100, testsweeper::id());
-
-        std::printf("input: %s", argv[0]);
-
+        printf("input: %s", argv[0]);
         for (int i = 1; i < argc; ++i) {
             std::string a(argv[i]);
-            const char* wordchars =
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-=";
+            const char* wordchars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO"
+                                    "PQRSTUVWXYZ0123456789_-=";
             if (a.find_first_not_of(wordchars) != std::string::npos)
-                std::printf(" '%s'", argv[i]);
+                printf(" '%s'", argv[i]);
             else
-                std::printf(" %s", argv[i]);
+                printf(" %s", argv[i]);
         }
-        std::printf("\n");
+        printf("\n");
 
         std::time_t t = std::time(nullptr);
         char current_time[100];
-        std::strftime(
-            current_time, sizeof(current_time), "%F %T", std::localtime(&t));
-        std::printf("%s.\n", current_time);
+        std::strftime(current_time, sizeof(current_time), "%F %T",
+                      std::localtime(&t));
+        printf("%s.\n", current_time);
 
         if (argc < 2 || strcmp(argv[argc-1], "-h")     == 0
                      || strcmp(argv[argc-1], "--help") == 0) {
@@ -282,14 +278,13 @@ int main(int argc, char* argv[])
         testsweeper::test_func_ptr tester = find_tester(routine, routines);
         if (tester == nullptr) {
             testsweeper::usage(argc, argv, routines, section_names);
-            throw std::runtime_error(
-                    std::string("routine ") + routine + " not found");
+            throw std::runtime_error(std::string("routine ") + routine +
+                                     std::string(" not found"));
         }
 
         Params p;
         p.routine = routine;
         tester(p, false);
-
         try {
             p.parse(routine, argc-2, argv+1);
         }
@@ -303,16 +298,16 @@ int main(int argc, char* argv[])
         do {
             if (p.datatype() != last) {
                 last = p.datatype();
-                std::printf("\n");
+                printf("\n");
             }
             for (int i = 0; i < p.repeat(); ++i) {
                 try {
                     tester(p, true);
                 }
                 catch (const std::exception& e) {
-                    std::fprintf(stderr, "\n%s%s%s%s\n",
-                        testsweeper::ansi_bold, testsweeper::ansi_red,
-                        e.what(), testsweeper::ansi_normal);
+                    fprintf(stderr, "\n%s%s%s%s\n", testsweeper::ansi_bold,
+                            testsweeper::ansi_red, e.what(),
+                            testsweeper::ansi_normal);
                     p.okay() = false;
                 }
 
@@ -321,21 +316,22 @@ int main(int argc, char* argv[])
                 status += !p.okay();
                 p.reset_output();
             }
+
             if (p.repeat() > 1)
-                std::printf("\n");
+                printf("\n");
+
         } while (p.next());
 
         if (status)
-            std::printf("%d tests FAILED for %s.\n", status, routine);
+            printf("%d tests FAILED for %s.\n", status, routine);
         else
-            std::printf("All tests passed for %s.\n", routine);
+            printf("All tests passed for %s.\n", routine);
     }
     catch (const testsweeper::QuitException& e) {
     }
     catch (const std::exception& e) {
-        fprintf(stderr, "\n%s%s%s%s\n",
-            testsweeper::ansi_bold, testsweeper::ansi_red,
-            e.what(), testsweeper::ansi_normal);
+        fprintf(stderr, "\n%s%s%s%s\n", testsweeper::ansi_bold,
+                testsweeper::ansi_red, e.what(), testsweeper::ansi_normal);
         status = -1;
     }
 
