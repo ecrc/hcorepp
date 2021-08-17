@@ -14,6 +14,57 @@
 
 namespace hcore {
 
+/// Transpose a tile; changing op flag from NoTrans to Trans, or from Trans to
+/// NoTrans. @return shallow copy with updated op flag.
+/// @param[in] A
+///     tile to be transposed.
+template <typename Tt>
+Tt transpose(Tt& A) {
+    Tt AT = A;
+
+    if (AT.op_ == blas::Op::NoTrans)
+        AT.op_ = blas::Op::Trans;
+    else if (AT.op_ == blas::Op::Trans || A.is_real)
+        AT.op_ = blas::Op::NoTrans;
+    else
+        throw Error("Unsupported operation: conjugate-no-transpose");
+
+    return AT;
+}
+
+/// Transpose a tile; changing op flag from NoTrans to Trans, or from Trans to
+/// NoTrans. @return shallow copy with updated op flag.
+/// Convert rvalue refs to lvalue refs.
+/// @param[in] A
+///     tile to be transposed.
+template <typename Tt>
+Tt transpose(Tt&& A) { return transpose(A); }
+
+/// Conjugate-transpose a tile; changing op flag from NoTrans to Trans, or from
+/// Trans to NoTrans. @return shallow copy with updated op flag.
+/// @param[in] A
+///     tile to be conjugate-transposed.
+template <typename Tt>
+Tt conjugate_transpose(Tt& A) {
+    Tt AT = A;
+
+    if (AT.op_ == blas::Op::NoTrans)
+        AT.op_ = blas::Op::ConjTrans;
+    else if (AT.op_ == blas::Op::ConjTrans || A.is_real)
+        AT.op_ = blas::Op::NoTrans;
+    else
+        throw Error("Unsupported operation: conjugate-no-transpose");
+
+    return AT;
+}
+/// Conjugate-transpose a tile; changing op flag from NoTrans to Trans, or from
+/// Trans to NoTrans. @return shallow copy with updated op flag.
+/// Convert rvalue refs to lvalue refs.
+/// @param[in] A
+///     tile to be conjugate-transposed.
+template <typename Tt>
+Tt conjugate_transpose(Tt&& A) { return conjugate_transpose(A); }
+
 template <typename T>
 class BaseTile {
 protected:
@@ -52,10 +103,51 @@ protected:
         hcore_error_if(A == nullptr);
     }
 
+    /// Set transposition operation.
+    /// @param[in] new_op
+    ///     - blas::Op::NoTrans: tile has no transposed structure.
+    ///     - blas::Op::Trans: tile has a transposed structure.
+    ///     - blas::Op::ConjTrans: tile has a conjugate-transposed structure.
+    void op(blas::Op new_op) {
+        hcore_error_if(new_op != blas::Op::NoTrans &&
+                       new_op != blas::Op::Trans   &&
+                       new_op != blas::Op::ConjTrans);
+        op_ = new_op;
+    }
+
 public:
     /// @return true if the class template identifier is complex, and false
     /// otherwise.
     static constexpr bool is_complex = blas::is_complex<T>::value;
+    /// @return true if the class template identifier isn't complex, and false
+    /// otherwise.
+    static constexpr bool is_real = !is_complex;
+
+    /// Transpose and @return a shallow copy with updated op flag.
+    /// @param[in] A
+    ///     tile to be transposed.
+    template <typename Tt>
+    friend Tt transpose(Tt& A);
+
+    /// Transpose and @return a shallow copy with updated op flag.
+    /// Convert rvalue refs to lvalue refs.
+    /// @param[in] A
+    ///     tile to be transposed.
+    template <typename Tt>
+    friend Tt transpose(Tt&& A);
+
+    /// Conjugate-transpose and @return a shallow copy with updated op flag.
+    /// @param[in] A
+    ///     tile to be conjugate-transposed.
+    template <typename Tt>
+    friend Tt conjugate_transpose(Tt& A);
+
+    /// Conjugate-transpose and @return a shallow copy with updated op flag.
+    /// Convert rvalue refs to lvalue refs.
+    /// @param[in] A
+    ///     tile to be conjugate-transposed.
+    template <typename Tt>
+    friend Tt conjugate_transpose(Tt&& A);
 
     /// @return number of rows.
     int64_t m() const { return (op_ == blas::Op::NoTrans ? m_ : n_); }
@@ -89,18 +181,6 @@ public:
 
     /// @return transposition operation.
     blas::Op op() const { return op_; }
-
-    /// Set transposition operation.
-    /// @param[in] op
-    ///     - Trans: this tile has a transposed structure.
-    ///     - ConjTrans: this tile has a conjugate-transposed structure.
-    ///     - NoTrans: this tile has no transposed structure.
-    void op(blas::Op op) {
-        hcore_error_if(op != blas::Op::Trans   &&
-                       op != blas::Op::NoTrans &&
-                       op != blas::Op::ConjTrans);
-        op_ = op;
-    }
 
     /// @return the logical packed storage type.
     blas::Uplo uplo() const { return uplo_logical(); }

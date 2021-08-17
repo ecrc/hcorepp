@@ -55,7 +55,11 @@ void potrf(Params& params, bool run) {
     dense_to_positive_definite(n, &Adata[0], lda);
 
     hcore::Tile<T> A(n, n, &Adata[0], lda, layout);
-    A.op(trans);
+    if (trans == blas::Op::Trans)
+        A = transpose(A);
+    else if (trans == blas::Op::ConjTrans)
+        A = conjugate_transpose(A);
+
     A.uplo(uplo);
 
     std::vector<T> Aref;

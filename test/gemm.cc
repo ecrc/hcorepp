@@ -143,11 +143,22 @@ void gemm(Params& params, bool run) {
     }
 
     hcore::Tile<T> A(Am, An, &Adata[0], lda, layout);
-    A.op(transA);
+    if (transA == blas::Op::Trans)
+        A = transpose(A);
+    else if (transA == blas::Op::ConjTrans)
+        A = conjugate_transpose(A);
+
     hcore::Tile<T> B(Bm, Bn, &Bdata[0], ldb, layout);
-    B.op(transB);
+    if (transB == blas::Op::Trans)
+        B = transpose(B);
+    else if (transB == blas::Op::ConjTrans)
+        B = conjugate_transpose(B);
+
     hcore::Tile<T> C(Cm, Cn, &Cdata[0], ldc, layout);
-    C.op(transC);
+    if (transC == blas::Op::Trans)
+        C = transpose(C);
+    else if (transC == blas::Op::ConjTrans)
+        C = conjugate_transpose(C);
 
     int64_t Cref_m = m;
     int64_t Cref_n = n;
@@ -185,7 +196,7 @@ void gemm(Params& params, bool run) {
         compress_dense_matrix(Am, An, Adata, lda, AUVdata, Ark, accuracy);
 
         AUV = hcore::CompressedTile<T>(Am, An, &AUVdata[0], lda, Ark, accuracy, layout);
-        AUV.op(transA);
+        // AUV.op(transA);
 
         if (verbose) {
             pretty_print(AUV, "A");
@@ -198,7 +209,7 @@ void gemm(Params& params, bool run) {
         compress_dense_matrix(Bm, Bn, Bdata, ldb, BUVdata, Brk, accuracy);
 
         BUV = hcore::CompressedTile<T>(Bm, Bn, &BUVdata[0], ldb, Brk, accuracy, layout);
-        BUV.op(transB);
+        // BUV.op(transB);
 
         if (verbose) {
             pretty_print(BUV, "B");
@@ -211,7 +222,7 @@ void gemm(Params& params, bool run) {
         compress_dense_matrix(Cm, Cn, Cdata, ldc, CUVdata, Crk, accuracy);
 
         CUV = hcore::CompressedTile<T>(Cm, Cn, &CUVdata[0], ldc, Crk, accuracy, layout);
-        CUV.op(transC);
+        // CUV.op(transC);
 
         if (verbose) {
             pretty_print(CUV, "C");

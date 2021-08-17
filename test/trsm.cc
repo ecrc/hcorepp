@@ -97,10 +97,18 @@ void trsm(Params& params, bool run) {
     }
 
     hcore::Tile<T> A(An, An, &Adata[0], lda, layout);
-    A.op(transA);
+    if (transA == blas::Op::Trans)
+        A = transpose(A);
+    else if (transA == blas::Op::ConjTrans)
+        A = conjugate_transpose(A);
+
     A.uplo(uplo);
+
     hcore::Tile<T> B(Bm, Bn, &Bdata[0], ldb, layout);
-    B.op(transB);
+    if (transB == blas::Op::Trans)
+        B = transpose(B);
+    else if (transB == blas::Op::ConjTrans)
+        B = conjugate_transpose(B);
 
     int64_t Bref_m = m;
     int64_t Bref_n = n;

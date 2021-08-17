@@ -115,9 +115,17 @@ void syrk(Params& params, bool run)
     }
 
     hcore::Tile<T> A(Am, An, &Adata[0], lda, layout);
-    A.op(transA);
+    if (transA == blas::Op::Trans)
+        A = transpose(A);
+    else if (transA == blas::Op::ConjTrans)
+        A = conjugate_transpose(A);
+
     hcore::Tile<T> C(n, n, &Cdata[0], ldc, layout);
-    C.op(transC);
+    if (transC == blas::Op::Trans)
+        C = transpose(C);
+    else if (transC == blas::Op::ConjTrans)
+        C = conjugate_transpose(C);
+
     C.uplo(uplo);
 
     set_dense_uplo(uplo, n, n, &Cdata[0], ldc);
@@ -146,7 +154,7 @@ void syrk(Params& params, bool run)
         compress_dense_matrix(Am, An, Adata, lda, AUVdata, Ark, accuracy);
 
         AUV = hcore::CompressedTile<T>(Am, An, &AUVdata[0], lda, Ark, accuracy);
-        AUV.op(transA);
+        // AUV.op(transA);
 
         if (verbose) {
             pretty_print(AUV, "A");
