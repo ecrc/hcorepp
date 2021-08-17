@@ -239,7 +239,7 @@ int main(int argc, char* argv[]) {
 
     int status = 0;
     try {
-        printf("HCORE version %s, git id %s\n", hcore::version(), hcore::id());
+        printf("HCORE version %s, id %s\n", hcore::version(), hcore::id());
         printf("BLAS++ version %s, id %s\n",
                version2str(blas::blaspp_version()).c_str(),
                blas::blaspp_id());
