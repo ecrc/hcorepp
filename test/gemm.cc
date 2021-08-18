@@ -1,5 +1,6 @@
-// Copyright (c) 2017-2021, King Abdullah University of Science and Technology
-// (KAUST). All rights reserved.
+// Copyright (c) 2017-2021,
+// King Abdullah University of Science and Technology (KAUST).
+// All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
 #include "test.hh"
@@ -24,13 +25,10 @@ namespace test {
 
 template <typename T>
 void gemm(Params& params, bool run) {
-    using real_t = blas::real_type<T>;
-
     blas::Layout layout = params.layout();
 
     blas::Op transA = params.transA();
     blas::Op transB = params.transB();
-    blas::Op transC = params.transC();
 
     T alpha = params.alpha.get<T>();
     T beta  = params.beta.get<T>();
@@ -43,10 +41,13 @@ void gemm(Params& params, bool run) {
     int64_t verbose = params.verbose();
     int64_t truncate_with_fixed_rk = params.truncate_with_fixed_rk();
 
-    real_t tol = params.tol();
-    real_t cond = params.latms_cond();
-    real_t accuracy =
-        params.routine == "gemm_ddd" ? std::numeric_limits<real_t>::epsilon()
+    lapack::Norm norm = params.norm();
+
+    blas::real_type<T> tol = params.tol();
+    blas::real_type<T> cond = params.latms_cond();
+    blas::real_type<T> dmax = params.latms_dmax();
+    blas::real_type<T> accuracy =
+        params.routine == "gemm_ddd" ? std::numeric_limits<blas::real_type<T>>::epsilon()
                                      : params.accuracy();
 
     bool use_trmm = params.use_trmm() == 'y';
@@ -59,21 +60,6 @@ void gemm(Params& params, bool run) {
     }
 
     if (!run) return;
-
-    // quick returns
-    if (params.routine == "gemm_ddd") {
-        if (blas::is_complex<T>::value) {
-            if ((transC == blas::Op::Trans &&
-                 (transA == blas::Op::ConjTrans || transB == blas::Op::ConjTrans)
-                ) ||
-                (transC == blas::Op::ConjTrans &&
-                 (transA == blas::Op::Trans || transB == blas::Op::Trans)
-                )) {
-                printf("skipping: wrong combinations of transA/transB/transC.\n");
-                return;
-            }
-        }
-    }
 
     // todo: relax these assumptions
     if (params.routine != "gemm_ddd" && params.routine != "gemm_ddc") {
@@ -88,10 +74,6 @@ void gemm(Params& params, bool run) {
     }
 
     if (params.routine != "gemm_ddd") {
-        if (transC != blas::Op::NoTrans) {
-            printf("skipping: only transC=NoTrans is supported.\n");
-            return;
-        }
         if (layout != blas::Layout::ColMajor) {
             printf("skipping: only layout=ColMajor is supported.\n");
             return;
@@ -102,8 +84,8 @@ void gemm(Params& params, bool run) {
     int64_t An = transA == blas::Op::NoTrans ? k : m;
     int64_t Bm = transB == blas::Op::NoTrans ? k : n;
     int64_t Bn = transB == blas::Op::NoTrans ? n : k;
-    int64_t Cm = transC == blas::Op::NoTrans ? m : n;
-    int64_t Cn = transC == blas::Op::NoTrans ? n : m;
+    int64_t Cm = m;
+    int64_t Cn = n;
 
     if (layout == blas::Layout::RowMajor) {
         std::swap(Am, An);
@@ -115,26 +97,19 @@ void gemm(Params& params, bool run) {
     int64_t ldb = testsweeper::roundup(Bm, align);
     int64_t ldc = testsweeper::roundup(Cm, align);
 
-    std::vector<T> Adata(lda * An);
-    std::vector<T> Bdata(ldb * Bn);
-    std::vector<T> Cdata(ldc * Cn);
+    std::vector<T> Adata(lda*An);
+    std::vector<T> Bdata(ldb*Bn);
+    std::vector<T> Cdata(ldc*Cn);
 
-    // int64_t idist = 1;
     int64_t iseed[4] = {0, 0, 0, 1};
 
-    // lapack::larnv(idist, iseed, lda * An, &Adata[0]);
-    generate_dense_matrix(Am, An, &Adata[0], lda, iseed, mode, cond);
+    generate_dense_matrix(Am, An, &Adata[0], lda, iseed, mode, cond, dmax);
+    generate_dense_matrix(Bm, Bn, &Bdata[0], ldb, iseed, mode, cond, dmax);
+    generate_dense_matrix(Cm, Cn, &Cdata[0], ldc, iseed, mode, cond, dmax);
 
-    // lapack::larnv(idist, iseed, ldb * Bn, &Bdata[0]);
-    generate_dense_matrix(Bm, Bn, &Bdata[0], ldb, iseed, mode, cond);
-
-    // lapack::larnv(idist, iseed, ldc * Cn, &Cdata[0]);
-    generate_dense_matrix(Cm, Cn, &Cdata[0], ldc, iseed, mode, cond);
-
-    lapack::Norm norm = lapack::Norm::Inf; // todo: variable norm type
-    real_t Anorm = lapack::lange(norm, Am, An, &Adata[0], lda);
-    real_t Bnorm = lapack::lange(norm, Bm, Bn, &Bdata[0], ldb);
-    real_t Cnorm = lapack::lange(norm, Cm, Cn, &Cdata[0], ldc);
+    blas::real_type<T> Anorm = lapack::lange(norm, Am, An, &Adata[0], lda);
+    blas::real_type<T> Bnorm = lapack::lange(norm, Bm, Bn, &Bdata[0], ldb);
+    blas::real_type<T> Cnorm = lapack::lange(norm, Cm, Cn, &Cdata[0], ldc);
 
     if (layout == blas::Layout::RowMajor) {
         std::swap(Am, An);
@@ -155,10 +130,6 @@ void gemm(Params& params, bool run) {
         B = conjugate_transpose(B);
 
     hcore::Tile<T> C(Cm, Cn, &Cdata[0], ldc, layout);
-    if (transC == blas::Op::Trans)
-        C = transpose(C);
-    else if (transC == blas::Op::ConjTrans)
-        C = conjugate_transpose(C);
 
     int64_t Cref_m = m;
     int64_t Cref_n = n;
@@ -222,7 +193,6 @@ void gemm(Params& params, bool run) {
         compress_dense_matrix(Cm, Cn, Cdata, ldc, CUVdata, Crk, accuracy);
 
         CUV = hcore::CompressedTile<T>(Cm, Cn, &CUVdata[0], ldc, Crk, accuracy, layout);
-        // CUV.op(transC);
 
         if (verbose) {
             pretty_print(CUV, "C");
@@ -365,7 +335,7 @@ void gemm(Params& params, bool run) {
         }
 
         params.error() = lapack::lange(norm, Cref_m, Cref_n, &Cref[0], ldcref)
-                        / (sqrt(real_t(k) + 2) * std::abs(alpha) *
+                        / (sqrt(blas::real_type<T>(k) + 2) * std::abs(alpha) *
                            Anorm * Bnorm + 2 * std::abs(beta) * Cnorm);
 
         // Complex number need extra factor.

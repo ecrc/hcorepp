@@ -122,9 +122,9 @@ Params::Params():
         "column alignment (sets lda, ldb, etc. to multiple of align)" ),
     latms_mode(
         // name, width, type, default, min, max, help
-        "latms_mode", 0, testsweeper::ParamType::Value, 0, 6, 0,
+        "latms_mode", 0, testsweeper::ParamType::Value, 0, 0, 6,
         "pass to lapacke_latms to describe how the singular/eigenvalues "
-        "are to be specified (1 to 6)"),
+        "are to be specified (0 to 6)"),
     alpha(
         // name, width, precision, type, default, min, max, help
         "alpha", 6, 4, testsweeper::ParamType::List,
@@ -152,6 +152,11 @@ Params::Params():
         // name, width, type, default, valid, help
         "truncate_with_tol", 0, testsweeper::ParamType::Value, 'n', "ny",
         "truncation with tolerance * accuracy (default no"),
+    norm(
+        // name, width, type, default, char2enum, enum2char, enum2str, help
+        "norm", 0, testsweeper::ParamType::Value, lapack::Norm::Inf,
+        lapack::char2norm, lapack::norm2char, lapack::norm2str,
+        "norm: o=one, 2=two, i=inf, f=fro, m=max"),
     truncate_with_fixed_rk(
         // name, width, type, default, min, max, help
         "truncate_with_fixed_rk", 0, testsweeper::ParamType::Value,
@@ -189,7 +194,13 @@ Params::Params():
         "latms_cond", 0, 0, testsweeper::ParamType::Value, 1,
         -std::numeric_limits<double>::infinity(),
          std::numeric_limits<double>::infinity(),
-        "pass to lapacke_latms to describe the mode, it must be >= 1"),
+        "used in setting D as described for the mode parameter"),
+    latms_dmax(
+        // name, width, precision, type, default, min, max, help
+        "latms_dmax", 0, 0, testsweeper::ParamType::Value, -1,
+        -std::numeric_limits<double>::infinity(),
+         std::numeric_limits<double>::infinity(),
+        "abs(dmax) is the maximum absolute eigenvalue/singular value"),
     accuracy(
         // name, width, precision, type, default, min, max, help
         "accuracy", 8, 0, testsweeper::ParamType::List, 1e-4, 0, 1,

@@ -7,6 +7,7 @@
 #define HCORE_TEST_TEST_HH
 
 #include "testsweeper.hh"
+#include "lapack.hh"
 #include "blas.hh"
 
 class Params : public testsweeper::ParamsBase
@@ -30,6 +31,8 @@ public:
     testsweeper::ParamChar use_ungqr;
     testsweeper::ParamChar truncate_with_tol;
 
+    testsweeper::ParamEnum<lapack::Norm> norm;
+
     testsweeper::ParamInt3 dim;
 
     testsweeper::ParamInt align;
@@ -50,6 +53,7 @@ public:
     testsweeper::ParamDouble ref_gbytes;
 
     testsweeper::ParamScientific latms_cond;
+    testsweeper::ParamScientific latms_dmax;
     testsweeper::ParamScientific accuracy;
     testsweeper::ParamScientific error;
 
