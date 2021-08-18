@@ -319,14 +319,14 @@ if (opts.chol):
 # Level 3 BLAS -- GEMM
 if (opts.blas3_gemm):
     cmds += [
-        ['gemm_ddd', layout + dtype + align + transA + transB + transC + mnk],
-        ['gemm_ddc', layout + dtype + align + transA + transB + transC + mnk],
-        ['gemm_dcd', layout + dtype + align + transA + transB + transC + mnk],
-        ['gemm_dcc', layout + dtype + align + transA + transB + transC + mnk],
-        ['gemm_cdd', layout + dtype + align + transA + transB + transC + mnk],
-        ['gemm_cdc', layout + dtype + align + transA + transB + transC + mnk],
-        ['gemm_ccd', layout + dtype + align + transA + transB + transC + mnk],
-        ['gemm_ccc', layout + dtype + align + transA + transB + transC + mnk],
+        ['gemm_ddd', layout + dtype + align + transA + transB + mnk],
+        ['gemm_ddc', layout + dtype + align + transA + transB + mnk],
+        ['gemm_dcd', layout + dtype + align + transA + transB + mnk],
+        ['gemm_dcc', layout + dtype + align + transA + transB + mnk],
+        ['gemm_cdd', layout + dtype + align + transA + transB + mnk],
+        ['gemm_cdc', layout + dtype + align + transA + transB + mnk],
+        ['gemm_ccd', layout + dtype + align + transA + transB + mnk],
+        ['gemm_ccc', layout + dtype + align + transA + transB + mnk],
     ]
 
 # Level 3 BLAS -- SYRK
