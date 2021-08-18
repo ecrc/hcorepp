@@ -45,16 +45,12 @@ void gemm(T alpha, Tile<T> const& A,
     internal::check::gemm(A, B, C);
 
     if (C.op() == blas::Op::NoTrans) {
-        blas::gemm(C.layout(), A.op(), B.op(),
-                   C.m(), C.n(), A.n(),
+        blas::gemm(C.layout(), A.op(), B.op(), C.m(), C.n(), A.n(),
                    alpha, A.data(), A.ld(),
                           B.data(), B.ld(),
                    beta,  C.data(), C.ld());
     }
     else {
-        hcore_error_if(C.is_complex &&
-                       A.op() != blas::Op::NoTrans && A.op() != C.op());
-
         blas::Op opA;
         if (A.op() == blas::Op::NoTrans)
             opA = C.op();
@@ -62,9 +58,6 @@ void gemm(T alpha, Tile<T> const& A,
             opA = blas::Op::NoTrans;
         else
             throw Error();
-
-        hcore_error_if(C.is_complex &&
-                       B.op() != blas::Op::NoTrans && B.op() != C.op());
 
         blas::Op opB;
         if (B.op() == blas::Op::NoTrans)
@@ -81,8 +74,7 @@ void gemm(T alpha, Tile<T> const& A,
             beta  = conj(beta);
         }
 
-        blas::gemm(C.layout(), opB, opA,
-                   C.n(), C.m(), A.n(),
+        blas::gemm(C.layout(), opB, opA, C.n(), C.m(), A.n(),
                    alpha, B.data(), B.ld(),
                           A.data(), A.ld(),
                    beta,  C.data(), C.ld());
@@ -125,10 +117,9 @@ void gemm(
 ///     On entry, the m-by-n compressed matrix (A=UV), U: m-by-Crk; V: Crk-by-n.
 ///     On exit, overwritten by the result: alpha * op(A) * op(B) + beta C.
 template <typename T>
-void gemm(
-    T alpha,      Tile<T> const& A,
-                  Tile<T> const& B,
-    T beta,  CompressedTile<T>      & C)
+void gemm(T alpha,           Tile<T> const& A,
+                             Tile<T> const& B,
+          T beta,  CompressedTile<T>      & C)
 {
     assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
