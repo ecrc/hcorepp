@@ -142,8 +142,9 @@ void gemm(Params& params, bool run) {
 
     std::vector<T> Cref;
     if (params.check() == 'y') {
-        Cref.resize(ldcref * Cref_n);
-        copy(&Cref[0], ldcref, C);
+        Cref = Cdata;
+        // Cref.resize(ldcref * Cref_n);
+        // copy(&Cref[0], ldcref, C);
     }
 
     if (verbose) {
@@ -304,7 +305,7 @@ void gemm(Params& params, bool run) {
                 m, n, k,
                 alpha, &Adata[0], lda,
                        &Bdata[0], ldb,
-                beta,  &Cref[0],  ldcref);
+                beta,  &Cref[0],  ldc);
         }
         double ref_time_end = testsweeper::get_wtime();
         params.ref_time() = ref_time_end - ref_time_start;
@@ -312,7 +313,7 @@ void gemm(Params& params, bool run) {
             blas::Gflop<T>::gemm(m, n, k) / params.ref_time();
 
         if (verbose) {
-            pretty_print(Cref_m, Cref_n, &Cref[0], ldcref, "Cref");
+            pretty_print(Cref_m, Cref_n, &Cref[0], ldc, "Cref");
         }
 
         if (params.routine == "gemm_dcc" ||
@@ -327,14 +328,17 @@ void gemm(Params& params, bool run) {
                 0.0, &Cdata[0],   ldc);
         }
 
-        // Compute the Residual ||Cref - C||_inf.        
-        diff(&Cref[0], ldcref, C);
+        // Compute the Residual ||Cref - C||_inf.
+        for (int64_t j = 0; j < Cref_n; ++j)
+            for (int64_t i = 0; i < Cref_m; ++i)
+                    Cref[i + j * ldc] -= C.data()[i + j*ldc];
 
-        if (verbose) {
-            pretty_print(Cref_m, Cref_n, &Cref[0], ldcref, "Cref_diff_C");
-        }
+        // diff(&Cref[0], ldc, C);
 
-        params.error() = lapack::lange(norm, Cref_m, Cref_n, &Cref[0], ldcref)
+        if (verbose)
+            pretty_print(Cref_m, Cref_n, &Cref[0], ldc, "Cref_diff_C");
+
+        params.error() = lapack::lange(norm, Cref_m, Cref_n, &Cref[0], ldc)
                         / (sqrt(blas::real_type<T>(k) + 2) * std::abs(alpha) *
                            Anorm * Bnorm + 2 * std::abs(beta) * Cnorm);
 
