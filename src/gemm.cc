@@ -8,8 +8,8 @@
 #include "hcore/check.hh"
 #include "hcore/exception.hh"
 #include "hcore/base_tile.hh"
+#include "internal/internal.hh"
 #include "hcore/compressed_tile.hh"
-#include <internal/internal.hh>
 
 #include "blas.hh"
 #include "lapack.hh"
@@ -126,10 +126,9 @@ void gemm(T alpha,           Tile<T> const& A,
 
     internal::check::gemm(A, B, C);
 
-    T zero = 0.0;
-    T one  = 1.0;
-
     T* W = new T[C.ldu() * C.n()];
+
+    T zero = 0.0;
 
     // W = alpha * A * B
     blas::gemm(C.layout(), A.op(), B.op(),
@@ -137,6 +136,8 @@ void gemm(T alpha,           Tile<T> const& A,
                alpha, A.data(), A.ld(),
                       B.data(), B.ld(),
                zero,  &W[0],    C.ldu());
+
+    T one  = 1.0;
 
     // W += beta * CU * CV
     blas::gemm(C.layout(), blas::Op::NoTrans, blas::Op::NoTrans,
