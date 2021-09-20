@@ -153,7 +153,7 @@ void syrk(Params& params, bool run)
         params.routine == "syrk_cc") {
         compress_dense_matrix(Am, An, Adata, lda, AUVdata, Ark, accuracy);
 
-        AUV = hcore::CompressedTile<T>(Am, An, &AUVdata[0], lda, Ark, accuracy);
+        AUV = hcore::CompressedTile<T>(Am, An, &AUVdata[0], lda, Ark, Ark, accuracy);
         // AUV.op(transA);
 
         if (verbose) {

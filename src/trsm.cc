@@ -8,8 +8,8 @@
 #include "blas.hh"
 
 #include "hcore/compressed_tile.hh"
+#include "hcore/internal/check.hh"
 #include "hcore/exception.hh"
-#include "hcore/check.hh"
 #include "hcore/tile.hh"
 #include "hcore.hh"
 
@@ -37,29 +37,26 @@ template <typename T>
 void trsm(blas::Side side, blas::Diag diag,
           T alpha, Tile<T> const& A,
                    Tile<T>      & B) {
-    internal::check::trsm(side, A, B);
+    internal::check_trsm(side, A, B);
 
     if (B.op() == blas::Op::NoTrans) {
-        blas::trsm(A.layout(), side, A.uplo_physical(), A.op(), diag,
-                   B.m(), B.n(), alpha, A.data(), A.ld(),
-                                        B.data(), B.ld());
+        blas::trsm(A.layout(), side, A.uploPhysical(), A.op(), diag,
+                   B.mb(), B.nb(), alpha, A.data(), A.stride(),
+                                        B.data(), B.stride());
     }
     else {
-        hcore_error_if(B.is_complex && A.op() != blas::Op::NoTrans &&
-                       A.op() != B.op());
+        if (B.is_complex && A.op() != blas::Op::NoTrans && A.op() != B.op())
+            throw Error();
 
         blas::Side side_ = (side == blas::Side::Left ? blas::Side::Right
                                                      : blas::Side::Left);
         blas::Op opA;
-        if (A.op() == blas::Op::NoTrans) {
+        if (A.op() == blas::Op::NoTrans)
             opA = B.op();
-        }
-        else if (A.op() == B.op() || !B.is_complex) {
+        else if (A.op() == B.op() || !B.is_complex)
             opA = blas::Op::NoTrans;
-        }
-        else {
-            throw hcore::Error();
-        }
+        else
+            throw Error();
 
         using blas::conj;
 
@@ -67,9 +64,9 @@ void trsm(blas::Side side, blas::Diag diag,
             alpha = conj(alpha);
         }
 
-        blas::trsm(A.layout(), side_, A.uplo_physical(), opA, diag,
-                   B.n(), B.m(), alpha, A.data(), A.ld(),
-                                        B.data(), B.ld());
+        blas::trsm(A.layout(), side_, A.uploPhysical(), opA, diag,
+                   B.nb(), B.mb(), alpha, A.data(), A.stride(),
+                                        B.data(), B.stride());
     }
 }
 

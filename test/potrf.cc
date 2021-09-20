@@ -119,8 +119,8 @@ void potrf(Params& params, bool run) {
         real_t temp = 0;
         real_t diff = 0;
         real_t norm = 0;
-        for (int64_t j = 0; j < A.n(); ++j) {
-            for (int64_t i = 0; i < A.m(); ++i) {
+        for (int64_t j = 0; j < A.nb(); ++j) {
+            for (int64_t i = 0; i < A.mb(); ++i) {
                 if ((uplo_ == blas::Uplo::Lower && i >= j) ||
                     (uplo_ == blas::Uplo::Upper && i <= j)) {
                     T Aij = layout == blas::Layout::ColMajor ? A(i, j)

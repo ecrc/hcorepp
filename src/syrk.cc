@@ -9,8 +9,8 @@
 #include "blas.hh"
 
 #include "hcore/compressed_tile.hh"
+#include "hcore/internal/check.hh"
 #include "hcore/exception.hh"
-#include "hcore/check.hh"
 #include "hcore/tile.hh"
 #include "hcore.hh"
 
@@ -34,16 +34,18 @@ namespace hcore {
 ///              alpha * A.' * A + beta * C.
 template <typename T>
 void syrk(T alpha, Tile<T> const& A,
-          T beta,  Tile<T>      & C) {
-    internal::check::syrk(A, C);
+          T beta,  Tile<T>      & C)
+{
+    internal::check_syrk(A, C);
 
-    hcore_error_if(C.is_complex &&
-                   (A.op() == blas::Op::ConjTrans ||
-                    C.op() == blas::Op::ConjTrans));
+    if (C.is_complex && (A.op() == blas::Op::ConjTrans
+        || C.op() == blas::Op::ConjTrans)) {
+        throw Error();
+    }
 
-    blas::syrk(C.layout(), C.uplo_physical(), A.op(),
-               C.n(), A.n(), alpha, A.data(), A.ld(),
-                             beta,  C.data(), C.ld());
+    blas::syrk(C.layout(), C.uploPhysical(), A.op(),
+               C.nb(), A.nb(), alpha, A.data(), A.stride(),
+                             beta,  C.data(), C.stride());
 }
 
 template
@@ -120,7 +122,7 @@ void syrk(T alpha, CompressedTile<T> const& A,
     assert(C.op() == blas::Op::NoTrans); // todo
     assert(C.layout() == blas::Layout::ColMajor); // todo
 
-    internal::check::syrk(A, C);
+    internal::check_syrk(A, C);
 
     T zero = 0.0;
     T one  = 1.0;
@@ -132,27 +134,27 @@ void syrk(T alpha, CompressedTile<T> const& A,
     // W0 = alpha * AV * AV.'
     blas::syrk(
         blas::Layout::ColMajor, C.uplo(), blas::Op::NoTrans,
-        A.rk(), A.n(),
-        alpha, A.Vdata(), A.ldv(),
+        A.rk(), A.nb(),
+        alpha, A.Vdata(), A.Vstride(),
         zero,  &W0[0],    A.rk());
 
-    std::vector<T> W1(A.m() * A.rk());
+    std::vector<T> W1(A.mb() * A.rk());
 
     // W1 = AU * W0
     blas::gemm(
         blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
-        A.m(), A.rk(), A.rk(),
-        one,  A.Udata(), A.ldu(),
+        A.mb(), A.rk(), A.rk(),
+        one,  A.Udata(), A.Ustride(),
               &W0[0],    A.rk(),
-        zero, &W1[0],    A.m());
+        zero, &W1[0],    A.mb());
 
     // C = W1 * AU.' + beta * C
     blas::gemm(
         blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::Trans,
-        A.m(), A.m(), A.rk(),
-        one,  &W1[0],    A.m(),
-              A.Udata(), A.ldu(),
-        beta, C.data(),  C.ld());
+        A.mb(), A.mb(), A.rk(),
+        one,  &W1[0],    A.mb(),
+              A.Udata(), A.Ustride(),
+        beta, C.data(),  C.stride());
 }
 
 template

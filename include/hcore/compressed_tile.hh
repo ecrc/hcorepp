@@ -6,140 +6,233 @@
 #ifndef HCORE_TILE_COMPRESSED_HH
 #define HCORE_TILE_COMPRESSED_HH
 
-#include "hcore/exception.hh"
-#include "hcore/base_tile.hh"
+#include <algorithm>
+#include <cstdint>
 
 #include "blas.hh"
 
-#include <cstdint>
-#include <algorithm>
+#include "hcore/base_tile.hh"
+#include "hcore/exception.hh"
+#include "hcore/tile.hh"
 
 namespace hcore {
 
-// =============================================================================
+//==============================================================================
 //
-/// Compressed tile class.
-/// @tparam T
-///     Data type: float, double, std::complex<float>, or std::complex<double>.
 template <typename T>
 class CompressedTile : public BaseTile<T>
 {
-    using real_t = blas::real_type<T>;
-
-private:
-    static const int64_t FULL_RANK_ = -1; ///> Constant representing full rank.
-
 public:
-    // =========================================================================
-    //
-    /// Empty compressed tile.
-    CompressedTile() : BaseTile<T>(), ld_(0), rk_(0), accuracy_(0)
-        {}
+    //--------------------------------------------------------------------------
+    /// CompressedTile empty class.
+    CompressedTile() : BaseTile<T>(), Ustride_(0), Vstride_(0), rk_(0), tol_(0)
+    {}
 
-    // =========================================================================
-    //
-    /// Compressed tile that wraps existing (preallocated) memory buffer.
-    /// @param[in] m
-    ///     Number of rows of the tile. m >= 0.
-    /// @param[in] n
-    ///     Number of columns of the tile. n >= 0.
+    //--------------------------------------------------------------------------
+    /// CompressedTile class that wraps existing (preallocated) memory buffer.
+    ///
+    /// @param[in] mb
+    ///     Number of rows. mb >= 0.
+    /// @param[in] nb
+    ///     Number of columns. nb >= 0.
     /// @param[in,out] UV
-    ///     The m-by-n matrix compressed tile (A=UV): A is m-by-n, U is m-by-rk,
-    ///     and V is rk-by-n. If layout = blas::Layout::ColMajor, the data array
-    ///     of A is stored in an ld-by-n array buffer; the data array of U is
-    ///     stored in an ld-by-rk array buffer; and data array of V is stored in
-    ///     an rk-by-n array buffer. However, if layout=blas::Layout::RowMajor:
-    ///     the data array of A is stored in an m-by-ld array buffer, the data
-    ///     array of U is stored in an m-by-rk array buffer, and data array of V
-    ///     is stored in an rk-by-ld array buffer.
-    /// @param[in] ld
-    ///     Leading dimension of the data array buffer of U/V.
-    ///     ldu >= m: if layout = blas::Layout::ColMajor, or
-    ///     ldv >= n: if layout = blas::Layout::RowMajor.
+    ///     The mb-by-nb compressed tile, stored in a data buffer of size:
+    ///     ldu-by-rk + ldv-by-nb: if layout = blas::Layout::ColMajor, or
+    ///     ldu-by-rk + ldv-by-mb: if layout = blas::Layout::RowMajor.
+    /// @param[in] ldu
+    ///     Leading dimension of the U array of the data buffer.
+    ///     ldu >= mb: if layout = blas::Layout::ColMajor, or
+    ///     ldu >= nb: if layout = blas::Layout::RowMajor.
+    /// @param[in] ldv
+    ///     Leading dimension of the V array of the data buffer. ldv >= rk.
     /// @param[in] rk
-    ///     Linear algebra rank of the tile. rk >= 0.
-    /// @param[in] accuracy
-    ///     Numerical error threshold. accuracy >= 0.
+    ///     Linear algebra matrix rank. rk >= 0.
+    /// @param[in] tol
+    ///     Scalar numerical error threshold. tol >= 0.
     /// @param[in] layout
     ///     The physical ordering of matrix elements in the data array buffer.
-    ///     blas::Layout::ColMajor: column elements are 1-strided (default), or
+    ///     blas::Layout::ColMajor: column elements are 1-strided, or
     ///     blas::Layout::RowMajor: row elements are 1-strided.
-    CompressedTile(int64_t m, int64_t n, T* UV, int64_t ld, int64_t rk,
-        real_t accuracy, blas::Layout layout=blas::Layout::ColMajor)
-        : BaseTile<T>(m, n, UV, layout), rk_(rk), ld_(ld), accuracy_(accuracy)
+    CompressedTile(int64_t mb, int64_t nb, T* UV, int64_t ldu, int64_t ldv,
+                   int64_t rk, blas::real_type<T> tol,
+                   blas::Layout layout = blas::Layout::ColMajor)
+        : BaseTile<T>(mb, nb, UV, layout),
+          Ustride_(ldu),
+          Vstride_(ldv),
+          rk_(rk),
+          tol_(tol)
     {
-        hcore_error_if(rk < 0);
-        hcore_error_if(accuracy < 0);
+        hcore_assert((layout == blas::Layout::ColMajor && ldu >= mb)
+                     || (layout == blas::Layout::RowMajor && ldu >= rk));
+        hcore_assert((layout == blas::Layout::ColMajor && ldv >= rk)
+                     || (layout == blas::Layout::RowMajor && ldv >= nb));
+        hcore_assert(rk >= 0);
+        hcore_assert(tol >= 0);
     }
 
+    //--------------------------------------------------------------------------
     /// @return const pointer to array data buffer of U.
     T const* Udata() const
-        { return this->data_; }
+    {
+       if ((this->op_ == blas::Op::NoTrans)
+            == (this->layout_ == blas::Layout::ColMajor)) {
+            return this->data_;
+        }
+        else {
+            return this->data_ + Vstride()*rk_;
+        }
+    }
 
+    //--------------------------------------------------------------------------
     /// @return pointer to array data buffer of U.
     T* Udata()
-        { return this->data_; }
+    {
+       if ((this->op_ == blas::Op::NoTrans)
+            == (this->layout_ == blas::Layout::ColMajor)) {
+            return this->data_;
+        }
+        else {
+            return this->data_ + Vstride()*rk_;
+        }
+    }
 
-    /// @return column/row stride of U.
-    int64_t ldu() const
-        { return (this->layout() == blas::Layout::ColMajor ? this->ld_ : rk_); }
-
+    //--------------------------------------------------------------------------
     /// @return const pointer to array data buffer of V.
     T const* Vdata() const
     {
-        return (
-            this->layout() == blas::Layout::ColMajor
-            ? (this->data_ + this->ld_ * rk_)
-            : (this->data_ + this->m() * rk_)
-            );
+       if ((this->op_ == blas::Op::NoTrans)
+            == (this->layout_ == blas::Layout::ColMajor)) {
+            return this->data_ + Ustride()*rk_;
+        }
+        else {
+            return this->data_;
+        }
     }
 
+    //--------------------------------------------------------------------------
     /// @return pointer to array data buffer of V.
     T* Vdata()
     {
-        return (this->layout() == blas::Layout::ColMajor
-            ? (this->data_ + this->ld_ * rk_)
-            : (this->data_ + this->m() * rk_));
+       if ((this->op_ == blas::Op::NoTrans)
+            == (this->layout_ == blas::Layout::ColMajor)) {
+            return this->data_ + Ustride()*rk_;
+        }
+        else {
+            return this->data_;
+        }
     }
 
-    /// Update pointer to array data buffer of U and V.
-    void UVdata(T* UV)
+    //--------------------------------------------------------------------------
+    /// @return column/row stride of U.
+    int64_t Ustride() const
     {
-        hcore_error_if(UV == nullptr);
-        this->data_ = UV;
+        return (this->op_ == blas::Op::NoTrans ? Ustride_ : Vstride_);
     }
-
+    //--------------------------------------------------------------------------
     /// @return column/row stride of V.
-    int64_t ldv() const
-        { return (this->layout() == blas::Layout::ColMajor ? rk_ : this->ld_); }
-
-    /// @return linear algebra rank of this tile.
-    int64_t rk() const
-        { return (rk_ == FULL_RANK_ ? std::min(this->m(), this->n()) : rk_); }
-
-    /// Update linear algebra rank of this tile.
-    void rk(int64_t rk)
+    int64_t Vstride() const
     {
-        hcore_error_if(rk < 0 && rk != FULL_RANK_);
-        rk_ = (rk == std::min(this->m(), this->n()) ? FULL_RANK_ : rk);
+        return (this->op_ == blas::Op::NoTrans ? Vstride_ : Ustride_);
     }
 
-    /// Update linear algebra rank of this tile to full rank.
-    void to_full_rk()
-        { rk(FULL_RANK_); }
+    //--------------------------------------------------------------------------
+    /// @return linear algebra matrix rank.
+    int64_t rk() const { return rk_; }
 
-    /// @return whether the linear algebra rank of this tile is full or not.
-    bool is_full_rk() const
-        { return (rk_ == FULL_RANK_ ? true : false); }
+    //--------------------------------------------------------------------------
+    /// @return scalar numerical error threshold.
+    blas::real_type<T> tol() const { return tol_; }
 
-    /// @return numerical error threshold of this tile.
-    real_t accuracy() const
-        { return accuracy_; }
+    //--------------------------------------------------------------------------
+    /// Resizes the container so that it contains n elements.
+    ///
+    /// @param[in,out] UV
+    ///     The mb-by-nb compressed tile, stored in a data buffer of size:
+    ///     ldu-by-rk + ldv-by-nb: if layout = blas::Layout::ColMajor, or
+    ///     ldu-by-rk + ldv-by-mb: if layout = blas::Layout::RowMajor.
+    /// @param[in] ldu
+    ///     Leading dimension of the U array of the data buffer.
+    ///     ldu >= mb: if layout = blas::Layout::ColMajor, or
+    ///     ldu >= nb: if layout = blas::Layout::RowMajor.
+    /// @param[in] ldv
+    ///     Leading dimension of the V array of the data buffer. ldv >= rk.
+    /// @param[in] rk
+    ///     Linear algebra matrix rank. rk >= 0.
+    void resize(T* UV, int64_t ldu, int64_t ldv, int64_t new_rk)
+    {
+        hcore_assert(UV != nullptr);
+        this->data_ = UV;
+        rk(new_rk);
+        Ustride(ldu);
+        Vstride(ldv);
+    }
 
-private:
-    int64_t ld_;
+    //--------------------------------------------------------------------------
+    /// Removes all elements from the data array buffer (which are destroyed),
+    /// leaving it with a size of 0.
+    void clear() { delete [] this->data_; }
+
+protected:
+    int64_t Ustride_; ///> Leading dimension of U.
+    int64_t Vstride_; ///> Leading dimension of V.
+
     int64_t rk_; ///> Linear algebra matrix rank.
-    real_t accuracy_; ///> Numerical error threshold.
+
+    blas::real_type<T> tol_; ///> Numerical error threshold.
+
+    //--------------------------------------------------------------------------
+    /// Set column (row-major) or row (column-major) stride of U.
+    ///
+    /// @param[in] new_Ustride
+    ///     Leading dimension of the U data array buffer.
+    ///     new_Ustride >= mb: if layout = blas::Layout::ColMajor, or
+    ///     new_Ustride >= nb: if layout = blas::Layout::RowMajor.
+    void Ustride(int64_t new_Ustride)
+    {
+        hcore_assert((this->layout_ == blas::Layout::ColMajor
+                     && new_Ustride >= this->mb_)
+                     || (this->layout_ == blas::Layout::RowMajor
+                     && new_Ustride >= rk_));
+        Ustride_ = new_Ustride;
+    }
+
+    //--------------------------------------------------------------------------
+    /// Set column (row-major) or row (column-major) stride of V.
+    ///
+    /// @param[in] new_Vstride
+    ///     Leading dimension of the V array of the data buffer.
+    ///     new_Vstride >= rk.
+    void Vstride(int64_t new_Vstride)
+    {
+        hcore_assert((this->layout_ == blas::Layout::ColMajor
+                     && new_Vstride >= rk_)
+                     || (this->layout_ == blas::Layout::RowMajor
+                     && new_Vstride >= this->nb_));
+
+        Vstride_ = new_Vstride;
+    }
+
+    //--------------------------------------------------------------------------
+    /// Set linear algebra matrix rank.
+    ///
+    /// @param[in] new_rknew_rk
+    ///     Linear algebra matrix rank. new_rk >= 0.
+    void rk(int64_t new_rk)
+    {
+        hcore_assert(new_rk >= 0);
+        rk_ = new_rk;
+    }
+
+    //--------------------------------------------------------------------------
+    /// Set scalar numerical error threshold. tol >= 0.
+    ///
+    /// @param[in] new_tol
+    ///     New accuracy. new_tol >= 0.
+    void tol(blas::real_type<T> new_tol)
+    {
+        hcore_assert(new_tol >= 0);
+        tol_ = new_tol;
+    }
 
 }; // class CompressedTile
 }  // namespace hcore

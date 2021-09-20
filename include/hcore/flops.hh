@@ -6,21 +6,18 @@
 #ifndef HCORE_FLOPS_HH
 #define HCORE_FLOPS_HH
 
-#include "hcore/check.hh"
-#include "hcore/tile.hh"
-#include "hcore/compressed_tile.hh"
-
-#include "blas/flops.hh"
 #include "lapack/flops.hh"
+#include "blas/flops.hh"
+
+#include "hcore/compressed_tile.hh"
+#include "hcore/internal/check.hh"
+#include "hcore/tile.hh"
 
 namespace hcore {
 namespace internal {
 
-inline double fmuls_gesvd(double m, double n)
-    { return 14*m*n*n; }
-
-inline double fadds_gesvd(double m, double n)
-    { return 8*n*n*n; }
+inline double fmuls_gesvd(double m, double n) { return 14*m*n*n; }
+inline double fadds_gesvd(double m, double n) { return  8*n*n*n; }
 
 template <typename T>
 class Gflop : public blas::Gflop<T>
@@ -37,109 +34,126 @@ public:
     //     - singular values and some singular vectors U (m x n) and V (n x n),
     //       14mn^2 + 8n^3
     static double lapack_gesvd(double m, double n)
-        { return 1e-9*(mul_ops*fmuls_gesvd(m, n)+add_ops*fadds_gesvd(m, n)); }
+    {
+        return 1e-9*(mul_ops*fmuls_gesvd(m, n)+add_ops*fadds_gesvd(m, n));
+    }
 
     // randomized svd
-    static double rsvd(int64_t Ark, int64_t Crk_org, CompressedTile<T>& C)
+    static double rsvd(double Ark, CompressedTile<T>& C)
     {
-        double m = double(C.m());
-        double n = double(C.n());
-        double rk = double(Ark + Crk_org);
-        double min_m_rk = double(std::min(C.m(), Ark + Crk_org));
-        double min_n_rk = double(std::min(C.n(), Ark + Crk_org));
-
-        return lapack::Gflop<T>::geqrf(m, rk) +
-               lapack::Gflop<T>::geqrf(n, rk) +
-               blas::Gflop<T>::gemm(min_m_rk, min_n_rk, rk) +
-               lapack_gesvd(min_m_rk, min_n_rk) +
-               lapack::Gflop<T>::ungqr(m, min_m_rk, min_m_rk) +
-               blas::Gflop<T>::gemm(m, C.rk(), min_m_rk) +
-               blas::Gflop<T>::scal(min_n_rk) +
-               lapack::Gflop<T>::ungqr(n, min_n_rk, min_n_rk) +
-               blas::Gflop<T>::gemm(n, C.rk(), min_n_rk);
+        return   lapack::Gflop<T>::geqrf(C.mb(), Ark + C.rk())
+               + lapack::Gflop<T>::geqrf(C.nb(), Ark + C.rk())
+               + blas::Gflop<T>::gemm(blas::min(C.mb(), Ark + C.rk()),
+                                      blas::min(C.nb(), Ark + C.rk()),
+                                      Ark + C.rk())
+               + lapack_gesvd(blas::min(C.mb(), Ark + C.rk()),
+                              blas::min(C.nb(), Ark + C.rk()))
+               + lapack::Gflop<T>::ungqr(C.mb(),
+                                         blas::min(C.mb(), Ark + C.rk()),
+                                         blas::min(C.mb(), Ark + C.rk()))
+               + blas::Gflop<T>::gemm(C.mb(),
+                                      C.rk(),
+                                      blas::min(C.mb(), Ark + C.rk()))
+               + blas::Gflop<T>::scal(blas::min(C.nb(), Ark + C.rk()))
+               + lapack::Gflop<T>::ungqr(C.nb(),
+                                         blas::min(C.nb(), Ark + C.rk()),
+                                         blas::min(C.nb(), Ark + C.rk()))
+               + blas::Gflop<T>::gemm(C.nb(),
+                                      C.rk(),
+                                      blas::min(C.nb(), Ark + C.rk()));
     }
 }; // class Gflop
-
 } // namespace internal
 
 template <typename T>
 class Gflop
 {
 public:
-    static double gemm(
-        Tile<T> A, Tile<T> B, Tile<T> C)
+    static double gemm(Tile<T> A,
+                       Tile<T> B,
+                       Tile<T> C)
     {
-        internal::check::gemm(A, B, C);
+        internal::check_gemm(A, B, C);
 
-        return blas::Gflop<T>::gemm(C.m(), C.n(), A.n());
+        return blas::Gflop<T>::gemm(C.mb(), C.nb(), A.nb());
     }
-    static double gemm(
-        Tile<T> A, Tile<T> B, CompressedTile<T> C,
-        int64_t Crk_org)
-    {
-        internal::check::gemm(A, B, C);
 
-        return blas::Gflop<T>::gemm(C.m(), C.n(), A.n()) +
-               blas::Gflop<T>::gemm(C.m(), C.n(), Crk_org);
+    static double gemm(CompressedTile<T> A,
+                                 Tile<T> B,
+                                 Tile<T> C)
+    {
+        internal::check_gemm(A, B, C);
+
+        return   blas::Gflop<T>::gemm(A.rk(), C.nb(), A.nb())
+               + blas::Gflop<T>::gemm(C.mb(), C.nb(), A.rk());
     }
-    static double gemm(
-        Tile<T> A, CompressedTile<T> B, Tile<T> C)
-    {
-        internal::check::gemm(A, B, C);
 
-        return blas::Gflop<T>::gemm(C.m(), B.rk(), A.n()) +
-               blas::Gflop<T>::gemm(C.m(), C.n(), B.rk());
+    static double gemm(          Tile<T> A,
+                       CompressedTile<T> B,
+                                 Tile<T> C)
+    {
+        internal::check_gemm(A, B, C);
+
+        return   blas::Gflop<T>::gemm(C.mb(), B.rk(), A.nb())
+               + blas::Gflop<T>::gemm(C.mb(), C.nb(), B.rk());
     }
-    static double gemm(
-        Tile<T> A, CompressedTile<T> B, CompressedTile<T> C,
-        int64_t Crk_org)
+
+    static double gemm(CompressedTile<T> A,
+                       CompressedTile<T> B,
+                                 Tile<T> C)
     {
-        internal::check::gemm(A, B, C);
+        internal::check_gemm(A, B, C);
 
-        return blas::Gflop<T>::gemm(C.m(), B.rk(), A.n()) +
-               internal::Gflop<T>::rsvd(B.rk(), Crk_org, C);
-
+        return   blas::Gflop<T>::gemm(A.rk(), B.rk(), A.nb())
+               + (A.rk() <= B.rk()
+                  ? blas::Gflop<T>::gemm(A.rk(), C.nb(), B.rk())
+                    + blas::Gflop<T>::gemm(C.mb(), C.nb(),  A.rk())
+                  : blas::Gflop<T>::gemm(C.mb(), B.rk(), A.rk())
+                    + blas::Gflop<T>::gemm(C.mb(), C.nb(),  B.rk()));
     }
-    static double gemm(
-        CompressedTile<T> A, Tile<T> B, Tile<T> C)
+
+    static double gemm(          Tile<T> A,
+                                 Tile<T> B,
+                       CompressedTile<T> C)
     {
-        internal::check::gemm(A, B, C);
+        internal::check_gemm(A, B, C);
 
-        return blas::Gflop<T>::gemm(A.rk(), C.n(), A.n()) +
-               blas::Gflop<T>::gemm(C.m(), C.n(), A.rk());
-
+        return   blas::Gflop<T>::gemm(C.mb(), C.nb(), A.nb())
+               + blas::Gflop<T>::gemm(C.mb(), C.nb(), C.rk());
     }
-    static double gemm(
-        CompressedTile<T> A, Tile<T> B, CompressedTile<T> C,
-        int64_t Crk_org)
-    {
-        internal::check::gemm(A, B, C);
 
-        return blas::Gflop<T>::gemm(A.rk(), C.n(), A.n()) +
-               internal::Gflop<T>::rsvd(A.rk(), Crk_org, C);
+    static double gemm(          Tile<T> A,
+                       CompressedTile<T> B,
+                       CompressedTile<T> C)
+    {
+        internal::check_gemm(A, B, C);
+
+        return   blas::Gflop<T>::gemm(C.mb(), B.rk(), A.nb())
+               + internal::Gflop<T>::rsvd(B.rk(), C);
     }
-    static double gemm(
-        CompressedTile<T> A, CompressedTile<T> B, Tile<T> C)
-    {
-        internal::check::gemm(A, B, C);
 
-        return blas::Gflop<T>::gemm(A.rk(), B.rk(), A.n()) +
-               (A.rk() <= B.rk() ? blas::Gflop<T>::gemm(A.rk(), C.n(), B.rk()) +
-                                   blas::Gflop<T>::gemm(C.m(), C.n(),  A.rk())
-                                 : blas::Gflop<T>::gemm(C.m(), B.rk(), A.rk()) +
-                                   blas::Gflop<T>::gemm(C.m(), C.n(),  B.rk()));
+    static double gemm(CompressedTile<T> A,
+                                 Tile<T> B,
+                       CompressedTile<T> C)
+    {
+        internal::check_gemm(A, B, C);
+
+        return   blas::Gflop<T>::gemm(A.rk(), C.nb(), A.nb())
+               + internal::Gflop<T>::rsvd(A.rk(), C);
     }
-    static double gemm(
-        CompressedTile<T> A, CompressedTile<T> B, CompressedTile<T> C,
-        int64_t Crk_org)
-    {
-        internal::check::gemm(A, B, C);
 
-        return blas::Gflop<T>::gemm(A.rk(), B.rk(), A.n()) +
-              (A.rk() <= B.rk() ? blas::Gflop<T>::gemm(A.rk(), C.n(), B.rk()) +
-                                  internal::Gflop<T>::rsvd(A.rk(), Crk_org, C)
-                                : blas::Gflop<T>::gemm(C.m(), B.rk(), A.rk()) +
-                                  internal::Gflop<T>::rsvd(B.rk(), Crk_org, C));
+    static double gemm(CompressedTile<T> A,
+                       CompressedTile<T> B,
+                       CompressedTile<T> C)
+    {
+        internal::check_gemm(A, B, C);
+
+        return   blas::Gflop<T>::gemm(A.rk(), B.rk(), A.nb())
+               + (A.rk() <= B.rk()
+                  ? blas::Gflop<T>::gemm(A.rk(), C.nb(), B.rk())
+                    + internal::Gflop<T>::rsvd(A.rk(), C)
+                  : blas::Gflop<T>::gemm(C.mb(), B.rk(), A.rk())
+                    + internal::Gflop<T>::rsvd(B.rk(), C));
     }
 }; // class Gflop
 }  // namespace hcore

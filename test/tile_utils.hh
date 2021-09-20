@@ -18,8 +18,8 @@
 template <typename T>
 void diff(T* Aref, int64_t lda_ref, hcore::Tile<T> const& A)
 {
-    for (int64_t j = 0; j < A.n(); ++j) {
-        for (int64_t i = 0; i < A.m(); ++i) {
+    for (int64_t j = 0; j < A.nb(); ++j) {
+        for (int64_t i = 0; i < A.mb(); ++i) {
             if (A.layout() == blas::Layout::ColMajor)
                 Aref[i + j * lda_ref] -= A(i, j);
             else
@@ -31,8 +31,8 @@ void diff(T* Aref, int64_t lda_ref, hcore::Tile<T> const& A)
 template <typename T>
 void copy(T* Aref, int64_t lda_ref, hcore::Tile<T> const& A)
 {
-    for (int64_t j = 0; j < A.n(); ++j) {
-        for (int64_t i = 0; i < A.m(); ++i) {
+    for (int64_t j = 0; j < A.nb(); ++j) {
+        for (int64_t i = 0; i < A.mb(); ++i) {
             if (A.layout() == blas::Layout::ColMajor)
                 Aref[i + j * lda_ref] = A(i, j);
             else
@@ -90,7 +90,7 @@ void pretty_print(
     char const* label, int width=12, int precision=9)
 {
     // forward
-    pretty_print(A.m(), A.n(), A.data(), A.ld(), label, width, precision);
+    pretty_print(A.mb(), A.nb(), A.data(), A.stride(), label, width, precision);
 }
 
 template <typename T>
@@ -98,17 +98,17 @@ void pretty_print(
     hcore::CompressedTile<T> const& A,
     char const* label, int width=12, int precision=9)
 {
-    std::string const& Ulabel = (A.is_full_rk() ? std::string(label)
-                                                : std::string(label) + "U");
+    std::string const& Ulabel = "";//(A.is_full_rk() ? std::string(label)
+                                     //           : std::string(label) + "U");
     // forward
     pretty_print(
-        A.m(), A.rk(), A.Udata(), A.ldu(), Ulabel.c_str(), width, precision);
-    if (!A.is_full_rk()) {
+        A.mb(), A.rk(), A.Udata(), A.Ustride(), Ulabel.c_str(), width, precision);
+    //if (!A.is_full_rk()) {
         std::string const& Vlabel = std::string(label) + "V";
         pretty_print(
-            A.rk(), A.n(), A.Vdata(), A.ldv(), Vlabel.c_str(),
+            A.rk(), A.nb(), A.Vdata(), A.Vstride(), Vlabel.c_str(),
             width, precision);
-    }
+    //}
 }
 
 #endif // HCORE_TEST_TILE_UTILS_HH

@@ -345,6 +345,7 @@ if (build_tests)
 
     message(STATUS "LAPACK MATGEN done")
     add_subdirectory(test)
+    add_subdirectory(utest)
 else()
     message("")
 endif()

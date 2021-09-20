@@ -14,13 +14,18 @@
 
 namespace hcore {
 
+//------------------------------------------------------------------------------
 /// Transpose a tile; changing op flag from NoTrans to Trans, or from Trans to
 /// NoTrans. @return shallow copy with updated op flag.
+///
 /// @param[in] A
-///     tile to be transposed.
-template <typename Tt>
-Tt transpose(Tt& A) {
-    Tt AT = A;
+///     Tile to be transposed.
+///
+/// @ingroup util
+template <typename T>
+T transpose(T& A)
+{
+    T AT = A;
 
     if (AT.op_ == blas::Op::NoTrans)
         AT.op_ = blas::Op::Trans;
@@ -32,21 +37,30 @@ Tt transpose(Tt& A) {
     return AT;
 }
 
+//------------------------------------------------------------------------------
 /// Transpose a tile; changing op flag from NoTrans to Trans, or from Trans to
 /// NoTrans. @return shallow copy with updated op flag.
 /// Convert rvalue refs to lvalue refs.
+///
 /// @param[in] A
-///     tile to be transposed.
-template <typename Tt>
-Tt transpose(Tt&& A) { return transpose(A); }
+///     Tile to be transposed.
+///
+/// @ingroup util
+template <typename T>
+T transpose(T&& A) { return transpose(A); }
 
+//------------------------------------------------------------------------------
 /// Conjugate-transpose a tile; changing op flag from NoTrans to Trans, or from
 /// Trans to NoTrans. @return shallow copy with updated op flag.
+///
 /// @param[in] A
-///     tile to be conjugate-transposed.
-template <typename Tt>
-Tt conjugate_transpose(Tt& A) {
-    Tt AT = A;
+///     Tile to be conjugate-transposed.
+///
+/// @ingroup util
+template <typename T>
+T conjugate_transpose(T& A)
+{
+    T AT = A;
 
     if (AT.op_ == blas::Op::NoTrans)
         AT.op_ = blas::Op::ConjTrans;
@@ -57,150 +71,168 @@ Tt conjugate_transpose(Tt& A) {
 
     return AT;
 }
+
+//------------------------------------------------------------------------------
 /// Conjugate-transpose a tile; changing op flag from NoTrans to Trans, or from
 /// Trans to NoTrans. @return shallow copy with updated op flag.
 /// Convert rvalue refs to lvalue refs.
+///
 /// @param[in] A
-///     tile to be conjugate-transposed.
-template <typename Tt>
-Tt conjugate_transpose(Tt&& A) { return conjugate_transpose(A); }
-
+///     Tile to be conjugate-transposed.
+///
+/// @ingroup util
 template <typename T>
-class BaseTile {
+T conjugate_transpose(T&& A) { return conjugate_transpose(A); }
+
+//==============================================================================
+//
+template <typename T>
+class BaseTile
+{
 protected:
+    //--------------------------------------------------------------------------
+    /// BaseTile parent empty class.
     BaseTile()
-        : m_(0),
-          n_(0),
+        : mb_(0),
+          nb_(0),
           data_(nullptr),
           op_(blas::Op::NoTrans),
           uplo_(blas::Uplo::General),
-          layout_(blas::Layout::ColMajor) {
+          layout_(blas::Layout::ColMajor)
+    {}
 
-    }
-
-    /// Tile that wraps existing (preallocated) memory buffer.
-    /// @param[in] m
-    ///     Number of rows of the tile. m >= 0.
-    /// @param[in] n
-    ///     Number of columns of the tile. b >= 0.
+    //--------------------------------------------------------------------------
+    /// BaseTile parent class that wraps existing (preallocated) memory buffer.
+    ///
+    /// @param[in] mb
+    ///     Number of rows. mb >= 0.
+    /// @param[in] nb
+    ///     Number of columns. nb >= 0.
     /// @param[in,out] A
-    ///     The m-by-n matrix, stored in an array data buffer of size:
-    ///     ld-by-n: if layout = blas::Layout::ColMajor, or
-    ///     ld-by-m: if layout = blas::Layout::RowMajor.
+    ///     The mb-by-nb tile, stored in a data buffer.
     /// @param[in] layout
     ///     The physical ordering of matrix elements in the data array buffer.
     ///     blas::Layout::ColMajor: column elements are 1-strided, or
     ///     blas::Layout::RowMajor: row elements are 1-strided.
-    BaseTile(int64_t m, int64_t n, T* A, blas::Layout layout)
-        : m_(m),
-          n_(n),
+    BaseTile(int64_t mb, int64_t nb, T* A, blas::Layout layout)
+        : mb_(mb),
+          nb_(nb),
           data_(A),
           op_(blas::Op::NoTrans),
           uplo_(blas::Uplo::General),
-          layout_(layout) {
-        hcore_error_if(m < 0);
-        hcore_error_if(n < 0);
-        hcore_error_if(A == nullptr);
+          layout_(layout)
+    {
+        hcore_assert(mb >= 0);
+        hcore_assert(nb >= 0);
+        hcore_assert(A != nullptr);
     }
 
+    //--------------------------------------------------------------------------
     /// Sets number of rows.
+    ///
     /// @param[in] new_mb
     ///     Number of rows.
-    void mb(int64_t new_mb) {
-        hcore_error_if(0 > new_mb || new_mb >= m());
+    void mb(int64_t new_mb)
+    {
+        hcore_assert(0 <= new_mb && new_mb <= mb());
 
         if (op_ == blas::Op::NoTrans)
-            m_ = new_mb;
+            mb_ = new_mb;
         else
-            n_ = new_mb;
+            nb_ = new_mb;
     }
+
+    //--------------------------------------------------------------------------
     /// Sets number of columns.
+    ///
     /// @param[in] new_nb
     ///     Number of columns.
-    void nb(int64_t new_nb) {
-        hcore_error_if(0 > new_nb || new_nb >= n());
+    void nb(int64_t new_nb)
+    {
+        hcore_assert(0 <= new_nb && new_nb <= nb());
 
         if (op_ == blas::Op::NoTrans)
-            n_ = new_nb;
+            nb_ = new_nb;
         else
-            m_ = new_nb;
+            mb_ = new_nb;
     }
 
+    //--------------------------------------------------------------------------
+    /// Set the physical ordering of the matrix elements in the data array.
+    ///
+    /// @param[in] new_layout
+    ///     blas::Layout::ColMajor: column elements are 1-strided.
+    ///     blas::Layout::RowMajor: row elements are 1-strided.
+    void layout(blas::Layout new_layout) { return layout_ = new_layout; }
+
+    //--------------------------------------------------------------------------
     /// Set transposition operation.
+    ///
     /// @param[in] new_op
     ///     - blas::Op::NoTrans: tile has no transposed structure.
     ///     - blas::Op::Trans: tile has a transposed structure.
     ///     - blas::Op::ConjTrans: tile has a conjugate-transposed structure.
-    void op(blas::Op new_op) {
-        hcore_error_if(new_op != blas::Op::NoTrans &&
-                       new_op != blas::Op::Trans   &&
-                       new_op != blas::Op::ConjTrans);
-        op_ = new_op;
-    }
+    void op(blas::Op new_op) { op_ = new_op; }
 
 public:
-    /// @return true if the class template identifier is complex, and false
-    /// otherwise.
+    //--------------------------------------------------------------------------
+    /// True if class template identifier is complex, and false otherwise.
     static constexpr bool is_complex = blas::is_complex<T>::value;
-    /// @return true if the class template identifier isn't complex, and false
-    /// otherwise.
+
+    //--------------------------------------------------------------------------
+    /// True if class template identifier isn't complex, and false otherwise.
     static constexpr bool is_real = !is_complex;
 
+    //--------------------------------------------------------------------------
     /// Transpose and @return a shallow copy with updated op flag.
     /// @param[in] A
-    ///     tile to be transposed.
-    template <typename Tt>
-    friend Tt transpose(Tt& A);
+    ///     Tile to be transposed.
+    template <typename T1>
+    friend T1 transpose(T1& A);
 
+    //--------------------------------------------------------------------------
     /// Transpose and @return a shallow copy with updated op flag.
     /// Convert rvalue refs to lvalue refs.
     /// @param[in] A
-    ///     tile to be transposed.
-    template <typename Tt>
-    friend Tt transpose(Tt&& A);
+    ///     Tile to be transposed.
+    template <typename T1>
+    friend T1 transpose(T1&& A);
 
+    //--------------------------------------------------------------------------
     /// Conjugate-transpose and @return a shallow copy with updated op flag.
     /// @param[in] A
-    ///     tile to be conjugate-transposed.
-    template <typename Tt>
-    friend Tt conjugate_transpose(Tt& A);
+    ///     Tile to be conjugate-transposed.
+    template <typename T1>
+    friend T1 conjugate_transpose(T1& A);
 
+    //--------------------------------------------------------------------------
     /// Conjugate-transpose and @return a shallow copy with updated op flag.
     /// Convert rvalue refs to lvalue refs.
     /// @param[in] A
-    ///     tile to be conjugate-transposed.
-    template <typename Tt>
-    friend Tt conjugate_transpose(Tt&& A);
+    ///     Tile to be conjugate-transposed.
+    template <typename T1>
+    friend T1 conjugate_transpose(T1&& A);
 
+    //--------------------------------------------------------------------------
     /// @return number of rows.
-    int64_t m() const { return (op_ == blas::Op::NoTrans ? m_ : n_); }
+    int64_t mb() const { return (op_ == blas::Op::NoTrans ? mb_ : nb_); }
 
+    //--------------------------------------------------------------------------
     /// @return number of columns.
-    int64_t n() const { return (op_ == blas::Op::NoTrans ? n_ : m_); }
+    int64_t nb() const { return (op_ == blas::Op::NoTrans ? nb_ : mb_); }
 
+    //--------------------------------------------------------------------------
     /// @return transposition operation.
     blas::Op op() const { return op_; }
 
+    //--------------------------------------------------------------------------
     /// @return the logical packed storage type.
-    blas::Uplo uplo() const { return uplo_logical(); }
+    blas::Uplo uplo() const { return uploLogical(); }
 
-    /// Set the physical packed storage type.
-    /// @param[in] uplo
-    ///     - General: both triangles are stored.
-    ///     - Upper:   upper triangle is stored.
-    ///     - Lower:   lower triangle is stored.
-    void uplo(blas::Uplo uplo) {
-        hcore_error_if(uplo != blas::Uplo::General &&
-                       uplo != blas::Uplo::Lower   &&
-                       uplo != blas::Uplo::Upper);
-        uplo_ = uplo;
-    }
-
-    /// @return the physical packed storage type.
-    blas::Uplo uplo_physical() const { return uplo_; }
-
+    //--------------------------------------------------------------------------
     /// @return the logical packed storage type.
-    blas::Uplo uplo_logical() const {
+    blas::Uplo uploLogical() const
+    {
         if (uplo_ == blas::Uplo::General)
             return blas::Uplo::General;
         else if ((uplo_ == blas::Uplo::Lower) == (op_ == blas::Op::NoTrans))
@@ -209,25 +241,30 @@ public:
             return blas::Uplo::Upper;
     }
 
+    //--------------------------------------------------------------------------
+    /// @return the physical packed storage type.
+    blas::Uplo uploPhysical() const { return uplo_; }
+
+    //--------------------------------------------------------------------------
     /// @return the physical ordering of the matrix elements in the data array.
     blas::Layout layout() const { return layout_; }
 
-    /// Set the physical ordering of the matrix elements in the data array.
-    void layout(blas::Layout layout) const {
-        hcore_error_if(layout != blas::Layout::ColMajor &&
-                       layout != blas::Layout::RowMajor);
-
-        return layout_ = layout;
-    }
+    //--------------------------------------------------------------------------
+    /// Set the physical packed storage type.
+    /// @param[in] uplo
+    ///     - General: both triangles are stored.
+    ///     - Upper: upper triangle is stored.
+    ///     - Lower: lower triangle is stored.
+    void uplo(blas::Uplo uplo) { uplo_ = uplo; } // note: public (not protected)
 
 protected:
-    int64_t m_; ///> Number of rows.
-    int64_t n_; ///> Number of columns.
+    int64_t mb_; ///> Number of rows.
+    int64_t nb_; ///> Number of columns.
 
     T* data_; ///> Data array buffer.
 
-    blas::Op op_;         ///> Transposition operation.
-    blas::Uplo uplo_;     ///> Physical packed storage type.
+    blas::Op op_; ///> Transposition operation.
+    blas::Uplo uplo_; ///> Physical packed storage type.
     blas::Layout layout_; ///> Physical ordering of the matrix elements.
 
 }; // class BaseTile

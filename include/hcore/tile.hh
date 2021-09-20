@@ -6,162 +6,217 @@
 #ifndef HCORE_TILE_HH
 #define HCORE_TILE_HH
 
+#include <algorithm>
 #include <cstdint>
 
 #include "blas.hh"
 
 #include "hcore/compressed_tile.hh"
-#include "hcore/exception.hh"
 #include "hcore/base_tile.hh"
+#include "hcore/exception.hh"
 
 namespace hcore {
 
+// forward declaration
 template <typename T>
-class Tile : public BaseTile<T> {
-public:
-    Tile() : BaseTile<T>(), ld_(0) {}
+class CompressedTile;
 
-    /// Tile that wraps existing (preallocated) memory buffer.
-    /// @param[in] m
-    ///     Number of rows of the tile. m >= 0.
-    /// @param[in] n
-    ///     Number of columns of the tile. b >= 0.
+//==============================================================================
+//
+template <typename T>
+class Tile : public BaseTile<T>
+{
+public:
+    //--------------------------------------------------------------------------
+    /// Tile empty class.
+    Tile() : BaseTile<T>(), stride_(0) {}
+
+    //--------------------------------------------------------------------------
+    /// Tile class that wraps existing (preallocated) memory buffer.
+    ///
+    /// @param[in] mb
+    ///     Number of rows. mb >= 0.
+    /// @param[in] nb
+    ///     Number of columns. nb >= 0.
     /// @param[in,out] A
-    ///     The m-by-n matrix tile, stored in an array data buffer of size:
-    ///     ld-by-n: if layout = blas::Layout::ColMajor, or
-    ///     ld-by-m: if layout = blas::Layout::RowMajor.
-    /// @param[in] ld
-    ///     Leading dimension of the data array buffer.
-    ///     ld >= m: if layout = blas::Layout::ColMajor, or
-    ///     ld >= n: if layout = blas::Layout::RowMajor.
+    ///     The mb-by-nb tile, stored in a data buffer of size:
+    ///     lda-by-nb: if layout = blas::Layout::ColMajor, or
+    ///     lda-by-mb: if layout = blas::Layout::RowMajor.
+    /// @param[in] lda
+    ///     Leading dimension of the data buffer.
+    ///     lda >= mb: if layout = blas::Layout::ColMajor, or
+    ///     lda >= nb: if layout = blas::Layout::RowMajor.
     /// @param[in] layout
     ///     The physical ordering of matrix elements in the data array buffer.
     ///     blas::Layout::ColMajor: column elements are 1-strided (default), or
     ///     blas::Layout::RowMajor: row elements are 1-strided.
-    Tile(int64_t m, int64_t n, T* A, int64_t ld,
+    Tile(int64_t mb, int64_t nb, T* A, int64_t lda,
          blas::Layout layout = blas::Layout::ColMajor)
-        : BaseTile<T>(m, n, A, layout), ld_(ld) {
-        hcore_error_if(layout == blas::Layout::ColMajor && ld < m);
-        hcore_error_if(layout == blas::Layout::RowMajor && ld < n);
+        : BaseTile<T>(mb, nb, A, layout), stride_(lda)
+    {
+        hcore_assert((layout == blas::Layout::ColMajor && lda >= mb)
+                     || (layout == blas::Layout::RowMajor && lda >= nb));
     }
 
-    /// [explicit]
-    /// Conversion from compressed tile, creating a shallow copy view of
-    /// the base tile.
-    /// @param[in,out] tile
-    ///     Base tile.
-    explicit Tile(CompressedTile<T> const& tile) : BaseTile<T>(tile), ld_(tile.ldu()) {}
+    //--------------------------------------------------------------------------
+    /// Conversion from CompressedTile
+    /// Creates shallow copy view of the original CompressedTile.
+    ///
+    /// @param[in] orig
+    ///     Original CompressedTile of which to make a Tile.
+    Tile(CompressedTile<T>& orig)
+        : BaseTile<T>(orig),
+          stride_(this->layout_ == blas::Layout::ColMajor ? orig.Ustride()
+                                                          : orig.Vstride())
+    {
+        hcore_assert(orig.rk() == std::min(orig.mb(), orig.nb())); // full rank
+    }
 
+    //--------------------------------------------------------------------------
+    /// Conversion from CompressedTile
+    /// Creates shallow copy view with a stride of the original CompressedTile.
+    ///
+    /// @param[in] stride
+    ///     Leading dimension of the data buffer.
+    ///     stride >= mb: if layout = blas::Layout::ColMajor, or
+    ///     stride >= nb: if layout = blas::Layout::RowMajor.
+    /// @param[in] orig
+    ///     Original CompressedTile of which to make a Tile.
+    Tile(int64_t stride, CompressedTile<T>& orig)
+        : BaseTile<T>(orig), stride_(stride)
+    {
+        hcore_assert((this->layout_ == blas::Layout::ColMajor
+                     && stride >= this->mb_)
+                     || (this->layout_ == blas::Layout::RowMajor
+                     && stride >= this->nb_));
+        hcore_assert(orig.rk() == std::min(orig.mb(), orig.nb())); // full rank
+    }
+
+    //--------------------------------------------------------------------------
     /// @return const pointer to array data buffer.
     T const* data() const { return this->data_; }
 
+    //--------------------------------------------------------------------------
     /// @return pointer to array data buffer.
     T* data() { return this->data_; }
 
+    //--------------------------------------------------------------------------
     /// @return column (row-major) or row (column-major) stride.
-    int64_t ld() const { return ld_; }
+    int64_t stride() const { return stride_; }
 
-    /// Set column (row-major) or row (column-major) stride.
-    /// @param[in] ld
-    ///     Leading dimension of the data array buffer.
-    ///     ld >= m: if layout = blas::Layout::ColMajor, or
-    ///     ld >= n: if layout = blas::Layout::RowMajor.
-    void ld(int64_t ld) {
-        hcore_error_if(
-            this->layout_ == blas::Layout::ColMajor && ld < this->m_);
-        hcore_error_if(
-            this->layout_ == blas::Layout::RowMajor && ld < this->n_);
-
-        ld_ = ld;
-    }
-
+    //--------------------------------------------------------------------------
     /// @return the number of locations in memory between beginnings of
     /// successive array elements of a row.
-    int64_t row_stride() const {
-        if ((this->op_ == blas::Op::NoTrans ) ==
-            (this->layout_ == blas::Layout::ColMajor)) {
-            return ld_;
+    int64_t rowIncrement() const
+    {
+        if ((this->op_ == blas::Op::NoTrans)
+            == (this->layout_ == blas::Layout::ColMajor)) {
+            return stride_;
         }
         else {
             return 1;
         }
     }
 
+    //--------------------------------------------------------------------------
     /// @return the number of locations in memory between beginnings of
     /// successive array elements of a column.
-    int64_t col_stride() const {
-        if ((this->op_ == blas::Op::NoTrans) ==
-            (this->layout_ == blas::Layout::ColMajor)) {
+    int64_t colIncrement() const
+    {
+        if ((this->op_ == blas::Op::NoTrans)
+            == (this->layout_ == blas::Layout::ColMajor)) {
             return 1;
         }
         else {
-            return ld_;
+            return stride_;
         }
     }
 
+    //--------------------------------------------------------------------------
     /// @return element {i, j} of this tile. The actual value is returned, not a
     /// reference. If op() == blas::Op::ConjTrans then data is conjugated,
     /// taking the layout into account.
+    ///
     /// @param[in] i
     ///     Row index. 0 <= i < m.
     /// @param[in] j
     ///     Column index. 0 <= j < n.
-    T operator()(int64_t i, int64_t j) const {
-        hcore_error_if(0 > i || i >= this->m());
-        hcore_error_if(0 > j || j >= this->n());
+    T operator()(int64_t i, int64_t j) const
+    {
+        hcore_assert(0 <= i && i < this->mb());
+        hcore_assert(0 <= j && j < this->nb());
 
         using blas::conj;
 
         if (this->op_ == blas::Op::ConjTrans) {
-            if (this->layout_ == blas::Layout::ColMajor) {
-                return conj(this->data_[j + i*ld_]);
-            }
-            else {
-                return conj(this->data_[i + j*ld_]);
-            }
+            if (this->layout_ == blas::Layout::ColMajor)
+                return conj(this->data_[j + i*stride_]);
+            else
+                return conj(this->data_[i + j*stride_]);
         }
-        else if ((this->op_ == blas::Op::NoTrans) ==
-                 (this->layout_ == blas::Layout::ColMajor)) {
-            return this->data_[i + j*ld_];
+        else if ((this->op_ == blas::Op::NoTrans)
+                 == (this->layout_ == blas::Layout::ColMajor)) {
+            return this->data_[i + j*stride_];
         }
         else {
-            return this->data_[j + i*ld_];
+            return this->data_[j + i*stride_];
         }
     }
 
+    //--------------------------------------------------------------------------
     /// @return a const reference to element {i, j} of this tile.
     /// If op() == blas::Op::ConjTrans then data isn't conjugated, because a
     /// reference is returned, taking the layout into account.
+    ///
     /// @param[in] i
     ///     Row index. 0 <= i < m.
     /// @param[in] j
     ///     Column index. 0 <= j < n.
-    T const& at(int64_t i, int64_t j) const {
-        hcore_error_if(0 > i || i >= this->m());
-        hcore_error_if(0 > j || j >= this->n());
+    T const& at(int64_t i, int64_t j) const
+    {
+        hcore_assert(0 <= i && i < this->mb());
+        hcore_assert(0 <= j && j < this->nb());
 
-        if ((this->op_ == blas::Op::NoTrans) ==
-            (this->layout_ == blas::Layout::ColMajor)) {
-            return this->data_[i + j*ld_];
+        if ((this->op_ == blas::Op::NoTrans)
+            == (this->layout_ == blas::Layout::ColMajor)) {
+            return this->data_[i + j*stride_];
         }
         else {
-            return this->data_[j + i*ld_];
+            return this->data_[j + i*stride_];
         }
     }
 
+    //--------------------------------------------------------------------------
     /// @return a reference to element {i, j} of this tile.
     /// If op() == blas::Op::ConjTrans then data isn't conjugated, because a
     /// reference is returned, taking the layout into account.
+    ///
     /// @param[in] i
     ///     Row index. 0 <= i < m.
     /// @param[in] j
     ///     Column index. 0 <= j < n.
-    T& at(int64_t i, int64_t j) {
+    T& at(int64_t i, int64_t j)
+    {
         return const_cast<T&>(static_cast<const Tile>(*this).at(i, j));
     }
+protected:
+    int64_t stride_; ///> Leading dimension.
 
-private:
-    int64_t ld_; ///> Leading dimension.
+    //--------------------------------------------------------------------------
+    /// Set column (row-major) or row (column-major) stride.
+    ///
+    /// @param[in] new_stride
+    ///     Leading dimension of the data array buffer.
+    ///     new_stride >= mb: if layout = blas::Layout::ColMajor, or
+    ///     new_stride >= nb: if layout = blas::Layout::RowMajor.
+    void stride(int64_t new_stride)
+    {
+        hcore_assert((this->layout_ == blas::Layout::ColMajor
+                     && new_stride >= this->mb_)
+                     || (this->layout_ == blas::Layout::RowMajor
+                     && new_stride >= this->nb_));
+        stride_ = new_stride;
+    }
 
 }; // class Tile
 }  // namespace hcore
