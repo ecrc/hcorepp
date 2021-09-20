@@ -3,7 +3,7 @@
 // All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
-#include "hcore.hh"
+#include "hcore/hcore.hh"
 
 #ifndef HCORE_VERSION
 #define HCORE_VERSION "1.0.0" // major.minor.patch

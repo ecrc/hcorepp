@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
 #include "test.hh"
-#include "hcore.hh"
+#include "hcore/hcore.hh"
 
 #include "blas.hh"
 #include "lapack.hh"

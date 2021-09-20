@@ -2,20 +2,20 @@
 // (KAUST). All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
-#include "test.hh"
-#include "hcore.hh"
-#include "tile_utils.hh"
-#include "matrix_utils.hh"
-
-#include "blas.hh"
-#include "lapack.hh"
-#include "lapack/flops.hh"
-#include "testsweeper.hh"
-
-#include <vector>
 #include <cstdint>
 #include <complex>
 #include <cassert>
+#include <vector>
+
+#include "lapack/flops.hh"
+#include "testsweeper.hh"
+#include "lapack.hh"
+#include "blas.hh"
+
+#include "matrix_utils.hh"
+#include "hcore/hcore.hh"
+#include "tile_utils.hh"
+#include "test.hh"
 
 namespace hcore {
 namespace test {

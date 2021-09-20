@@ -1,13 +1,14 @@
-// Copyright (c) 2017-2021, King Abdullah University of Science and Technology
-// (KAUST). All rights reserved.
+// Copyright (c) 2017-2021,
+// King Abdullah University of Science and Technology (KAUST).
+// All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
-#include "hcore.hh"
-
-#include <vector>
+#include <algorithm> // std::min
 #include <cstdint>   // int64_t
 #include <stdio.h>   // printf
-#include <algorithm> // std::min
+#include <vector>    // std::vector
+
+#include "hcore/hcore.hh"
 
 // -----------------------------------------------------------------------------
 // Performs tile low-rank Matrix-matrix multiplication:
@@ -19,27 +20,27 @@
 template <typename T>
 void execute(int64_t m, int64_t n, int64_t k)
 {
-    int64_t lda = m;
-    int64_t ldb = n;
-    int64_t ldc = m;
+    int64_t ldau = m;
+    int64_t ldbu = k;
+    int64_t ldcu = m;
 
     int64_t Ark = std::min(m, k) / 2;
     int64_t Brk = std::min(k, n) / 2;
     int64_t Crk = std::min(m, n) / 2;
 
-    blas::real_type<T> accuracy = 1e-4;
+    int64_t ldav = Ark;
+    int64_t ldbv = Brk;
+    int64_t ldcv = Crk;
 
-    // m-by-k (U: m-by-Ark; V: Ark-by-k)
-    std::vector<T> AUVdata((lda + k) * Ark, 1.0);
-    hcore::CompressedTile<T> A(m, k, &AUVdata[0], lda, Ark, accuracy);
+    blas::real_type<T> tol = 1e-4;
 
-    // k-by-n (U: k-by-Brk; V: Brk-by-n)
-    std::vector<T> BUVdata((ldb + n) * Brk, 2.0);
-    hcore::CompressedTile<T> B(k, n, &BUVdata[0], ldb, Brk, accuracy);
+    std::vector<T> A_data(ldau*Ark + ldav*Ark, 1.0);
+    std::vector<T> B_data(ldbu*Brk + ldbv*Brk, 2.0);
+    std::vector<T> C_data(ldcu*Crk + ldcv*Crk, 3.0);
 
-    // m-by-n (U: m-by-Crk; V: Crk-by-n)
-    std::vector<T> CUVdata((ldc + n) * Crk, 3.0);
-    hcore::CompressedTile<T> C(m, n, &CUVdata[0], ldc, Crk, accuracy);
+    hcore::CompressedTile<T> A(m, k, &A_data[0], ldau, ldav, Ark, tol);
+    hcore::CompressedTile<T> B(k, n, &B_data[0], ldbu, ldbv, Brk, tol);
+    hcore::CompressedTile<T> C(m, n, &C_data[0], ldcu, ldcv, Crk, tol);
 
     // C = -1.0 * A * B + 1.0 * C
     hcore::gemm<T>(-1.0, A, B, 1.0, C);

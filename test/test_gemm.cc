@@ -3,22 +3,20 @@
 // All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
-#include "test.hh"
-#include "hcore.hh"
-#include "tile_utils.hh"
-#include "hcore/flops.hh"
-#include "matrix_utils.hh"
-
-#include "blas.hh"
-#include "blas/flops.hh"
-#include "lapack.hh"
-#include "testsweeper.hh"
-
-#include <vector>
+#include <algorithm>
 #include <cstdint>
 #include <complex>
-#include <algorithm>
-#include <initializer_list>
+#include <vector>
+
+#include "testsweeper.hh"
+#include "blas/flops.hh"
+#include "lapack.hh"
+#include "blas.hh"
+
+#include "lapack_wrappers.hh"
+#include "hcore/hcore.hh"
+#include "hcore/flops.hh"
+#include "test.hh"
 
 namespace hcore {
 namespace test {
@@ -459,7 +457,7 @@ void gemm(Params& params, bool run) {
                 Cref[i + j*ldc] -= Cdata_[i + j*ldc];
 
         if (verbose)
-            pretty_print(Cm, Cn, &Cref[0], ldc, "Cref_diff_C");
+            print_matrix(Cm, Cn, &Cref[0], ldc, "Cref_diff_C");
 
         params.error() = lapack::lange(norm, Cm, Cn, &Cref[0], ldc)
                        / (sqrt(blas::real_type<T>(k) + 2) * std::abs(alpha)
@@ -511,7 +509,7 @@ void gemm_dispatch(Params& params, bool run) {
             hcore::test::gemm<std::complex<double>>(params, run);
             break;
         default:
-            throw hcore::Error("Unsupported data type.");
+            throw Error("Unsupported data type.");
             break;
     }
 }

@@ -77,23 +77,23 @@ message("")
 # ------------------------------------------------------------------------------
 # test/unit/gemm.cc
 file(
-    GLOB gemm_src
+    GLOB utest_gemm_src
     CONFIGURE_DEPENDS
-    gemm.cc
+    utest_gemm.cc
     test.cc
 )
 
-set(gemm "${hcore_}gemm")
+set(utest_gemm "${hcore_}utest_gemm")
 add_executable(
-    ${gemm}
-    ${gemm_src}
+    ${utest_gemm}
+    ${utest_gemm_src}
 )
 
 # C++11 is inherited from hcore, but disabling extensions is not
-set_target_properties(${gemm} PROPERTIES CXX_EXTENSIONS false)
+set_target_properties(${utest_gemm} PROPERTIES CXX_EXTENSIONS false)
 
 target_link_libraries(
-    ${gemm}
+    ${utest_gemm}
     testsweeper
     hcore
 )

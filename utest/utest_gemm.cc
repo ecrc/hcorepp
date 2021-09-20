@@ -15,8 +15,8 @@
 #include "lapack.hh"
 
 #include "hcore/exception.hh"
+#include "hcore/hcore.hh"
 #include "hcore/tile.hh"
-#include "hcore.hh"
 #include "test.hh"
 
 namespace hcore {
