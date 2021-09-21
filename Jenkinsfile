@@ -17,7 +17,12 @@ pipeline {
                         values 'Almaha', 'Buraq', 'Condor', 'Flamingo',
                             'Jasmine', 'Shihab', 'Vulture', 'Albatross',
                             'Tuwaiq'
-                            // 'stork'   // todo: no modules
+                            // 'stork'   // todo
+                            // 'kanary'  // todo
+                            // 'qaysar'  // todo
+                            // 'batriq'  // todo
+                            // 'kanary'  // todo
+                            // 'tawous'  // todo
                             // 'Oqab',   // decommissioned
                             // 'P100',   // decommissioned
                             // 'Raed',   // decommissioned
@@ -78,12 +83,15 @@ pipeline {
                             ./run_tests.py --quick --xml ${top}/report.xml
 
                             echo "========================================"
-                            echo "smoke tests"
+                            echo "smoke test"
                             cd ${top}/example
 
                             rm -rf build && mkdir build && cd build
-                            cmake -DCMAKE_PREFIX_PATH="${top}/install/lib/blaspp;${top}/install/lib/lapackpp;${top}/install/lib/hcore" ..
-
+                            if [ "${host}" = "Condor" ]; then
+                            else
+                                cmake -DCMAKE_PREFIX_PATH="${top}/install/lib64/blaspp;${top}/install/lib64/lapackpp;${top}/install/lib64/hcore" ..
+                            fi
+                                cmake -DCMAKE_PREFIX_PATH="${top}/install/lib/blaspp;${top}/install/lib/lapackpp;${top}/install/lib/hcore" ..
                             make
                             ./example_gemm_ccc || exit 1
                             '''
