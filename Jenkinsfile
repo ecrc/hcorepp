@@ -64,6 +64,10 @@ pipeline {
 
                             module list
 
+                            ####################################################
+                            # Configure and build
+                            ####################################################
+
                             rm -rf ${top}/install
                             echo "========================================"
 
@@ -78,9 +82,17 @@ pipeline {
                             echo "========================================"
                             ldd test/tester
 
+                            ####################################################
+                            # Run tester
+                            ####################################################
+
                             echo "========================================"
                             cd test
                             ./run_tests.py --quick --xml ${top}/report.xml
+
+                            ####################################################
+                            # Smoke test
+                            ####################################################
 
                             echo "========================================"
                             echo "smoke test"
@@ -88,10 +100,11 @@ pipeline {
 
                             rm -rf build && mkdir build && cd build
                             if [ "${host}" = "Condor" ]; then
-                            else
                                 cmake -DCMAKE_PREFIX_PATH="${top}/install/lib64/blaspp;${top}/install/lib64/lapackpp;${top}/install/lib64/hcore" ..
-                            fi
+                            else
                                 cmake -DCMAKE_PREFIX_PATH="${top}/install/lib/blaspp;${top}/install/lib/lapackpp;${top}/install/lib/hcore" ..
+                            fi
+
                             make
                             ./example_gemm_ccc || exit 1
                             '''
