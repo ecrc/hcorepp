@@ -63,18 +63,30 @@ pipeline {
                             rm -rf build
                             mkdir build
                             cd build
-                            cmake -Dcolor=no -DCMAKE_CXX_FLAGS="-Werror" -Dlog=trace ..
+                            cmake -Dcolor=no -DCMAKE_CXX_FLAGS="-Werror" -Dlog=trace -DCMAKE_INSTALL_PREFIX=${top}/install ..
                             export top=../..
 
                             echo "========================================"
                             make -j8
+                            make install
+                            ls -R ${top}/install
 
                             echo "========================================"
                             ldd test/tester
 
                             echo "========================================"
                             cd test
-                            ./run_tests.py --small --xml ${top}/report.xml
+                            ./run_tests.py --quick --xml ${top}/report.xml
+
+                            echo "========================================"
+                            echo "smoke tests"
+                            cd ${top}/example
+
+                            rm -rf build && mkdir build && cd build
+                            cmake -DCMAKE_PREFIX_PATH=${top}/install/lib64/blaspp ..
+
+                            make
+                            ./example_gemm_ccc || exit 1
                             '''
                         } // steps
                         post {
