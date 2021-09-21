@@ -59,11 +59,10 @@ pipeline {
 
                             module list
 
+                            rm -rf ${top}/install
                             echo "========================================"
 
-                            rm -rf build
-                            mkdir build
-                            cd build
+                            rm -rf build && mkdir build && cd build
                             cmake -Dcolor=no -DCMAKE_CXX_FLAGS="-Werror" -Dlog=trace -DCMAKE_INSTALL_PREFIX=${top}/install ..
 
                             echo "========================================"
@@ -83,7 +82,7 @@ pipeline {
                             cd ${top}/example
 
                             rm -rf build && mkdir build && cd build
-                            cmake -DCMAKE_PREFIX_PATH=${top}/install/lib64/blaspp ..
+                            cmake -DCMAKE_PREFIX_PATH=${top}/install/lib/hcore ..
 
                             make
                             ./example_gemm_ccc || exit 1
