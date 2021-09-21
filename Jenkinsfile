@@ -32,6 +32,7 @@ pipeline {
                         steps {
                             sh '''#!/bin/bash -le
                             hostname && pwd
+                            export top=`pwd`
 
                             # modules
                             echo "========================================"
@@ -64,7 +65,6 @@ pipeline {
                             mkdir build
                             cd build
                             cmake -Dcolor=no -DCMAKE_CXX_FLAGS="-Werror" -Dlog=trace -DCMAKE_INSTALL_PREFIX=${top}/install ..
-                            export top=../..
 
                             echo "========================================"
                             make -j8
