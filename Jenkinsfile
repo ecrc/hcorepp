@@ -63,7 +63,7 @@ pipeline {
                             echo "========================================"
 
                             rm -rf build && mkdir build && cd build
-                            cmake -Dcolor=no -DCMAKE_CXX_FLAGS="-Werror" -Dlog=trace -DCMAKE_INSTALL_PREFIX=${top}/install ..
+                            cmake -Dcolor=no -DCMAKE_CXX_FLAGS="-Werror" -DCMAKE_INSTALL_PREFIX=${top}/install ..
 
                             echo "========================================"
                             make -j8
@@ -82,7 +82,7 @@ pipeline {
                             cd ${top}/example
 
                             rm -rf build && mkdir build && cd build
-                            cmake -DCMAKE_PREFIX_PATH=${top}/install/lib/hcore ..
+                            cmake -DCMAKE_PREFIX_PATH="${top}/install/lib/blaspp;${top}/install/lib/lapackpp;${top}/install/lib/hcore" ..
 
                             make
                             ./example_gemm_ccc || exit 1
