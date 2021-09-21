@@ -16,6 +16,7 @@
 #include "hcore/internal/check.hh"
 #include "internal/internal.hh"
 #include "hcore/exception.hh"
+#include "hcore/options.hh"
 #include "hcore/hcore.hh"
 #include "hcore/tile.hh"
 
@@ -488,11 +489,15 @@ template <typename T>
 void gemm(T alpha,           Tile<T> const& A,
                    CompressedTile<T> const& B,
           T beta,  CompressedTile<T>&       C,
-    bool use_ungqr, bool truncated_svd, int64_t fixed_rk)
+          Options const& opts)
 {
     assert(C.op() == blas::Op::NoTrans); // todo
 
     internal::check_gemm(A, B, C);
+
+    bool use_gemm = get_option(opts, Option::UseGEMM, true);
+    int64_t fixed_rk = get_option(opts, Option::FixedRank, 0);
+    bool truncate_with_tol = get_option(opts, Option::TruncateWithTol, false);
 
     T zero = 0.0;
 
@@ -512,14 +517,14 @@ void gemm(T alpha,           Tile<T> const& A,
                        beta, B.Vdata(), B.Vstride(),
                              &W[0],     ldw, B.rk(),
                              C,
-                       use_ungqr, truncated_svd, fixed_rk);
+                       use_gemm, fixed_rk, truncate_with_tol);
     }
     else {
         internal::rsvd(blas::Op::NoTrans, B.op(),
                        beta, &W[0],     ldw,
                              B.Vdata(), B.Vstride(), B.rk(),
                              C,
-                       use_ungqr, truncated_svd, fixed_rk);
+                       use_gemm, fixed_rk, truncate_with_tol);
     }
 }
 
@@ -527,24 +532,24 @@ template
 void gemm(float alpha,           Tile<float> const& A,
                        CompressedTile<float> const& B,
           float beta,  CompressedTile<float>&       C,
-          bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
+          Options const& opts);
 template
 void gemm(double alpha,           Tile<double> const& A,
                         CompressedTile<double> const& B,
           double beta,  CompressedTile<double>&       C,
-          bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
+          Options const& opts);
 template
 void gemm(
     std::complex<float> alpha,           Tile<std::complex<float>> const& A,
                                CompressedTile<std::complex<float>> const& B,
     std::complex<float> beta,  CompressedTile<std::complex<float>>&       C,
-    bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
+    Options const& opts);
 template
 void gemm(
     std::complex<double> alpha,           Tile<std::complex<double>> const& A,
                                 CompressedTile<std::complex<double>> const& B,
     std::complex<double> beta,  CompressedTile<std::complex<double>>&       C,
-    bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
+    Options const& opts);
 
 //------------------------------------------------------------------------------
 /// General matrix-matrix multiplication. Performs the matrix-matrix operation:
@@ -579,11 +584,15 @@ template <typename T>
 void gemm(T alpha, CompressedTile<T> const& A,
                              Tile<T> const& B,
           T beta,  CompressedTile<T>&       C,
-          bool use_ungqr, bool truncated_svd, int64_t fixed_rk)
+          Options const& opts)
 {
     assert(C.op() == blas::Op::NoTrans); // todo
 
     internal::check_gemm(A, B, C);
+
+    bool use_gemm = get_option(opts, Option::UseGEMM, true);
+    int64_t fixed_rk = get_option(opts, Option::FixedRank, 0);
+    bool truncate_with_tol = get_option(opts, Option::TruncateWithTol, false);
 
     std::vector<T> W(A.rk()*C.nb());
     int64_t ldw = C.layout() == blas::Layout::ColMajor ? A.rk() : C.nb();
@@ -603,14 +612,14 @@ void gemm(T alpha, CompressedTile<T> const& A,
                        beta, &W[0],     ldw,
                              A.Udata(), A.Ustride(), A.rk(),
                              C,
-                       use_ungqr, truncated_svd, fixed_rk);
+                       use_gemm, truncate_with_tol, fixed_rk);
     }
     else {
         internal::rsvd(A.op(), blas::Op::NoTrans,
                        beta, A.Udata(), A.Ustride(),
                              &W[0],     ldw, A.rk(),
                              C,
-                       use_ungqr, truncated_svd, fixed_rk);
+                       use_gemm, truncate_with_tol, fixed_rk);
     }
 }
 
@@ -618,24 +627,24 @@ template
 void gemm(float alpha, CompressedTile<float> const& A,
                                  Tile<float> const& B,
           float beta,  CompressedTile<float>&       C,
-    bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
+          Options const& opts);
 template
 void gemm(double alpha, CompressedTile<double> const& A,
                                   Tile<double> const& B,
           double beta,  CompressedTile<double>&       C,
-    bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
+          Options const& opts);
 template
 void gemm(
     std::complex<float> alpha, CompressedTile<std::complex<float>> const& A,
                                          Tile<std::complex<float>> const& B,
     std::complex<float> beta,  CompressedTile<std::complex<float>>&       C,
-    bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
+    Options const& opts);
 template
 void gemm(
     std::complex<double> alpha, CompressedTile<std::complex<double>> const& A,
                                           Tile<std::complex<double>> const& B,
     std::complex<double> beta,  CompressedTile<std::complex<double>>&       C,
-    bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
+    Options const& opts);
 
 //------------------------------------------------------------------------------
 /// General matrix-matrix multiplication. Performs the matrix-matrix operation:
@@ -671,7 +680,7 @@ template <typename T>
 void gemm(T alpha, CompressedTile<T> const& A,
                    CompressedTile<T> const& B,
           T beta,  CompressedTile<T>&       C,
-          bool use_ungqr, bool truncated_svd, int64_t fixed_rk)
+          Options const& opts)
 {
     assert(C.op() == blas::Op::NoTrans); // todo
 
@@ -679,6 +688,10 @@ void gemm(T alpha, CompressedTile<T> const& A,
     T one  = 1.0;
 
     internal::check_gemm(A, B, C);
+
+    bool use_gemm = get_option(opts, Option::UseGEMM, true);
+    int64_t fixed_rk = get_option(opts, Option::FixedRank, 0);
+    bool truncate_with_tol = get_option(opts, Option::TruncateWithTol, false);
 
     // W0 = alpha * AV * BU
     std::vector<T> W0(A.rk() * B.rk());
@@ -707,14 +720,14 @@ void gemm(T alpha, CompressedTile<T> const& A,
                            beta, &W1[0],    ldw1,
                                  A.Udata(), A.Ustride(), A.rk(),
                                  C,
-                           use_ungqr, truncated_svd, fixed_rk);
+                           use_gemm, truncate_with_tol, fixed_rk);
         }
         else {
             internal::rsvd(A.op(), blas::Op::NoTrans,
                            beta, A.Udata(), A.Ustride(),
                                  &W1[0],    ldw1, A.rk(),
                                  C,
-                           use_ungqr, truncated_svd, fixed_rk);
+                           use_gemm, truncate_with_tol, fixed_rk);
         }
     }
     else {
@@ -734,14 +747,14 @@ void gemm(T alpha, CompressedTile<T> const& A,
                            beta, B.Vdata(), B.Vstride(),
                                  &W1[0],    ldw1, B.rk(),
                                  C,
-                           use_ungqr, truncated_svd, fixed_rk);
+                           use_gemm, truncate_with_tol, fixed_rk);
         }
         else {
             internal::rsvd(blas::Op::NoTrans, B.op(),
                            beta, &W1[0],    ldw1,
                                  B.Vdata(), B.Vstride(), B.rk(),
                                  C,
-                           use_ungqr, truncated_svd, fixed_rk);
+                           use_gemm, truncate_with_tol, fixed_rk);
         }
     }
 }
@@ -750,23 +763,23 @@ template
 void gemm(float alpha, CompressedTile<float> const& A,
                        CompressedTile<float> const& B,
           float beta,  CompressedTile<float>&       C,
-          bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
+          Options const& opts);
 template
 void gemm(double alpha, CompressedTile<double> const& A,
                         CompressedTile<double> const& B,
            double beta, CompressedTile<double>&       C,
-           bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
+          Options const& opts);
 template
 void gemm(
     std::complex<float> alpha, CompressedTile<std::complex<float>> const& A,
                                CompressedTile<std::complex<float>> const& B,
     std::complex<float> beta,  CompressedTile<std::complex<float>>&       C,
-    bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
+    Options const& opts);
 template
 void gemm(
     std::complex<double> alpha, CompressedTile<std::complex<double>> const& A,
                                 CompressedTile<std::complex<double>> const& B,
     std::complex<double> beta,  CompressedTile<std::complex<double>>&       C,
-    bool use_ungqr, bool truncated_svd, int64_t fixed_rk);
+    Options const& opts);
 
 } // namespace hcore

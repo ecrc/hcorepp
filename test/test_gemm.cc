@@ -182,22 +182,24 @@ void gemm(Params& params, bool run) {
     int64_t m = params.dim.m();
     int64_t n = params.dim.n();
     int64_t k = params.dim.k();
-    int64_t mode = params.latms_mode();
     int64_t align = params.align();
     int64_t verbose = params.verbose();
-    int64_t truncate_with_fixed_rk = params.truncate_with_fixed_rk();
 
     lapack::Norm norm = params.norm();
 
     blas::real_type<T> tol = params.tol();
+
+    int64_t mode = params.latms_mode();
     blas::real_type<T> cond = params.latms_cond();
     blas::real_type<T> dmax = params.latms_dmax();
+
     blas::real_type<T> accuracy = params.routine == "gemm_ddd"
                             ? std::numeric_limits<blas::real_type<T>>::epsilon()
                             : params.accuracy();
 
-    bool use_ungqr = params.use_ungqr() == 'y';
+    bool use_gemm = params.use_gemm() == 'y';
     bool truncate_with_tol = params.truncate_with_tol() == 'y';
+    int64_t truncate_with_fixed_rk = params.truncate_with_fixed_rk();
 
     if (params.routine == "gemm_ddc" || params.routine == "gemm_dcc" ||
         params.routine == "gemm_cdc" || params.routine == "gemm_ccc") {
@@ -347,6 +349,12 @@ void gemm(Params& params, bool run) {
         Crk = rk;
     }
 
+    hcore::Options const opts = {
+        { hcore::Option::UseGEMM,         use_gemm               },
+        { hcore::Option::FixedRank,       truncate_with_fixed_rk },
+        { hcore::Option::TruncateWithTol, truncate_with_tol      }
+    };
+
     double gflops = 0.0;
     double time_start = testsweeper::get_wtime();
 
@@ -363,8 +371,7 @@ void gemm(Params& params, bool run) {
         gflops = hcore::Gflop<T>::gemm(A, BUV, C);
     }
     else if (params.routine == "gemm_dcc") {
-        hcore::gemm<T>(alpha, A, BUV, beta, CUV, 
-                use_ungqr, truncate_with_tol, truncate_with_fixed_rk);
+        hcore::gemm<T>(alpha, A, BUV, beta, CUV, opts);
         gflops = hcore::Gflop<T>::gemm(A, BUV, CUV);
     }
     else if (params.routine == "gemm_cdd") {
@@ -372,8 +379,7 @@ void gemm(Params& params, bool run) {
         gflops = hcore::Gflop<T>::gemm(AUV, B, C);
     }
     else if (params.routine == "gemm_cdc") {
-        hcore::gemm<T>(alpha, AUV, B, beta, CUV, 
-                use_ungqr, truncate_with_tol, truncate_with_fixed_rk);
+        hcore::gemm<T>(alpha, AUV, B, beta, CUV, opts);
         gflops = hcore::Gflop<T>::gemm(AUV, B, CUV);
     }
     else if (params.routine == "gemm_ccd") {
@@ -381,8 +387,7 @@ void gemm(Params& params, bool run) {
         gflops = hcore::Gflop<T>::gemm(AUV, BUV, C);
     }
     else if (params.routine == "gemm_ccc") {
-        hcore::gemm<T>(alpha, AUV, BUV, beta, CUV,
-                use_ungqr, truncate_with_tol, truncate_with_fixed_rk);
+        hcore::gemm<T>(alpha, AUV, BUV, beta, CUV, opts);
         gflops = hcore::Gflop<T>::gemm(AUV, BUV, CUV);
     }
 

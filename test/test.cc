@@ -35,9 +35,9 @@ const char* section_names[] = {
 
 std::vector<testsweeper::routines_t> routines = {
     { "potrf",    hcore::test::potrf_dispatch, Section::chol       },
-    // { "potrf_c",    hcore::test::potrf_dispatch, Section::chol       }, // todo
-    // { "potrf_d",    hcore::test::potrf_dispatch, Section::chol       }, // todo
-    { "",         nullptr,             Section::newline    },
+    // { "potrf_c",  hcore::test::potrf_dispatch, Section::chol       }, // todo
+    // { "potrf_d",  hcore::test::potrf_dispatch, Section::chol       }, // todo
+    { "",         nullptr,                     Section::newline    },
 
     { "gemm_ddd", hcore::test::gemm_dispatch,  Section::blas3_gemm },
     { "gemm_ddc", hcore::test::gemm_dispatch,  Section::blas3_gemm },
@@ -47,20 +47,20 @@ std::vector<testsweeper::routines_t> routines = {
     { "gemm_cdc", hcore::test::gemm_dispatch,  Section::blas3_gemm },
     { "gemm_ccd", hcore::test::gemm_dispatch,  Section::blas3_gemm },
     { "gemm_ccc", hcore::test::gemm_dispatch,  Section::blas3_gemm },
-    { "",         nullptr,             Section::newline    },
+    { "",         nullptr,                     Section::newline    },
 
     { "syrk_dd",  hcore::test::syrk_dispatch,  Section::blas3_syrk },
-    // { "syrk_dc",  hcore::test::syrk_dispatch,  Section::blas3_syrk }, // todo
+    { "syrk_dc",  hcore::test::syrk_dispatch,  Section::blas3_syrk },
     { "syrk_cd",  hcore::test::syrk_dispatch,  Section::blas3_syrk },
-    // { "syrk_cc",  hcore::test::syrk_dispatch,  Section::blas3_syrk }, // todo
-    { "",         nullptr,             Section::newline    },
+    { "syrk_cc",  hcore::test::syrk_dispatch,  Section::blas3_syrk },
+    { "",         nullptr,                     Section::newline    },
 
     { "trsm",  hcore::test::trsm_dispatch,  Section::blas3_trsm },
     // { "trsm_dd",  hcore::test::trsm_dispatch,  Section::blas3_trsm }, // todo
     // { "trsm_dc",  hcore::test::trsm_dispatch,  Section::blas3_trsm }, // todo
     // { "trsm_cd",  hcore::test::trsm_dispatch,  Section::blas3_trsm }, // todo
     // { "trsm_cc",  hcore::test::trsm_dispatch,  Section::blas3_trsm }, // todo
-    { "",         nullptr,             Section::newline    },
+    { "",         nullptr,                     Section::newline    },
 };
 
 Params::Params():
@@ -140,13 +140,9 @@ Params::Params():
         // name, width, type, default, valid, help
         "check", 0, testsweeper::ParamType::Value, 'y', "ny",
         "check the results (default yes)"),
-    use_trmm(
+    use_gemm(
         // name, width, type, default, valid, help
-        "use_trmm", 0, testsweeper::ParamType::Value, 'n', "ny",
-        "use gemm with trmm (default no)"),
-    use_ungqr(
-        // name, width, type, default, valid, help
-        "use_ungqr", 0, testsweeper::ParamType::Value, 'y', "ny",
+        "use_gemm", 0, testsweeper::ParamType::Value, 'y', "ny",
         "use gemm with ungqr (default yes)"),
     truncate_with_tol(
         // name, width, type, default, valid, help

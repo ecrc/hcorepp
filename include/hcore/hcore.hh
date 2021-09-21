@@ -11,6 +11,7 @@
 #include "blas.hh"
 
 #include "hcore/compressed_tile.hh"
+#include "hcore/options.hh"
 #include "hcore/tile.hh"
 
 //------------------------------------------------------------------------------
@@ -90,45 +91,42 @@ template <typename T>
 void gemm(T alpha,           Tile<T> const& A,
                    CompressedTile<T> const& B,
           T beta,  CompressedTile<T>&       C,
-          bool use_ungqr=true, bool truncation_with_tol=false, int64_t rk=0);
+          Options const& opts = Options());
 // converts rvalue references to lvalue references
 template <typename T>
 void gemm(T alpha,           Tile<T> const&& A,
                    CompressedTile<T> const&& B,
           T beta,  CompressedTile<T>&&       C,
-          bool use_ungqr=true, bool truncation_with_tol=false, int64_t rk=0)
+          Options const& opts = Options())
 {
-    hcore::gemm(alpha, A, B, beta, C,
-                use_ungqr, truncation_with_tol, rk); // forward
+    hcore::gemm(alpha, A, B, beta, C, opts); // forward
 }
 template <typename T>
 void gemm(T alpha, CompressedTile<T> const& A,
                              Tile<T> const& B,
           T beta,  CompressedTile<T>&       C,
-          bool use_ungqr=true, bool truncation_with_tol=false, int64_t rk=0);
+          Options const& opts = Options());
 // converts rvalue references to lvalue references
 template <typename T>
 void gemm(T alpha, CompressedTile<T> const&& A,
                              Tile<T> const&& B,
           T beta,  CompressedTile<T>&&       C,
-          bool use_ungqr=true, bool truncation_with_tol=false, int64_t rk=0)
+          Options const& opts = Options())
 {
-    hcore::gemm(alpha, A, B, beta, C,
-        use_ungqr, truncation_with_tol, rk); // forward
+    hcore::gemm(alpha, A, B, beta, C, opts); // forward
 }
 template <typename T>
 void gemm(T alpha, CompressedTile<T> const& A,
                    CompressedTile<T> const& B,
           T beta,  CompressedTile<T>&       C,
-          bool use_ungqr=true, bool truncation_with_tol=false, int64_t rk=0);
+          Options const& opts = Options());
 template <typename T>
 void gemm(T alpha, CompressedTile<T> const&& A,
                    CompressedTile<T> const&& B,
           T beta,  CompressedTile<T>&&       C,
-          bool use_ungqr=true, bool truncation_with_tol=false, int64_t rk=0)
+          Options const& opts = Options())
 {
-    hcore::gemm(alpha, A, B, beta, C,
-        use_ungqr, truncation_with_tol, rk); // forward
+    hcore::gemm(alpha, A, B, beta, C, opts); // forward
 }
 
 // Symmetric rank-k update (syrk)

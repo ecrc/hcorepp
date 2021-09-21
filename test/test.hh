@@ -27,8 +27,7 @@ public:
     testsweeper::ParamEnum<blas::Op>     transC;
 
     testsweeper::ParamChar check;
-    testsweeper::ParamChar use_trmm;
-    testsweeper::ParamChar use_ungqr;
+    testsweeper::ParamChar use_gemm;
     testsweeper::ParamChar truncate_with_tol;
 
     testsweeper::ParamEnum<lapack::Norm> norm;
