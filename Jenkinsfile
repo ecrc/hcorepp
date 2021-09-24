@@ -111,11 +111,13 @@ pipeline {
                         } // steps
                         post {
                             failure {
+                                githubNotify(status: 'FAILURE')
                                 mail to: 'mohammed.farhan@kaust.edu.sa',
                                     subject: "${currentBuild.fullDisplayName} -- ${host} failed",
                                     body: "see more at ${env.BUILD_URL}"
                             }
                             always {
+                                githubNotify(status: 'SUCCESS')
                                 junit '*.xml'
                             }
                         } // post
