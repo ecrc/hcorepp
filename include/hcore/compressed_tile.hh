@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <utility>
 
 #include "blas.hh"
 
@@ -25,7 +26,7 @@ class CompressedTile : public BaseTile<T>
 public:
     //--------------------------------------------------------------------------
     /// CompressedTile empty class.
-    CompressedTile() : BaseTile<T>(), Ustride_(0), Vstride_(0), rk_(0), tol_(0)
+    CompressedTile() : BaseTile<T>(), stride_({0, 0}), rk_(0), tol_(0)
     {}
 
     //--------------------------------------------------------------------------
@@ -37,14 +38,17 @@ public:
     ///     Number of columns. nb >= 0.
     /// @param[in,out] UV
     ///     The mb-by-nb compressed tile, stored in a data buffer of size:
-    ///     ldu-by-rk + ldv-by-nb: if layout = blas::Layout::ColMajor, or
-    ///     ldu-by-rk + ldv-by-mb: if layout = blas::Layout::RowMajor.
-    /// @param[in] ldu
-    ///     Leading dimension of the U array of the data buffer.
-    ///     ldu >= mb: if layout = blas::Layout::ColMajor, or
-    ///     ldu >= nb: if layout = blas::Layout::RowMajor.
-    /// @param[in] ldv
-    ///     Leading dimension of the V array of the data buffer. ldv >= rk.
+    ///     UV: lduv1-by-rk + lduv2-by-nb, if layout=blas::Layout::ColMajor, or
+    ///     VU: lduv1-by-rk + lduv2-by-mb, if layout=blas::Layout::RowMajor.
+    /// @param[in] lduv1
+    ///     Leading dimension of the U or V array of the data buffer.
+    ///     lduv1 >= mb: if layout = blas::Layout::ColMajor (stride of U), or
+    ///     lduv1 >= nb: if layout = blas::Layout::RowMajor (stride of V).
+    /// @param[in] lduv2
+    ///     Leading dimension of the V or U array of the data buffer.
+    ///     lduv2 >= rk.
+    ///     if layout = blas::Layout::ColMajor (stride of V), or
+    ///     if layout = blas::Layout::RowMajor (stride of U).
     /// @param[in] rk
     ///     Linear algebra matrix rank. rk >= 0.
     /// @param[in] tol
@@ -53,19 +57,17 @@ public:
     ///     The physical ordering of matrix elements in the data array buffer.
     ///     blas::Layout::ColMajor: column elements are 1-strided, or
     ///     blas::Layout::RowMajor: row elements are 1-strided.
-    CompressedTile(int64_t mb, int64_t nb, T* UV, int64_t ldu, int64_t ldv,
+    CompressedTile(int64_t mb, int64_t nb, T* UV, int64_t lduv1, int64_t lduv2,
                    int64_t rk, blas::real_type<T> tol,
                    blas::Layout layout = blas::Layout::ColMajor)
         : BaseTile<T>(mb, nb, UV, layout),
-          Ustride_(ldu),
-          Vstride_(ldv),
+          stride_({lduv1, lduv2}),
           rk_(rk),
           tol_(tol)
     {
-        hcore_assert((layout == blas::Layout::ColMajor && ldu >= mb)
-                     || (layout == blas::Layout::RowMajor && ldu >= rk));
-        hcore_assert((layout == blas::Layout::ColMajor && ldv >= rk)
-                     || (layout == blas::Layout::RowMajor && ldv >= nb));
+        hcore_assert((layout == blas::Layout::ColMajor && lduv1 >= mb)
+                     || (layout == blas::Layout::RowMajor && lduv1 >= nb));
+        hcore_assert(lduv2 >= rk);
         hcore_assert(rk >= 0);
         hcore_assert(tol >= 0);
     }
@@ -74,12 +76,14 @@ public:
     /// @return const pointer to array data buffer of U.
     T const* Udata() const
     {
-       if ((this->op_ == blas::Op::NoTrans)
+        // (blas::Op::NoTrans && blas::Layout::ColMajor)
+        //  || (blas::Op::Trans && blas::Layout::RowMajor)
+        if ((this->op_ == blas::Op::NoTrans)
             == (this->layout_ == blas::Layout::ColMajor)) {
-            return this->data_;
+            return this->data_;                 // UV: mb-by-rk + rk-by-nb
         }
         else {
-            return this->data_ + Vstride()*rk_;
+            return this->data_ + Vstride()*rk_; // VU: nb-y-rk + rk-by-mb
         }
     }
 
@@ -87,12 +91,14 @@ public:
     /// @return pointer to array data buffer of U.
     T* Udata()
     {
-       if ((this->op_ == blas::Op::NoTrans)
+        // (blas::Op::NoTrans && blas::Layout::ColMajor)
+        //  || (blas::Op::Trans && blas::Layout::RowMajor)
+        if ((this->op_ == blas::Op::NoTrans)
             == (this->layout_ == blas::Layout::ColMajor)) {
-            return this->data_;
+            return this->data_;                 // UV: mb-by-rk + rk-by-nb
         }
         else {
-            return this->data_ + Vstride()*rk_;
+            return this->data_ + Vstride()*rk_; // VU: nb-y-rk + rk-by-mb
         }
     }
 
@@ -100,12 +106,14 @@ public:
     /// @return const pointer to array data buffer of V.
     T const* Vdata() const
     {
-       if ((this->op_ == blas::Op::NoTrans)
+        // (blas::Op::NoTrans && blas::Layout::ColMajor)
+        //  || (blas::Op::Trans && blas::Layout::RowMajor)
+        if ((this->op_ == blas::Op::NoTrans)
             == (this->layout_ == blas::Layout::ColMajor)) {
-            return this->data_ + Ustride()*rk_;
+            return this->data_ + Ustride()*rk_; // UV: mb-by-rk + rk-by-nb
         }
         else {
-            return this->data_;
+            return this->data_;                 // VU: nb-y-rk + rk-by-mb
         }
     }
 
@@ -113,12 +121,14 @@ public:
     /// @return pointer to array data buffer of V.
     T* Vdata()
     {
-       if ((this->op_ == blas::Op::NoTrans)
+        // (blas::Op::NoTrans && blas::Layout::ColMajor)
+        //  || (blas::Op::Trans && blas::Layout::RowMajor)
+        if ((this->op_ == blas::Op::NoTrans)
             == (this->layout_ == blas::Layout::ColMajor)) {
-            return this->data_ + Ustride()*rk_;
+            return this->data_ + Ustride()*rk_; // UV: mb-by-rk + rk-by-nb
         }
         else {
-            return this->data_;
+            return this->data_;                 // VU: nb-y-rk + rk-by-mb
         }
     }
 
@@ -126,13 +136,29 @@ public:
     /// @return column/row stride of U.
     int64_t Ustride() const
     {
-        return (this->op_ == blas::Op::NoTrans ? Ustride_ : Vstride_);
+        // (blas::Op::NoTrans && blas::Layout::ColMajor)
+        //  || (blas::Op::Trans && blas::Layout::RowMajor)
+        if ((this->op_ == blas::Op::NoTrans)
+            == (this->layout_ == blas::Layout::ColMajor)) {
+            return stride_.first;  // UV: mb-by-rk + rk-by-nb
+        }
+        else {
+            return stride_.second; // VU: nb-y-rk + rk-by-mb
+        }
     }
     //--------------------------------------------------------------------------
     /// @return column/row stride of V.
     int64_t Vstride() const
     {
-        return (this->op_ == blas::Op::NoTrans ? Vstride_ : Ustride_);
+        // (blas::Op::NoTrans && blas::Layout::ColMajor)
+        //  || (blas::Op::Trans && blas::Layout::RowMajor)
+        if ((this->op_ == blas::Op::NoTrans)
+            == (this->layout_ == blas::Layout::ColMajor)) {
+            return stride_.second; // UV: mb-by-rk + rk-by-nb
+        }
+        else {
+            return stride_.first;  // VU: nb-y-rk + rk-by-mb
+        }
     }
 
     //--------------------------------------------------------------------------
@@ -148,23 +174,25 @@ public:
     ///
     /// @param[in,out] UV
     ///     The mb-by-nb compressed tile, stored in a data buffer of size:
-    ///     ldu-by-rk + ldv-by-nb: if layout = blas::Layout::ColMajor, or
-    ///     ldu-by-rk + ldv-by-mb: if layout = blas::Layout::RowMajor.
-    /// @param[in] ldu
-    ///     Leading dimension of the U array of the data buffer.
-    ///     ldu >= mb: if layout = blas::Layout::ColMajor, or
-    ///     ldu >= nb: if layout = blas::Layout::RowMajor.
-    /// @param[in] ldv
-    ///     Leading dimension of the V array of the data buffer. ldv >= rk.
-    /// @param[in] rk
+    ///     UV: lduv1-by-rk + lduv2-by-nb, if layout=blas::Layout::ColMajor, or
+    ///     VU: lduv1-by-rk + lduv2-by-mb, if layout=blas::Layout::RowMajor.
+    /// @param[in] lduv1
+    ///     Leading dimension of the U or V array of the data buffer.
+    ///     lduv1 >= mb: if layout = blas::Layout::ColMajor (stride of U), or
+    ///     lduv1 >= nb: if layout = blas::Layout::RowMajor (stride of V).
+    /// @param[in] lduv2
+    ///     Leading dimension of the V or U array of the data buffer.
+    ///     lduv2 >= rk.
+    ///     if layout = blas::Layout::ColMajor (stride of V), or
+    ///     if layout = blas::Layout::RowMajor (stride of U).
+    /// @param[in] new_rk
     ///     Linear algebra matrix rank. rk >= 0.
-    void resize(T* UV, int64_t ldu, int64_t ldv, int64_t new_rk)
+    void resize(T* UV, int64_t lduv1, int64_t lduv2, int64_t new_rk)
     {
         hcore_assert(UV != nullptr);
         this->data_ = UV;
         rk(new_rk);
-        Ustride(ldu);
-        Vstride(ldv);
+        stride(lduv1, lduv2);
     }
 
     //--------------------------------------------------------------------------
@@ -173,8 +201,7 @@ public:
     void clear() { delete [] this->data_; }
 
 protected:
-    int64_t Ustride_; ///> Leading dimension of U.
-    int64_t Vstride_; ///> Leading dimension of V.
+    std::pair<int64_t, int64_t> stride_; ///> Leading dimension
 
     int64_t rk_; ///> Linear algebra matrix rank.
 
@@ -183,33 +210,23 @@ protected:
     //--------------------------------------------------------------------------
     /// Set column (row-major) or row (column-major) stride of U.
     ///
-    /// @param[in] new_Ustride
-    ///     Leading dimension of the U data array buffer.
-    ///     new_Ustride >= mb: if layout = blas::Layout::ColMajor, or
-    ///     new_Ustride >= nb: if layout = blas::Layout::RowMajor.
-    void Ustride(int64_t new_Ustride)
+    /// @param[in] lduv1
+    ///     Leading dimension of the U or V array of the data buffer.
+    ///     lduv1 >= mb: if layout = blas::Layout::ColMajor (stride of U), or
+    ///     lduv1 >= nb: if layout = blas::Layout::RowMajor (stride of V).
+    /// @param[in] lduv2
+    ///     Leading dimension of the V or U array of the data buffer.
+    ///     lduv2 >= rk.
+    ///     if layout = blas::Layout::ColMajor (stride of V), or
+    ///     if layout = blas::Layout::RowMajor (stride of U).
+    void stride(int64_t lduv1, int64_t lduv2)
     {
         hcore_assert((this->layout_ == blas::Layout::ColMajor
-                     && new_Ustride >= this->mb_)
+                     && lduv1 >= this->mb_)
                      || (this->layout_ == blas::Layout::RowMajor
-                     && new_Ustride >= rk_));
-        Ustride_ = new_Ustride;
-    }
-
-    //--------------------------------------------------------------------------
-    /// Set column (row-major) or row (column-major) stride of V.
-    ///
-    /// @param[in] new_Vstride
-    ///     Leading dimension of the V array of the data buffer.
-    ///     new_Vstride >= rk.
-    void Vstride(int64_t new_Vstride)
-    {
-        hcore_assert((this->layout_ == blas::Layout::ColMajor
-                     && new_Vstride >= rk_)
-                     || (this->layout_ == blas::Layout::RowMajor
-                     && new_Vstride >= this->nb_));
-
-        Vstride_ = new_Vstride;
+                     && lduv1 >= this->nb_));
+        hcore_assert(lduv2 >= rk_);
+        stride_ = {lduv1, lduv2};
     }
 
     //--------------------------------------------------------------------------

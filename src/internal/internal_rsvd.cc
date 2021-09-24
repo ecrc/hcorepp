@@ -273,10 +273,7 @@ void rsvd(blas::Op transAU, blas::Op transAV,
                 VTilda[i + j*ldv] = conj(VTilda[i + j*ldv]);
     }
 
-    if (C.layout() == blas::Layout::ColMajor)
-        C.resize(UV, ldu, ldv, rk_new);
-    else
-        C.resize(UV, ldv, ldu, rk_new);
+    C.resize(UV, ldu, ldv, rk_new);
 }
 
 template

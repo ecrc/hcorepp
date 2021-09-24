@@ -430,11 +430,7 @@ void gemm(T alpha,           Tile<T> const& A,
                one,  &W[0],     ldw);
 
     int64_t min_mb_nb = std::min(C.mb(), C.nb());
-
-    if (C.layout() == blas::Layout::RowMajor)
-        C.resize(W, min_mb_nb, ldw, min_mb_nb);
-    else
-        C.resize(W, ldw, min_mb_nb, min_mb_nb);
+    C.resize(W, ldw, min_mb_nb, min_mb_nb);
 }
 
 template

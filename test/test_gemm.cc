@@ -299,9 +299,6 @@ void gemm(Params& params, bool run) {
             print_matrix(rk, An, &AUVdata[ldu*rk], ldv, "AV");
         }
 
-        if (layout == blas::Layout::RowMajor)
-            std::swap(ldu, ldv);
-
         AUV = hcore::CompressedTile<T>(Am_orig, An_orig, &AUVdata[0], ldu, ldv,
                                        rk, accuracy, layout);
         if (transA == blas::Op::Trans)
@@ -320,9 +317,6 @@ void gemm(Params& params, bool run) {
             print_matrix(rk, Bn, &BUVdata[ldu*rk], ldv, "BV");
         }
 
-        if (layout == blas::Layout::RowMajor)
-            std::swap(ldu, ldv);
-
         BUV = hcore::CompressedTile<T>(Bm_orig, Bn_orig, &BUVdata[0], ldu, ldv,
                                        rk, accuracy, layout);
         if (transB == blas::Op::Trans)
@@ -340,9 +334,6 @@ void gemm(Params& params, bool run) {
             print_matrix(Cm, rk, &CUVdata[0],      ldu, "CU");
             print_matrix(rk, Cn, &CUVdata[ldu*rk], ldv, "CV");
         }
-
-        if (layout == blas::Layout::RowMajor)
-            std::swap(ldu, ldv);
 
         CUV = hcore::CompressedTile<T>(Cm_orig, Cn_orig, &CUVdata[0], ldu, ldv,
                                        rk, accuracy, layout);
