@@ -397,8 +397,17 @@ void gemm(Params& params, bool run) {
         }
         else if (params.routine == "gemm_dcc" || params.routine == "gemm_cdc" ||
                  params.routine == "gemm_ccc") {
-            print_matrix(Cm, CUV.rk(), CUV.Udata(), CUV.Ustride(), "CU");
-            print_matrix(CUV.rk(), Cn, CUV.Vdata(), CUV.Vstride(), "CV");
+            T const* CU = layout == blas::Layout::ColMajor ? CUV.Udata()
+                                                           : CUV.Vdata();
+            T const* CV = layout == blas::Layout::ColMajor ? CUV.Vdata()
+                                                           : CUV.Udata();
+
+            int64_t ldcu = layout == blas::Layout::ColMajor ? CUV.Ustride()
+                                                            : CUV.Vstride();
+            int64_t ldcv = layout == blas::Layout::ColMajor ? CUV.Vstride()
+                                                            : CUV.Ustride();
+            print_matrix(Cm, CUV.rk(), CU, ldcu, "CU");
+            print_matrix(CUV.rk(), Cn, CV, ldcv, "CV");
         }
     }
 
