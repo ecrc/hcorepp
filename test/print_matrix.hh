@@ -6,6 +6,7 @@
 #ifndef HCORE_TEST_PRINT_MATRIX_HH
 #define HCORE_TEST_PRINT_MATRIX_HH
 
+#include <cassert>
 #include <cstdint>
 #include <string>
 #include <cstdio>
