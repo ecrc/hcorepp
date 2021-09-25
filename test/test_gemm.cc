@@ -14,50 +14,13 @@
 #include "blas.hh"
 
 #include "lapack_wrappers.hh"
+#include "print_matrix.hh"
 #include "hcore/hcore.hh"
 #include "hcore/flops.hh"
 #include "test.hh"
 
 namespace hcore {
 namespace test {
-
-template <typename T>
-void print_matrix(int64_t m, int64_t n, T const* A, int64_t lda,
-                  char const* label, const char* format = "%9.4f")
-{
-    #define A(i_, j_) A[(i_) + size_t(lda)*(j_)]
-
-    assert(m >= 0);
-    assert(n >= 0);
-    assert(lda >= m);
-
-    char format2[32];
-    if (blas::is_complex<T>::value) {
-        snprintf(format2, sizeof(format2), " %s + %si", format, format);
-    }
-    else {
-        snprintf(format2, sizeof(format2), " %s", format);
-    }
-
-    using blas::real;
-    using blas::imag;
-
-    printf("%s = [\n", label);
-    for (int64_t i = 0; i < m; ++i) {
-        for (int64_t j = 0; j < n; ++j) {
-            if (blas::is_complex<T>::value) {
-                printf(format2, real(A(i, j)), imag(A(i, j)));
-            }
-            else {
-                printf(format2, A(i, j));
-            }
-        }
-        printf("\n");
-    }
-    printf("];\n");
-
-    #undef A
-}
 
 template <typename T>
 void compress_matrix(int64_t m, int64_t n, std::vector<T> A, int64_t lda,
@@ -285,7 +248,6 @@ void gemm(Params& params, bool run) {
         C = hcore::Tile<T>(Cm_orig, Cn_orig, &Cdata[0], ldc, layout);
     }
 
-    int64_t Crk;
     T *AUVdata, *BUVdata, *CUVdata;
     hcore::CompressedTile<T> AUV, BUV, CUV;
     if (params.routine == "gemm_cdd" || params.routine == "gemm_cdc"
@@ -294,13 +256,11 @@ void gemm(Params& params, bool run) {
         compress_matrix(Am, An, Adata, lda, &AUVdata, ldu, ldv, rk, accuracy,
                         align, (verbose > 3));
 
-        if (verbose) {
-            print_matrix(Am, rk, &AUVdata[0],      ldu, "AU");
-            print_matrix(rk, An, &AUVdata[ldu*rk], ldv, "AV");
-        }
-
         AUV = hcore::CompressedTile<T>(Am_orig, An_orig, &AUVdata[0], ldu, ldv,
                                        rk, accuracy, layout);
+        if (verbose)
+            print_matrix(AUV, "A");
+
         if (transA == blas::Op::Trans)
             AUV = transpose(AUV);
         else if (transA == blas::Op::ConjTrans)
@@ -312,13 +272,11 @@ void gemm(Params& params, bool run) {
         compress_matrix(Bm, Bn, Bdata, ldb, &BUVdata, ldu, ldv, rk, accuracy,
                         align, (verbose > 3));
 
-        if (verbose) {
-            print_matrix(Bm, rk, &BUVdata[0],      ldu, "BU");
-            print_matrix(rk, Bn, &BUVdata[ldu*rk], ldv, "BV");
-        }
-
         BUV = hcore::CompressedTile<T>(Bm_orig, Bn_orig, &BUVdata[0], ldu, ldv,
                                        rk, accuracy, layout);
+        if (verbose)
+            print_matrix(BUV, "B");
+
         if (transB == blas::Op::Trans)
             BUV = transpose(BUV);
         else if (transB == blas::Op::ConjTrans)
@@ -330,14 +288,12 @@ void gemm(Params& params, bool run) {
         compress_matrix(Cm, Cn, Cdata, ldc, &CUVdata, ldu, ldv, rk, accuracy,
                         align, (verbose > 3));
 
-        if (verbose) {
-            print_matrix(Cm, rk, &CUVdata[0],      ldu, "CU");
-            print_matrix(rk, Cn, &CUVdata[ldu*rk], ldv, "CV");
-        }
-
         CUV = hcore::CompressedTile<T>(Cm_orig, Cn_orig, &CUVdata[0], ldu, ldv,
                                        rk, accuracy, layout);
-        Crk = rk;
+        if (verbose)
+            print_matrix(CUV, "C");
+
+        params.rk() = std::to_string(rk);
     }
 
     hcore::Options const opts = {
@@ -393,27 +349,17 @@ void gemm(Params& params, bool run) {
         if (params.routine == "gemm_ddd" || params.routine == "gemm_dcd" ||
             params.routine == "gemm_cdd" || params.routine == "gemm_ccd" ||
             params.routine == "gemm_ddc") {
-            print_matrix(Cm, Cn, C.data(), ldc, "C");
+            print_matrix(C, "C");
         }
         else if (params.routine == "gemm_dcc" || params.routine == "gemm_cdc" ||
                  params.routine == "gemm_ccc") {
-            T const* CU = layout == blas::Layout::ColMajor ? CUV.Udata()
-                                                           : CUV.Vdata();
-            T const* CV = layout == blas::Layout::ColMajor ? CUV.Vdata()
-                                                           : CUV.Udata();
-
-            int64_t ldcu = layout == blas::Layout::ColMajor ? CUV.Ustride()
-                                                            : CUV.Vstride();
-            int64_t ldcv = layout == blas::Layout::ColMajor ? CUV.Vstride()
-                                                            : CUV.Ustride();
-            print_matrix(Cm, CUV.rk(), CU, ldcu, "CU");
-            print_matrix(CUV.rk(), Cn, CV, ldcv, "CV");
+            print_matrix(CUV, "C");
         }
     }
 
     if (params.routine == "gemm_ddc" || params.routine == "gemm_dcc" ||
         params.routine == "gemm_cdc" || params.routine == "gemm_ccc") {
-        params.rk() = std::to_string(Crk) + "->" + std::to_string(CUV.rk());
+        params.rk() += "->" + std::to_string(CUV.rk());
     }
 
     if (params.check() == 'y') {
