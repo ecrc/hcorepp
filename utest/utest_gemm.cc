@@ -17,11 +17,10 @@
 #include "hcore/exception.hh"
 #include "hcore/hcore.hh"
 #include "hcore/tile.hh"
-#include "test.hh"
+#include "utest.hh"
 
 namespace hcore {
-namespace test {
-namespace unit {
+namespace utest {
 
 blas::Op ops[] = {blas::Op::NoTrans, blas::Op::Trans, blas::Op::ConjTrans};
 blas::Layout layouts[] = {blas::Layout::ColMajor, blas::Layout::RowMajor};
@@ -205,8 +204,7 @@ void launch() {
     run(gemm_dispatch, "gemm");
 }
 
-} // namespace unit
-} // namespace test
+} // namespace utest
 } // namespace hcore
 
-int main(int argc, char* argv[]) { return hcore::test::unit::main(); }
+int main(int argc, char* argv[]) { return hcore::utest::main(); }

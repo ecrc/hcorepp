@@ -8,11 +8,10 @@
 
 #include "testsweeper.hh"
 
-#include "test.hh"
+#include "utest.hh"
 
 namespace hcore {
-namespace test {
-namespace unit {
+namespace utest {
 
 static int total_ = 0;
 static int pass_  = 0;
@@ -90,6 +89,5 @@ int main() {
     }
 }
 
+} // namespace utest
 } // namespace hcore
-} // namespace test
-} // namespace unit

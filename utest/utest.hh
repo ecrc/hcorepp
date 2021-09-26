@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
 namespace hcore {
-namespace test {
-namespace unit {
+namespace utest {
 
 typedef void test_func_ptr(void);
 
@@ -14,6 +13,5 @@ int main();
 
 void launch(); ///> To be implemented by user -- called by unit::test::main()
 
-} // namespace unit
 } // namespace test
 } // namespace hcore

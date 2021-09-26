@@ -80,7 +80,7 @@ file(
     GLOB utest_gemm_src
     CONFIGURE_DEPENDS
     utest_gemm.cc
-    test.cc
+    utest.cc
 )
 
 set(utest_gemm "${hcore_}utest_gemm")

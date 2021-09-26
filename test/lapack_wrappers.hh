@@ -1,20 +1,21 @@
-// Copyright (c) 2017-2021, King Abdullah University of Science and Technology
-// (KAUST). All rights reserved.
+// Copyright (c) 2017-2021,
+// King Abdullah University of Science and Technology (KAUST).
+// All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
 #ifndef HCORE_TEST_LAPACK_WRAPPERS_HH
 #define HCORE_TEST_LAPACK_WRAPPERS_HH
 
-#include "lapack.hh"
-#include "lapack/fortran.h"
-
-#include <cmath>     // std::abs
+#include <algorithm> // std::copy, std::max
+#include <complex>   // std::complex
+#include <cstdint>   // int64_t
 #include <cctype>    // std::toupper
 #include <limits>    // std::numeric_limits<T>::max
 #include <vector>    // std::vector
-#include <complex>   // std::complex
-#include <cstdint>   // int64_t
-#include <algorithm> // std::copy, std::max
+#include <cmath>     // std::abs
+
+#include "lapack/fortran.h"
+#include "lapack.hh"
 
 namespace lapack {
 
@@ -22,14 +23,13 @@ namespace lapack {
 //
 /// Specifies the type of distribution to be used to generate the random
 /// eigenvalues or singular values.
-enum class Dist {
+enum class Dist : char {
     Normal           = 'N', ///> Normal(0, 1).
     Uniform          = 'U', ///> Uniform(0, 1).
     SymmetricUniform = 'S', ///> Uniform for symmetric(-1, 1).
 };
 
-inline char dist2char(lapack::Dist dist)
-    { return char(dist); }
+inline char dist2char(lapack::Dist dist) { return char(dist); }
 
 inline lapack::Dist char2dist(char dist)
 {
@@ -51,7 +51,7 @@ inline const char* dist2str(lapack::Dist dist)
 }
 
 /// Generated matrix types.
-enum class Sym {
+enum class Sym : char {
     /// Symmetric matrix with positive, negative, or zero eigenvalues.
     Symmetric         = 'S', Hermitian = 'H',
     /// Nonsymmetric matrix with positive eigenvalues.
@@ -60,8 +60,7 @@ enum class Sym {
     PositiveSymmetric = 'P',
 }; // enum class Sym
 
-inline char sym2char(lapack::Sym sym)
-    { return char(sym); }
+inline char sym2char(lapack::Sym sym) { return char(sym); }
 
 inline lapack::Sym char2sym(char sym)
 {
@@ -84,7 +83,7 @@ inline const char* sym2str(lapack::Sym sym)
 }
 
 /// Specifies packing of matrix.
-enum class Pack {
+enum class Pack : char {
     /// No packing.
     NoPacking         = 'N',
     /// Zero out all subdiagonal entries (if symmetric).
@@ -103,15 +102,15 @@ enum class Pack {
     EntireMatrixBand  = 'Z',
 }; // enum class Pack
 
-inline char pack2char(lapack::Pack pack)
-    { return char(pack); }
+inline char pack2char(lapack::Pack pack) { return char(pack); }
 
 inline lapack::Pack char2pack(char pack)
 {
     pack = char(std::toupper(pack));
 
-    lapack_error_if(pack != 'N' && pack != 'U' && pack != 'L' && pack != 'C' &&
-                    pack != 'R' && pack != 'B' && pack != 'Q' && pack != 'Z');
+    lapack_error_if(pack != 'N' && pack != 'U' && pack != 'L'
+                    && pack != 'C' && pack != 'R' && pack != 'B'
+                    && pack != 'Q' && pack != 'Z');
 
     return lapack::Pack(pack);
 }
@@ -133,10 +132,9 @@ inline const char* pack2str(lapack::Pack pack)
 
 // =============================================================================
 //
-inline void latms(
-    int64_t m, int64_t n, Dist dist, int64_t* iseed, Sym sym, float* d,
-    int64_t mode, float cond, float dmax, int64_t kl, int64_t ku, Pack pack,
-    float* A, int64_t lda)
+inline void latms(int64_t m, int64_t n, Dist dist, int64_t* iseed, Sym sym,
+                  float* d, int64_t mode, float cond, float dmax, int64_t kl,
+                  int64_t ku, Pack pack, float* A, int64_t lda)
 {
     if (sizeof(int64_t) > sizeof(lapack_int)) {
         lapack_error_if(std::abs(m   )>std::numeric_limits<lapack_int>::max());
@@ -170,12 +168,11 @@ inline void latms(
 
     lapack_int info_ = 0;
 
-    LAPACK_slatms(
-        &m_, &n_, &dist_, iseed_ptr, &sym_, d, &mode_, &cond, &dmax, &kl_, &ku_,
-        &pack_, A, &lda_, &work[0], &info_
-        #ifdef LAPACK_FORTRAN_STRLEN_END
-        , 1, 1, 1
-        #endif
+    LAPACK_slatms(&m_, &n_, &dist_, iseed_ptr, &sym_, d, &mode_, &cond, &dmax,
+                  &kl_, &ku_, &pack_, A, &lda_, &work[0], &info_
+                  #ifdef LAPACK_FORTRAN_STRLEN_END
+                  , 1, 1, 1
+                  #endif
     );
 
     if (info_ < 0) {
@@ -187,10 +184,9 @@ inline void latms(
     #endif
 }
 
-inline void latms(
-    int64_t m, int64_t n, Dist dist, int64_t* iseed, Sym sym, double* d,
-    int64_t mode, double cond, double dmax, int64_t kl, int64_t ku, Pack pack,
-    double* A, int64_t lda)
+inline void latms(int64_t m, int64_t n, Dist dist, int64_t* iseed, Sym sym,
+                  double* d, int64_t mode, double cond, double dmax, int64_t kl,
+                  int64_t ku, Pack pack, double* A, int64_t lda)
 {
     if (sizeof(int64_t) > sizeof(lapack_int)) {
         lapack_error_if(std::abs(m   )>std::numeric_limits<lapack_int>::max());
@@ -224,12 +220,11 @@ inline void latms(
 
     lapack_int info_ = 0;
 
-    LAPACK_dlatms(
-        &m_, &n_, &dist_, iseed_ptr, &sym_, d, &mode_, &cond, &dmax, &kl_, &ku_,
-        &pack_, A, &lda_, &work[0], &info_
-        #ifdef LAPACK_FORTRAN_STRLEN_END
-        , 1, 1, 1
-        #endif
+    LAPACK_dlatms(&m_, &n_, &dist_, iseed_ptr, &sym_, d, &mode_, &cond, &dmax,
+                  &kl_, &ku_, &pack_, A, &lda_, &work[0], &info_
+                  #ifdef LAPACK_FORTRAN_STRLEN_END
+                  , 1, 1, 1
+                  #endif
     );
 
     if (info_ < 0) {
@@ -241,10 +236,9 @@ inline void latms(
     #endif
 }
 
-inline void latms(
-    int64_t m, int64_t n, Dist dist, int64_t* iseed, Sym sym, float* d,
-    int64_t mode, float cond, float dmax, int64_t kl, int64_t ku, Pack pack,
-    std::complex<float>* A, int64_t lda)
+inline void latms(int64_t m, int64_t n, Dist dist, int64_t* iseed, Sym sym,
+                  float* d, int64_t mode, float cond, float dmax, int64_t kl,
+                  int64_t ku, Pack pack, std::complex<float>* A, int64_t lda)
 {
     if (sizeof(int64_t) > sizeof(lapack_int)) {
         lapack_error_if(std::abs(m   )>std::numeric_limits<lapack_int>::max());
@@ -278,13 +272,12 @@ inline void latms(
 
     lapack_int info_ = 0;
 
-    LAPACK_clatms(
-        &m_, &n_, &dist_, iseed_ptr, &sym_, d, &mode_, &cond, &dmax, &kl_, &ku_,
-        &pack_, (lapack_complex_float*)A, &lda_,
-        (lapack_complex_float*)&work[0], &info_
-        #ifdef LAPACK_FORTRAN_STRLEN_END
-        , 1, 1, 1
-        #endif
+    LAPACK_clatms(&m_, &n_, &dist_, iseed_ptr, &sym_, d, &mode_, &cond, &dmax,
+                  &kl_, &ku_, &pack_, (lapack_complex_float*)A, &lda_,
+                  (lapack_complex_float*)&work[0], &info_
+                  #ifdef LAPACK_FORTRAN_STRLEN_END
+                  , 1, 1, 1
+                  #endif
     );
 
     if (info_ < 0) {
@@ -296,10 +289,9 @@ inline void latms(
     #endif
 }
 
-inline void latms(
-    int64_t m, int64_t n, Dist dist, int64_t* iseed, Sym sym, double* d,
-    int64_t mode, double cond, double dmax, int64_t kl, int64_t ku, Pack pack,
-    std::complex<double>* A, int64_t lda)
+inline void latms(int64_t m, int64_t n, Dist dist, int64_t* iseed, Sym sym,
+                  double* d, int64_t mode, double cond, double dmax, int64_t kl,
+                  int64_t ku, Pack pack, std::complex<double>* A, int64_t lda)
 {
     if (sizeof(int64_t) > sizeof(lapack_int)) {
         lapack_error_if(std::abs(m   )>std::numeric_limits<lapack_int>::max());
@@ -333,13 +325,12 @@ inline void latms(
 
     lapack_int info_ = 0;
 
-    LAPACK_zlatms(
-        &m_, &n_, &dist_, iseed_ptr, &sym_, d, &mode_, &cond, &dmax, &kl_, &ku_,
-        &pack_, (lapack_complex_double*)A, &lda_,
-        (lapack_complex_double*)&work[0], &info_
-        #ifdef LAPACK_FORTRAN_STRLEN_END
-        , 1, 1, 1
-        #endif
+    LAPACK_zlatms(&m_, &n_, &dist_, iseed_ptr, &sym_, d, &mode_, &cond, &dmax,
+                  &kl_, &ku_, &pack_, (lapack_complex_double*)A, &lda_,
+                  (lapack_complex_double*)&work[0], &info_
+                  #ifdef LAPACK_FORTRAN_STRLEN_END
+                  , 1, 1, 1
+                  #endif
     );
 
     if (info_ < 0) {

@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2017-2021, King Abdullah University of Science and Technology
-# (KAUST). All rights reserved.
+# Copyright (c) 2017-2021,
+# King Abdullah University of Science and Technology (KAUST).
+# All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
 # example usage
@@ -25,25 +26,37 @@ import time
 # command line arguments
 parser = argparse.ArgumentParser()
 
-group_test = parser.add_argument_group( 'test' )
-group_test.add_argument( '-t', '--test', action='store',
-    help='test command to run, e.g., --test "mpirun -np 4 ./test"; default "%(default)s"',
-    default='./tester' )
-group_test.add_argument( '--xml', help='generate report.xml for jenkins' )
+group_test = parser.add_argument_group('test')
+group_test.add_argument('-t', '--test', action='store',
+                        help='test command to run, e.g., --test "mpirun -np 4 '
+                             './test"; default "%(default)s"',
+                        default='./tester')
+group_test.add_argument('--xml', help='generate report.xml for jenkins')
 
-group_size = parser.add_argument_group( 'matrix dimensions (default is medium)' )
-group_size.add_argument(       '--quick',  action='store_true', help='run quick "sanity check" of few, small tests' )
-group_size.add_argument( '-x', '--xsmall', action='store_true', help='run x-small tests' )
-group_size.add_argument( '-s', '--small',  action='store_true', help='run small tests' )
-group_size.add_argument( '-m', '--medium', action='store_true', help='run medium tests' )
-group_size.add_argument( '-l', '--large',  action='store_true', help='run large tests' )
-group_size.add_argument(       '--square', action='store_true', help='run square (m = n = k) tests', default=False )
-group_size.add_argument(       '--tall',   action='store_true', help='run tall (m > n) tests', default=False )
-group_size.add_argument(       '--wide',   action='store_true', help='run wide (m < n) tests', default=False )
-group_size.add_argument(       '--mnk',    action='store_true', help='run tests with m, n, k all different', default=False )
-group_size.add_argument(       '--dim',    action='store',      help='explicitly specify size', default='' )
+group_size = parser.add_argument_group('matrix dimensions (default is medium)')
+group_size.add_argument('-q', '--quick', action='store_true',
+                        help='run quick "sanity check" of few, small tests')
+group_size.add_argument('-x', '--xsmall', action='store_true',
+                        help='run x-small tests')
+group_size.add_argument('-s', '--small', action='store_true',
+                        help='run small tests')
+group_size.add_argument('-m', '--medium', action='store_true',
+                        help='run medium tests')
+group_size.add_argument('-l', '--large', action='store_true',
+                        help='run large tests')
+group_size.add_argument('--square', action='store_true',
+                        help='run square (m = n = k) tests', default=False)
+group_size.add_argument('--tall', action='store_true',
+                        help='run tall (m > n) tests', default=False)
+group_size.add_argument('--wide', action='store_true',
+                        help='run wide (m < n) tests', default=False)
+group_size.add_argument('--mnk', action='store_true',
+                        help='run tests with m, n, k all different',
+                        default=False)
+group_size.add_argument('--dim', action='store',
+                        help='explicitly specify size', default='')
 
-group_cat = parser.add_argument_group( 'category (default is all)' )
+group_cat = parser.add_argument_group('category (default is all)')
 categories = [
     group_cat.add_argument(
         '--chol', action='store_true',
@@ -59,37 +72,45 @@ categories = [
         help='run Level 3 BLAS trsm tests'),
 ]
 # map category objects to category names: ['lu', 'chol', ...]
-categories = list( map( lambda x: x.dest, categories ) )
+categories = list(map(lambda x: x.dest, categories))
 
-group_opt = parser.add_argument_group( 'options' )
+group_opt = parser.add_argument_group('options')
 # BLAS and LAPACK
 # Empty defaults (check, ref, etc.) use the default in test.cc.
-group_opt.add_argument( '--type',   action='store', help='default=%(default)s', default='s,d,c,z' )
-group_opt.add_argument( '--layout', action='store', help='default=%(default)s', default='c,r' )
-group_opt.add_argument( '--transA', action='store', help='default=%(default)s', default='n,t,c' )
-group_opt.add_argument( '--transB', action='store', help='default=%(default)s', default='n,t,c' )
-group_opt.add_argument( '--transC', action='store', help='default=%(default)s', default='n,t,c' )
-group_opt.add_argument( '--trans',  action='store', help='default=%(default)s', default='n,t,c' )
-group_opt.add_argument( '--uplo',   action='store', help='default=%(default)s', default='l,u' )
-group_opt.add_argument( '--diag',   action='store', help='default=%(default)s', default='n,u' )
-group_opt.add_argument( '--side',   action='store', help='default=%(default)s', default='l,r' )
-group_opt.add_argument( '--alpha',  action='store', help='default=%(default)s', default='' )
-group_opt.add_argument( '--beta',   action='store', help='default=%(default)s', default='' )
-group_opt.add_argument( '--incx',   action='store', help='default=%(default)s', default='1,2,-1,-2' )
-group_opt.add_argument( '--incy',   action='store', help='default=%(default)s', default='1,2,-1,-2' )
-group_opt.add_argument( '--batch',  action='store', help='default=%(default)s', default='' )
-group_opt.add_argument( '--align',  action='store', help='default=%(default)s', default='1,2,4,16,32' )
-group_opt.add_argument( '--check',  action='store', help='default=y', default='' )  # default in test.cc
-group_opt.add_argument( '--ref',    action='store', help='default=y', default='' )  # default in test.cc
+group_opt.add_argument('--type', action='store', help='default=%(default)s',
+                       default='s,d,c,z')
+group_opt.add_argument('--layout', action='store', help='default=%(default)s',
+                       default='c,r')
+group_opt.add_argument('--transA', action='store', help='default=%(default)s',
+                       default='n,t,c')
+group_opt.add_argument('--transB', action='store', help='default=%(default)s',
+                       default='n,t,c')
+group_opt.add_argument('--transC', action='store', help='default=%(default)s',
+                       default='n,t,c')
+group_opt.add_argument('--trans',  action='store', help='default=%(default)s',
+                       default='n,t,c')
+group_opt.add_argument('--uplo', action='store', help='default=%(default)s',
+                       default='l,u')
+group_opt.add_argument('--diag', action='store', help='default=%(default)s',
+                       default='n,u')
+group_opt.add_argument('--side', action='store', help='default=%(default)s',
+                       default='l,r')
+group_opt.add_argument('--alpha', action='store', help='default=%(default)s',
+                       default='')
+group_opt.add_argument('--beta', action='store', help='default=%(default)s',
+                       default='')
+group_opt.add_argument('--align', action='store', help='default=%(default)s',
+                       default='1,2,4,16,32')
+group_opt.add_argument('--check', action='store', help='default=y', default='')
 
-parser.add_argument( 'tests', nargs=argparse.REMAINDER )
+parser.add_argument('tests', nargs=argparse.REMAINDER)
 opts = parser.parse_args()
 
 for t in opts.tests:
     if (t.startswith('--')):
-        print( 'Error: option', t, 'must come before any routine names' )
-        print( 'usage:', sys.argv[0], '[options]', '[routines]' )
-        print( '      ', sys.argv[0], '--help' )
+        print('Error: option', t, 'must come before any routine names')
+        print('usage:', sys.argv[0], '[options]', '[routines]')
+        print('      ', sys.argv[0], '--help')
         exit(1)
 
 # by default, run medium sizes
@@ -104,13 +125,13 @@ if (not (opts.square or opts.tall or opts.wide or opts.mnk)):
     opts.mnk    = True
 
 # by default, run all categories
-if (opts.tests or not any( map( lambda c: opts.__dict__[ c ], categories ))):
+if (opts.tests or not any(map(lambda c: opts.__dict__[ c ], categories))):
     for c in categories:
         opts.__dict__[ c ] = True
 
 ## By default, or if specific test routines given, enable all categories
 ## to get whichever has the routines.
-#if (opts.tests or not any( map( lambda c: opts.__dict__[ c ], categories ))):
+#if (opts.tests or not any(map(lambda c: opts.__dict__[ c ], categories))):
 #    opts.host   = True
 #    opts.device = True
 #
@@ -222,41 +243,33 @@ diag   = ' --diag '   + opts.diag   if (opts.diag)   else ''
 side   = ' --side '   + opts.side   if (opts.side)   else ''
 a      = ' --alpha '  + opts.alpha  if (opts.alpha)  else ''
 ab     = a+' --beta ' + opts.beta   if (opts.beta)   else a
-incx   = ' --incx '   + opts.incx   if (opts.incx)   else ''
-incy   = ' --incy '   + opts.incy   if (opts.incy)   else ''
-batch  = ' --batch '  + opts.batch  if (opts.batch)  else ''
 align  = ' --align '  + opts.align  if (opts.align)  else ''
 check  = ' --check '  + opts.check  if (opts.check)  else ''
-ref    = ' --ref '    + opts.ref    if (opts.ref)    else ''
 
 # ------------------------------------------------------------------------------
 # filters a comma separated list csv based on items in list values.
 # if no items from csv are in values, returns first item in values.
-def filter_csv( values, csv ):
-    f = list( filter( lambda x: x in values, csv.split( ',' ) ) )
+def filter_csv(values, csv):
+    f = list(filter(lambda x: x in values, csv.split(',')))
     if (not f):
         return values[0]
-    return ','.join( f )
+    return ','.join(f)
 # end
 
 # ------------------------------------------------------------------------------
 # limit options to specific values
-dtype_real    = ' --type ' + filter_csv( ('s', 'd'), opts.type )
-dtype_complex = ' --type ' + filter_csv( ('c', 'z'), opts.type )
-dtype_double  = ' --type ' + filter_csv( ('d', 'z'), opts.type )
+dtype_real    = ' --type ' + filter_csv(('s', 'd'), opts.type)
+dtype_complex = ' --type ' + filter_csv(('c', 'z'), opts.type)
+dtype_double  = ' --type ' + filter_csv(('d', 'z'), opts.type)
 
-transA_nt = ' --transA ' + filter_csv( ('n', 't'), opts.trans )
-transA_nc = ' --transA ' + filter_csv( ('n', 'c'), opts.trans )
+transA_nt = ' --transA ' + filter_csv(('n', 't'), opts.trans)
+transA_nc = ' --transA ' + filter_csv(('n', 'c'), opts.trans)
 
-transC_nt = ' --transC ' + filter_csv( ('n', 't'), opts.trans )
-transC_nc = ' --transC ' + filter_csv( ('n', 'c'), opts.trans )
+transC_nt = ' --transC ' + filter_csv(('n', 't'), opts.trans)
+transC_nc = ' --transC ' + filter_csv(('n', 'c'), opts.trans)
 
-trans_nt = ' --trans ' + filter_csv( ('n', 't'), opts.trans )
-trans_nc = ' --trans ' + filter_csv( ('n', 'c'), opts.trans )
-
-# positive inc
-incx_pos = ' --incx ' + filter_csv( ('1', '2'), opts.incx )
-incy_pos = ' --incy ' + filter_csv( ('1', '2'), opts.incy )
+trans_nt = ' --trans ' + filter_csv(('n', 't'), opts.trans)
+trans_nc = ' --trans ' + filter_csv(('n', 'c'), opts.trans)
 
 # ------------------------------------------------------------------------------
 cmds = []
@@ -406,34 +419,34 @@ output_redirected = not sys.stdout.isatty()
 # ------------------------------------------------------------------------------
 # if output is redirected, prints to both stderr and stdout;
 # otherwise prints to just stdout.
-def print_tee( *args ):
+def print_tee(*args):
     global output_redirected
-    print( *args )
+    print(*args)
     if (output_redirected):
-        print( *args, file=sys.stderr )
+        print(*args, file=sys.stderr)
 # end
 
 # ------------------------------------------------------------------------------
 # cmd is a pair of strings: (function, args)
 
-def run_test( cmd ):
+def run_test(cmd):
     cmd = opts.test +' '+ cmd[1] +' '+ cmd[0]
-    print_tee( cmd )
+    print_tee(cmd)
     output = ''
-    p = subprocess.Popen( cmd.split(), stdout=subprocess.PIPE,
-                                       stderr=subprocess.STDOUT )
+    p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT)
     p_out = p.stdout
     if (sys.version_info.major >= 3):
         p_out = io.TextIOWrapper(p.stdout, encoding='utf-8')
     # Read unbuffered ("for line in p.stdout" will buffer).
     for line in iter(p_out.readline, ''):
-        print( line, end='' )
+        print(line, end='')
         output += line
     err = p.wait()
     if (err != 0):
-        print_tee( 'FAILED: exit code', err )
+        print_tee('FAILED: exit code', err)
     else:
-        print_tee( 'pass' )
+        print_tee('pass')
     return (err, output)
 # end
 
@@ -441,7 +454,7 @@ def run_test( cmd ):
 # Utility to pretty print XML.
 # See https://stackoverflow.com/a/33956544/1655607
 #
-def indent_xml( elem, level=0 ):
+def indent_xml(elem, level=0):
     i = "\n" + level*"  "
     if len(elem):
         if not elem.text or not elem.text.strip():
@@ -449,7 +462,7 @@ def indent_xml( elem, level=0 ):
         if not elem.tail or not elem.tail.strip():
             elem.tail = i
         for elem in elem:
-            indent_xml( elem, level+1 )
+            indent_xml(elem, level+1)
         if not elem.tail or not elem.tail.strip():
             elem.tail = i
     else:
@@ -461,7 +474,7 @@ def indent_xml( elem, level=0 ):
 # run each test
 
 start = time.time()
-print_tee( time.ctime() )
+print_tee(time.ctime())
 
 failed_tests = []
 passed_tests = []
@@ -471,28 +484,28 @@ run_all = (ntests == 0)
 seen = set()
 for cmd in cmds:
     if (run_all or cmd[0] in opts.tests):
-        seen.add( cmd[0] )
-        (err, output) = run_test( cmd )
+        seen.add(cmd[0])
+        (err, output) = run_test(cmd)
         if (err):
-            failed_tests.append( (cmd[0], err, output) )
+            failed_tests.append((cmd[0], err, output))
         else:
-            passed_tests.append( cmd[0] )
-not_seen = list( filter( lambda x: x not in seen, opts.tests ) )
+            passed_tests.append(cmd[0])
+not_seen = list(filter(lambda x: x not in seen, opts.tests))
 
 if (not_seen):
-    print_tee( 'Warning: unknown routines:', ' '.join( not_seen ))
+    print_tee('Warning: unknown routines:', ' '.join(not_seen))
 
 # print summary of failures
-nfailed = len( failed_tests )
+nfailed = len(failed_tests)
 if (nfailed > 0):
-    print_tee( '\n' + str(nfailed) + ' routines FAILED:',
-               ', '.join( [x[0] for x in failed_tests] ) )
+    print_tee('\n' + str(nfailed) + ' routines FAILED:',
+               ', '.join([x[0] for x in failed_tests]))
 else:
-    print_tee( '\n' + 'All routines passed.' )
+    print_tee('\n' + 'All routines passed.')
 
 # generate jUnit compatible test report
 if opts.xml:
-    print( 'writing XML file', opts.xml )
+    print('writing XML file', opts.xml)
     root = ET.Element("testsuites")
     doc = ET.SubElement(root, "testsuite",
                         name="blaspp_suite",
@@ -518,12 +531,12 @@ if opts.xml:
         testcase.text = 'PASSED'
 
     tree = ET.ElementTree(root)
-    indent_xml( root )
-    tree.write( opts.xml )
+    indent_xml(root)
+    tree.write(opts.xml)
 # end
 
 elapsed = time.time() - start
-print_tee( 'Elapsed %.2f sec' % elapsed )
-print_tee( time.ctime() )
+print_tee('Elapsed %.2f sec' % elapsed)
+print_tee(time.ctime())
 
-exit( nfailed )
+exit(nfailed)
