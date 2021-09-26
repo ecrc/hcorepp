@@ -24,8 +24,25 @@ Changes to HCORE C/C++ code should conform to the
 [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html) and
 the following HiCMA specific style details:
 
-- Function naming convention is snake case.
+- Naming convention
+    - Global functions are snake_case.
+    - Member functions are lowerCamelCase.
+    - Classes, enums, enum values, structs are UpperCamelCase.
+    - Variables are snake_case.
+    - Constants are snake_case.
+    - Namespaces are lowercase.
+    - Member private variables have underscore suffix; Note that using leading
+      underscores is illegal (they are reserved by C/C++).
 - Default indentation is 4 spaces, and wrapped parameters have 4 spaces indent.
+- In HCORE++, we have 4 namespaces, as follows:
+    - `hcore`: HCORE's top-level namespace.
+    - `hcore::internal`: Namespace used for HCORE internal implementation. It is
+      intended that application code would not call any internal HCORE
+      functions.
+    - `hcore::internal::specialization`: Namespace used for target backend
+      implementations.
+    - `hcore::test`: Namespace used for all HCORE test routines.
+    - `hcore::utest`: Namespace used for all HCORE unit test routines.
 
 Use `clang-format` to check your C/C++ changes.
 
