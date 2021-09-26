@@ -99,7 +99,7 @@ pipeline {
                             cd ${top}/example
 
                             rm -rf build && mkdir build && cd build
-                            if [ "${host}" = "Condor" ]; then
+                            if [ "${host}" = "Condor" ] || [ "${host}" = "Albatross" ]; then
                                 cmake -DCMAKE_PREFIX_PATH="${top}/install/lib64/blaspp;${top}/install/lib64/lapackpp;${top}/install/lib64/hcore" ..
                             else
                                 cmake -DCMAKE_PREFIX_PATH="${top}/install/lib/blaspp;${top}/install/lib/lapackpp;${top}/install/lib/hcore" ..
