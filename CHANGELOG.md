@@ -9,9 +9,10 @@ v1.0.0 | 2021.05.30
    - Use BLAS++ and LAPACK++ as abstraction layers to provide C++ APIs for the
    Basic Linear Algebra Subroutines (BLAS) and LAPACK (Linear Algebra PACKage).
    - Support flexible and non-uniform tile sizes
-   - Support all combinations of GEMM
-      - ddd, ddc, dcd, dcc, cdd, cdc, ccd, and ccc; where c is compressed tile
-      and d is dense tile
+   - Support all possible combinations of general matrix-matrix multiplication,
+     (GEMM).
+   - Support row-major and column-major.
+   - Support no transpose, transpose, and conjugate-transpose.
    - Provide a complete build script generator based on CMake
    - Provide a comprehensive testing suite based on TestSweeper framework
 
