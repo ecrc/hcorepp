@@ -207,6 +207,18 @@ void rsvd(blas::Op transAU, blas::Op transAV,
                     + std::to_string(std::min(m, n)) + ").");
     }
 
+    // VTnew eats (swallow) Sigma.
+    // todo: we may need to have uplo parameter:
+    //       scale VT, if Lower, or scale U otherwise.
+    for(int64_t i = 0; i < rk_new; ++i) {
+        blas::scal(use_gemm ? min_Vm_Vn : Vm, Sigma[i], &VTnew[i], sizeS);
+
+        if (!use_gemm) {
+            for (int64_t j = 0; j < Vm; ++j)
+                VTnew[i + j*sizeS] = conj(VTnew[i + j*sizeS]);
+        }
+    }
+
     int64_t ldu = ldcu;
     int64_t ldv = rk_new;
 
@@ -231,18 +243,6 @@ void rsvd(blas::Op transAU, blas::Op transAV,
                       &Unew[0], Um);
         lapack::lacpy(lapack::MatrixType::General, Um, rk_new, &Unew[0], Um,
                       UTilda, ldu);
-    }
-
-    // VTnew eats Sigma.
-    // todo: we may need to have uplo parameter:
-    //       scale VT, if Lower, or scale U otherwise.
-    for(int64_t i = 0; i < rk_new; ++i) {
-        blas::scal(use_gemm ? min_Vm_Vn : Vm, Sigma[i], &VTnew[i], sizeS);
-
-        if (!use_gemm) {
-            for (int64_t j = 0; j < Vm; ++j)
-                VTnew[i + j*sizeS] = conj(VTnew[i + j*sizeS]);
-        }
     }
 
     // T* UVptr = UV + ldcu * rk_new;
