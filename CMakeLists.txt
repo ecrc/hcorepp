@@ -88,12 +88,13 @@ set_property(
 
 message(DEBUG "Settings:
 CMAKE_INSTALL_PREFIX   = ${CMAKE_INSTALL_PREFIX}
-CMAKE_BUILD_TYPE       = ${CMAKE_BUILD_TYPE}
 BUILD_SHARED_LIBS      = ${BUILD_SHARED_LIBS}
-build_tests            = ${build_tests}
-color                  = ${color}
+CMAKE_BUILD_TYPE       = ${CMAKE_BUILD_TYPE}
 hcore_is_project       = ${hcore_is_project}
+build_tests            = ${build_tests}
+use_openmp             = ${use_openmp}
 hcore_                 = ${hcore_}
+color                  = ${color}
 ")
 
 # enforce out-of-source build
