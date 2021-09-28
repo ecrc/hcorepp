@@ -10,7 +10,7 @@
 $(warning WARNING: The flags in the Makefile are hard-coded.)
 
 # here is a hard-coded example using OpenBLAS
-CXXFLAGS = -I/usr/local/hcore/include -std=c++17
+CXXFLAGS = -I/usr/local/hcore/include -std=c++11
 LIBS     = -L/usr/local/hcore/lib$(LIB_SUFFIX) -lhcore -lopenblas
 
 # rules
