@@ -268,8 +268,9 @@ void rsvd(blas::Op transAU, blas::Op transAV,
                       &VTnew[0], sizeS);
         lapack::lacpy(lapack::MatrixType::General, rk_new, Vm, &VTnew[0], sizeS,
                       VTilda, ldv);
-        for (int64_t i = 0; i < rk_new; ++i)
-            for (int64_t j = 0; j < Vm; ++j)
+
+        for (int64_t j = 0; j < Vm; ++j)
+            for (int64_t i = 0; i < rk_new; ++i)
                 VTilda[i + j*ldv] = conj(VTilda[i + j*ldv]);
     }
 
