@@ -83,26 +83,18 @@ void rsvd(blas::Op transAU, blas::Op transAV,
 
     // V = [beta * CV.' ((alpha * AV * BU) * BV).']
     std::vector<T> V(Vm*Vn);
-    for (int64_t j = 0; j < n; ++j) {
-        for (int64_t i = 0; i < Crk; ++i) {
-            V[j + i*Vm] = use_gemm ? conj(beta*CV[i + j*ldcv])
-                                   :      beta*CV[i + j*ldcv];
-        }
-    }
+    for (int64_t j = 0; j < n; ++j)
+        for (int64_t i = 0; i < Crk; ++i)
+            V[j + i*Vm] = conj(beta*CV[i + j*ldcv]);
+
     for (int64_t j = 0; j < n; ++j) {
         T* V_ = &V[n*Crk];
         for (int64_t i = 0; i < Ark; ++i) {
             #define AV(i_, j_) (transAV == blas::Op::NoTrans   \
                                 ? AV[(i_) + (j_)*size_t(ldav)] \
                                 : AV[(j_) + (i_)*size_t(ldav)])
-            if (use_gemm) {
-                V_[j + i*Vm] = transAV == blas::Op::ConjTrans ?      AV(i, j)
-                                                              : conj(AV(i, j));
-            }
-            else {
-                V_[j + i*Vm] = transAV == blas::Op::ConjTrans ? conj(AV(i, j))
-                                                              :      AV(i, j);
-            }
+            V_[j + i*Vm] = transAV == blas::Op::ConjTrans ?      AV(i, j)
+                                                          : conj(AV(i, j));
             #undef AV
         }
     }
@@ -114,7 +106,7 @@ void rsvd(blas::Op transAU, blas::Op transAV,
     lapack::geqrf(Vm, Vn, &V[0], Vm, &Vtau[0]);
 
     // int64_t sizeS = (use_trmm ? min_Um_Un : std::min({m, n, (Ark + Crk)}));
-    int64_t sizeS = use_gemm ? std::min({m, n, (Ark + Crk)}) : min_Um_Un;
+    int64_t sizeS = std::min({m, n, (Ark + Crk)});
     std::vector<blas::real_type<T>> Sigma(sizeS);
 
     // allocate max rows (m) because we truncate columns not rows, after unmqr
@@ -124,7 +116,7 @@ void rsvd(blas::Op transAU, blas::Op transAV,
 
     if (!use_gemm) {
         blas::trmm(blas::Layout::ColMajor, blas::Side::Right, blas::Uplo::Upper,
-                   blas::Op::Trans, blas::Diag::NonUnit, min_Um_Un, Un,
+                   blas::Op::ConjTrans, blas::Diag::NonUnit, min_Um_Un, Un,
                    one, &V[0],  Vm,
                         &RU[0], min_Um_Un);
         // orthogonal QU and QV
@@ -133,6 +125,7 @@ void rsvd(blas::Op transAU, blas::Op transAV,
                       &RU[0], min_Um_Un, &Sigma[0],
                       &Unew[0],  Um,
                       &VTnew[0], sizeS);
+
         // blas::trmm(
         //     blas::Layout::ColMajor, blas::Side::Right, blas::Uplo::Upper,
         //     (use_ungqr ? blas::Op::ConjTrans : blas::Op::Trans),
@@ -213,10 +206,10 @@ void rsvd(blas::Op transAU, blas::Op transAV,
     for(int64_t i = 0; i < rk_new; ++i) {
         blas::scal(use_gemm ? min_Vm_Vn : Vm, Sigma[i], &VTnew[i], sizeS);
 
-        if (!use_gemm) {
-            for (int64_t j = 0; j < Vm; ++j)
-                VTnew[i + j*sizeS] = conj(VTnew[i + j*sizeS]);
-        }
+        //if (!use_gemm) {
+        //    for (int64_t j = 0; j < Vm; ++j)
+        //        VTnew[i + j*sizeS] = conj(VTnew[i + j*sizeS]);
+        //}
     }
 
     int64_t ldu = ldcu;
@@ -269,9 +262,9 @@ void rsvd(blas::Op transAU, blas::Op transAV,
         lapack::lacpy(lapack::MatrixType::General, rk_new, Vm, &VTnew[0], sizeS,
                       VTilda, ldv);
 
-        for (int64_t j = 0; j < Vm; ++j)
-            for (int64_t i = 0; i < rk_new; ++i)
-                VTilda[i + j*ldv] = conj(VTilda[i + j*ldv]);
+        //for (int64_t j = 0; j < Vm; ++j)
+        //    for (int64_t i = 0; i < rk_new; ++i)
+        //        VTilda[i + j*ldv] = conj(VTilda[i + j*ldv]);
     }
 
     C.resize(UV, ldu, ldv, rk_new);
