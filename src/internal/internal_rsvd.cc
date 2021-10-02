@@ -6,6 +6,7 @@
 #include <initializer_list>
 #include <algorithm>
 #include <cstdint>
+#include <cstdlib>
 #include <complex>
 #include <vector>
 #include <new>
@@ -24,7 +25,7 @@ void rsvd(blas::Op transAU, blas::Op transAV,
           T beta, T const* AU, int64_t ldau,
                   T const* AV, int64_t ldav, int64_t Ark,
                   CompressedTile<T>& C,
-          bool use_gemm, bool truncate_with_tol, int64_t fixed_rk) {
+          bool use_gemm, bool use_Segma0_as_tol, int64_t fixed_rk) {
     using blas::conj;
 
     T zero = 0.0;
@@ -50,20 +51,21 @@ void rsvd(blas::Op transAU, blas::Op transAV,
     // U = [CU AU]
     std::vector<T> U(Um*Un);
     lapack::lacpy(lapack::MatrixType::General, m, Crk, &CU[0], ldcu, &U[0], Um);
-
-    for (int64_t j = 0; j < Ark; ++j) {
-        T* U_ = &U[m*Crk];
-        for (int64_t i = 0; i < m; ++i) {
-            #define AU(i_, j_) (transAU == blas::Op::NoTrans   \
-                                ? AU[(i_) + (j_)*size_t(ldau)] \
-                                : AU[(j_) + (i_)*size_t(ldau)])
-            U_[i + j*Um] = transAU == blas::Op::ConjTrans ? conj(AU(i, j))
-                                                          :      AU(i, j);
-            #undef AU
-        }
-    }
     // lapack::lacpy(lapack::MatrixType::General, m, Ark, &AU[0], ldau,
     //               &U[m*Crk], Um);
+    {
+        #define AU(i_, j_) (transAU == blas::Op::NoTrans   \
+                            ? AU[(i_) + (j_)*size_t(ldau)] \
+                            : AU[(j_) + (i_)*size_t(ldau)])
+        T* U_ = &U[m*Crk];
+        for (int64_t j = 0; j < Ark; ++j) {
+            for (int64_t i = 0; i < m; ++i) {
+                U_[i + j*Um] = transAU == blas::Op::ConjTrans ? conj(AU(i, j))
+                                                              :      AU(i, j);
+            }
+        }
+        #undef AU
+    }
 
     int64_t min_Um_Un = std::min(Um, Un);
 
@@ -87,16 +89,18 @@ void rsvd(blas::Op transAU, blas::Op transAV,
         for (int64_t i = 0; i < Crk; ++i)
             V[j + i*Vm] = conj(beta*CV[i + j*ldcv]);
 
-    for (int64_t j = 0; j < n; ++j) {
+    {
+        #define AV(i_, j_) (transAV == blas::Op::NoTrans   \
+                            ? AV[(i_) + (j_)*size_t(ldav)] \
+                            : AV[(j_) + (i_)*size_t(ldav)])
         T* V_ = &V[n*Crk];
-        for (int64_t i = 0; i < Ark; ++i) {
-            #define AV(i_, j_) (transAV == blas::Op::NoTrans   \
-                                ? AV[(i_) + (j_)*size_t(ldav)] \
-                                : AV[(j_) + (i_)*size_t(ldav)])
-            V_[j + i*Vm] = transAV == blas::Op::ConjTrans ?      AV(i, j)
-                                                          : conj(AV(i, j));
-            #undef AV
+        for (int64_t j = 0; j < n; ++j) {
+            for (int64_t i = 0; i < Ark; ++i) {
+                V_[j + i*Vm] = transAV == blas::Op::ConjTrans ?      AV(i, j)
+                                                              : conj(AV(i, j));
+            }
         }
+        #undef AV
     }
 
     int64_t min_Vm_Vn = std::min(Vm, Vn);
@@ -173,24 +177,25 @@ void rsvd(blas::Op transAU, blas::Op transAV,
     }
     else { // truncate according to tolerance
         rk_new = sizeS;
-        if (truncate_with_tol) {
-            blas::real_type<T> Sigma_0 = Sigma[0];
-            for (int64_t i = 1; i < sizeS; i++) {
-                if (Sigma[i] < tol*Sigma_0) {
-                    Sigma_0 = Sigma[i];
-                    rk_new = i;
-                    break;
-                }
+        blas::real_type<T> Sigma_0 = use_Segma0_as_tol ? Sigma[0] : 1.0;
+        for (int64_t i = 1; i < sizeS; i++) {
+            if (Sigma[i] < tol*Sigma_0) {
+                // Sigma_0 = Sigma[i];
+                rk_new = i;
+                break;
             }
         }
-        else {
-            for (int64_t i = 1; i < sizeS; i++) {
-                if (Sigma[i] < tol) {
-                    rk_new = i;
-                    break;
-                }
-            }
-        }
+
+        // if (use_Segma0_as_tol) {
+        // }
+        // else {
+        //     for (int64_t i = 1; i < sizeS; i++) {
+        //         if (Sigma[i] < tol) {
+        //             rk_new = i;
+        //             break;
+        //         }
+        //     }
+        // }
     }
 
     if (rk_new > std::min(m, n)) {
@@ -203,14 +208,14 @@ void rsvd(blas::Op transAU, blas::Op transAV,
     // VTnew eats (swallow) Sigma.
     // todo: we may need to have uplo parameter:
     //       scale VT, if Lower, or scale U otherwise.
-    for(int64_t i = 0; i < rk_new; ++i) {
+    for(int64_t i = 0; i < rk_new; ++i)// {
         blas::scal(use_gemm ? min_Vm_Vn : Vm, Sigma[i], &VTnew[i], sizeS);
 
         //if (!use_gemm) {
         //    for (int64_t j = 0; j < Vm; ++j)
         //        VTnew[i + j*sizeS] = conj(VTnew[i + j*sizeS]);
         //}
-    }
+    // }
 
     int64_t ldu = ldcu;
     int64_t ldv = rk_new;
@@ -275,20 +280,20 @@ void rsvd(blas::Op transAU, blas::Op transAV,
           float beta, float const* AU, int64_t ldau,
                       float const* AV, int64_t ldav, int64_t Ark,
                       CompressedTile<float>& C,
-          bool use_gemm, bool truncate_with_tol, int64_t fixed_rk);
+          bool use_gemm, bool use_Segma0_as_tol, int64_t fixed_rk);
 template
 void rsvd(blas::Op transAU, blas::Op transAV,
           double beta, double const* AU, int64_t ldau,
                        double const* AV, int64_t ldav, int64_t Ark,
                        CompressedTile<double>& C,
-          bool use_gemm, bool truncate_with_tol, int64_t fixed_rk);
+          bool use_gemm, bool use_Segma0_as_tol, int64_t fixed_rk);
 template
 void rsvd(blas::Op transAU, blas::Op transAV,
           std::complex<float> beta, std::complex<float> const* AU, int64_t ldau,
                                     std::complex<float> const* AV, int64_t ldav,
                                     int64_t Ark,
                                     CompressedTile<std::complex<float>>& C,
-          bool use_gemm, bool truncate_with_tol, int64_t fixed_rk);
+          bool use_gemm, bool use_Segma0_as_tol, int64_t fixed_rk);
 template
 void rsvd(blas::Op transAU, blas::Op transAV,
           std::complex<double> beta, std::complex<double> const* AU,
@@ -296,7 +301,7 @@ void rsvd(blas::Op transAU, blas::Op transAV,
                                      std::complex<double> const* AV,
                                      int64_t ldav, int64_t Ark,
                                      CompressedTile<std::complex<double>>& C,
-          bool use_gemm, bool truncate_with_tol, int64_t fixed_rk);
+          bool use_gemm, bool use_Segma0_as_tol, int64_t fixed_rk);
 
 } // namespace internal
 } // namespace hcore

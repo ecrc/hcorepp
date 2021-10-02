@@ -12,9 +12,9 @@
 namespace hcore {
 
 enum class Option : char {
-    UseGEMM  = 'U',
-    FixedRank = 'F',
-    TruncateWithTol = 'T',
+    UseGEMM        = 'U',
+    FixedRank      = 'F',
+    UseSegma0AsTol = 'T',
 };
 
 struct OptionValue {

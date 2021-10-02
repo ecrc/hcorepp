@@ -28,7 +28,7 @@ public:
 
     testsweeper::ParamChar check;
     testsweeper::ParamChar use_gemm;
-    testsweeper::ParamChar truncate_with_tol;
+    testsweeper::ParamChar use_Segma0_as_tol;
 
     testsweeper::ParamEnum<lapack::Norm> norm;
 

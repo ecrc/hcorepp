@@ -144,9 +144,9 @@ Params::Params():
         // name, width, type, default, valid, help
         "use_gemm", 0, testsweeper::ParamType::Value, 'y', "ny",
         "use gemm with ungqr (default yes)"),
-    truncate_with_tol(
+    use_Segma0_as_tol(
         // name, width, type, default, valid, help
-        "truncate_with_tol", 0, testsweeper::ParamType::Value, 'n', "ny",
+        "use_Segma0_as_tol", 0, testsweeper::ParamType::Value, 'n', "ny",
         "truncation with tolerance * accuracy (default no"),
     norm(
         // name, width, type, default, char2enum, enum2char, enum2str, help

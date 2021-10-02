@@ -18,7 +18,7 @@ void rsvd(blas::Op transA, blas::Op transB,
           T beta, T const* AU, int64_t ldau,
                   T const* AV, int64_t ldav, int64_t Ark,
                   CompressedTile<T>& C,
-          bool use_gemm=true, bool truncate_with_tol=false, int64_t fixed_rk=0);
+          bool use_gemm=true, bool use_Segma0_as_tol=false, int64_t fixed_rk=0);
 
 } // namespace internal
 } // namespace hcore

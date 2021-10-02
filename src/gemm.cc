@@ -493,7 +493,7 @@ void gemm(T alpha,           Tile<T> const& A,
 
     bool use_gemm = get_option(opts, Option::UseGEMM, true);
     int64_t fixed_rk = get_option(opts, Option::FixedRank, 0);
-    bool truncate_with_tol = get_option(opts, Option::TruncateWithTol, false);
+    bool use_Segma0_as_tol = get_option(opts, Option::UseSegma0AsTol, false);
 
     T zero = 0.0;
 
@@ -513,14 +513,14 @@ void gemm(T alpha,           Tile<T> const& A,
                        beta, B.Vdata(), B.Vstride(),
                              &W[0],     ldw, B.rk(),
                              C,
-                       use_gemm, fixed_rk, truncate_with_tol);
+                       use_gemm, fixed_rk, use_Segma0_as_tol);
     }
     else {
         internal::rsvd(blas::Op::NoTrans, B.op(),
                        beta, &W[0],     ldw,
                              B.Vdata(), B.Vstride(), B.rk(),
                              C,
-                       use_gemm, fixed_rk, truncate_with_tol);
+                       use_gemm, fixed_rk, use_Segma0_as_tol);
     }
 }
 
@@ -588,7 +588,7 @@ void gemm(T alpha, CompressedTile<T> const& A,
 
     bool use_gemm = get_option(opts, Option::UseGEMM, true);
     int64_t fixed_rk = get_option(opts, Option::FixedRank, 0);
-    bool truncate_with_tol = get_option(opts, Option::TruncateWithTol, false);
+    bool use_Segma0_as_tol = get_option(opts, Option::UseSegma0AsTol, false);
 
     std::vector<T> W(A.rk()*C.nb());
     int64_t ldw = C.layout() == blas::Layout::ColMajor ? A.rk() : C.nb();
@@ -608,14 +608,14 @@ void gemm(T alpha, CompressedTile<T> const& A,
                        beta, &W[0],     ldw,
                              A.Udata(), A.Ustride(), A.rk(),
                              C,
-                       use_gemm, truncate_with_tol, fixed_rk);
+                       use_gemm, use_Segma0_as_tol, fixed_rk);
     }
     else {
         internal::rsvd(A.op(), blas::Op::NoTrans,
                        beta, A.Udata(), A.Ustride(),
                              &W[0],     ldw, A.rk(),
                              C,
-                       use_gemm, truncate_with_tol, fixed_rk);
+                       use_gemm, use_Segma0_as_tol, fixed_rk);
     }
 }
 
@@ -687,7 +687,7 @@ void gemm(T alpha, CompressedTile<T> const& A,
 
     bool use_gemm = get_option(opts, Option::UseGEMM, true);
     int64_t fixed_rk = get_option(opts, Option::FixedRank, 0);
-    bool truncate_with_tol = get_option(opts, Option::TruncateWithTol, false);
+    bool use_Segma0_as_tol = get_option(opts, Option::UseSegma0AsTol, false);
 
     // W0 = alpha * AV * BU
     std::vector<T> W0(A.rk() * B.rk());
@@ -716,14 +716,14 @@ void gemm(T alpha, CompressedTile<T> const& A,
                            beta, &W1[0],    ldw1,
                                  A.Udata(), A.Ustride(), A.rk(),
                                  C,
-                           use_gemm, truncate_with_tol, fixed_rk);
+                           use_gemm, use_Segma0_as_tol, fixed_rk);
         }
         else {
             internal::rsvd(A.op(), blas::Op::NoTrans,
                            beta, A.Udata(), A.Ustride(),
                                  &W1[0],    ldw1, A.rk(),
                                  C,
-                           use_gemm, truncate_with_tol, fixed_rk);
+                           use_gemm, use_Segma0_as_tol, fixed_rk);
         }
     }
     else {
@@ -743,14 +743,14 @@ void gemm(T alpha, CompressedTile<T> const& A,
                            beta, B.Vdata(), B.Vstride(),
                                  &W1[0],    ldw1, B.rk(),
                                  C,
-                           use_gemm, truncate_with_tol, fixed_rk);
+                           use_gemm, use_Segma0_as_tol, fixed_rk);
         }
         else {
             internal::rsvd(blas::Op::NoTrans, B.op(),
                            beta, &W1[0],    ldw1,
                                  B.Vdata(), B.Vstride(), B.rk(),
                                  C,
-                           use_gemm, truncate_with_tol, fixed_rk);
+                           use_gemm, use_Segma0_as_tol, fixed_rk);
         }
     }
 }

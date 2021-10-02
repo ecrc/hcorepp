@@ -51,7 +51,7 @@ void gemm(Params& params, bool run) {
                             : params.accuracy();
 
     bool use_gemm = params.use_gemm() == 'y';
-    bool truncate_with_tol = params.truncate_with_tol() == 'y';
+    bool use_Segma0_as_tol = params.use_Segma0_as_tol() == 'y';
     int64_t truncate_with_fixed_rk = params.truncate_with_fixed_rk();
 
     if (params.routine == "gemm_ddc" || params.routine == "gemm_dcc" ||
@@ -187,9 +187,9 @@ void gemm(Params& params, bool run) {
     }
 
     hcore::Options const opts = {
-        { hcore::Option::UseGEMM,         use_gemm               },
-        { hcore::Option::FixedRank,       truncate_with_fixed_rk },
-        { hcore::Option::TruncateWithTol, truncate_with_tol      }
+        { hcore::Option::UseGEMM,        use_gemm               },
+        { hcore::Option::FixedRank,      truncate_with_fixed_rk },
+        { hcore::Option::UseSegma0AsTol, use_Segma0_as_tol      }
     };
 
     double gflops = 0.0;
