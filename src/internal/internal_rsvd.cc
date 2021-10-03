@@ -120,13 +120,15 @@ void rsvd(blas::Op transAU, blas::Op transAV,
 
     if (!use_gemm) {
         blas::trmm(blas::Layout::ColMajor, blas::Side::Right, blas::Uplo::Upper,
-                   blas::Op::ConjTrans, blas::Diag::NonUnit, min_Um_Un, Un,
+                   blas::Op::ConjTrans, blas::Diag::NonUnit,
+                   min_Um_Un, Un,
                    one, &V[0],  Vm,
                         &RU[0], min_Um_Un);
         // orthogonal QU and QV
         // [Unew, Sigma, VTnew] = svd(RU * RV.');
-        lapack::gesvd(lapack::Job::SomeVec, lapack::Job::SomeVec, min_Um_Un, Un,
-                      &RU[0], min_Um_Un, &Sigma[0],
+        lapack::gesvd(lapack::Job::SomeVec, lapack::Job::SomeVec,
+                      min_Um_Un, min_Vm_Vn,
+                      &RU[0],    min_Um_Un, &Sigma[0],
                       &Unew[0],  Um,
                       &VTnew[0], sizeS);
 
