@@ -6,6 +6,7 @@
 #include <complex>
 #include <cassert>
 #include <vector>
+#include <string>
 
 #include "lapack/flops.hh"
 #include "testsweeper.hh"
@@ -82,7 +83,7 @@ void potrf(Params& params, bool run) {
     int64_t info = hcore::potrf<T>(A);
     double time_end = testsweeper::get_wtime();
     if (info != 0) {
-        throw hcore::Error("lapack::potrf returned error " + info);
+        throw hcore::Error("lapack::potrf returned error " + std::to_string(info));
     }
 
     gflops = lapack::Gflop<T>::potrf(n);
@@ -103,7 +104,7 @@ void potrf(Params& params, bool run) {
         {
             int64_t info = lapack::potrf(uplo_, n, &Aref[0], lda);
             if (info != 0) {
-                throw hcore::Error("lapack::potrf returned error " + info);
+                throw hcore::Error("lapack::potrf returned error " + std::to_string(info));
             }
         }
         double ref_time_end = testsweeper::get_wtime();
