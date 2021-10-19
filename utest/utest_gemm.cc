@@ -56,7 +56,7 @@ void err_check(Tile<T> const& A, T const* B, int ldb,
 
                 if (!(abs_error <= abs_tol || rel_error <= rel_tol)) {
                     printf("\n");
-                    printf("A(%3d, %3d) %8.4f + %8.4fi\n"
+                    printf("A(%3ld, %3ld) %8.4f + %8.4fi\n"
                            "B           %8.4f + %8.4fi\n"
                            "abs_error %8.2e, rel_error %8.2e\n",
                             i, j, real(A(i, j)), imag(A(i, j)),
