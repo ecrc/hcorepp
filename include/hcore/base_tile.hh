@@ -163,7 +163,7 @@ protected:
     /// @param[in] new_layout
     ///     blas::Layout::ColMajor: column elements are 1-strided.
     ///     blas::Layout::RowMajor: row elements are 1-strided.
-    void layout(blas::Layout new_layout) { return layout_ = new_layout; }
+    void layout(blas::Layout new_layout) { layout_ = new_layout; }
 
     //--------------------------------------------------------------------------
     /// Set transposition operation.
