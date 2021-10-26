@@ -1,34 +1,35 @@
-v1.0.0 | 2021.05.30
+v1.0.0 | 2021.11.14
 --------------------------------------------------------------------------------
 
    - Modern C++ design
       - Templates for precision to minimize codebase
          - Instantiation for float, double, complex, and complex-double
       - Exceptions to avoid silently ignoring errors
-      - Use standard containers. e.g., std::vector
+      - Rely upon standard containers. e.g., std::vector
    - Use BLAS++ and LAPACK++ as abstraction layers to provide C++ APIs for the
-   Basic Linear Algebra Subroutines (BLAS) and LAPACK (Linear Algebra PACKage).
+   Basic Linear Algebra Subroutines (BLAS) and LAPACK (Linear Algebra PACKage)
    - Support flexible and non-uniform tile sizes
-   - Support all possible combinations of general matrix-matrix multiplication,
-     (GEMM).
-   - Support row-major and column-major.
-   - Support no transpose, transpose, and conjugate-transpose.
+   - Support all possible combinations of general matrix-matrix multiplication (GEMM)
+```
+C (dense)      = alpha x A (dense)      x B (dense)      + beta x C (dense)
+C (dense)      = alpha x A (compressed) x B (dense)      + beta x C (dense)
+C (dense)      = alpha x A (dense)      x B (compressed) + beta x C (dense)
+C (dense)      = alpha x A (compressed) x B (compressed) + beta x C (dense)
+C (compressed) = alpha x A (dense)      x B (dense)      + beta x C (compressed)
+C (compressed) = alpha x A (compressed) x B (dense)      + beta x C (compressed)
+C (compressed) = alpha x A (dense)      x B (compressed) + beta x C (compressed)
+C (compressed) = alpha x A (compressed) x B (compressed) + beta x C (compressed)
+```
+   - Support row-major and column-major
+   - Support no transpose, transpose, and conjugate-transpose
+```c++
+auto AT = transpose(A);
+auto BT = conj_transpose(B);
+// gemm( layout, Op::Trans, Op::ConjTrans, alpha, A, B, beta, C );
+hcore::gemm<T>( alpha, AT, BT, beta, C );
+```
    - Provide a complete build script generator based on CMake
-   - Provide a comprehensive testing suite based on TestSweeper framework
-
-v0.1.1 | 2021.02.03
---------------------------------------------------------------------------------
-
-   - GEMM in the form of: C = alpha x A (compressed) x B (compressed) + beta x C
-   - Decompress a low-rank tile: A = U x VT
-   - Complex-double precision
-   - Support dense SYRK, POTRF, and TRSM
-
-v0.1.0 | 2020.01.08
---------------------------------------------------------------------------------
-
-   - GEMM in the form of:
-   C (compressed) = alpha x A (compressed) x B (compressed) + beta x C (compressed)
-   - SYRK in the form of: C = alpha x A (compressed) A^T (compressed) x beta x C
-   - Double precision
-   - Testing suite
+   - Provide a comprehensive integration testing suite and unite testing suite
+   based on TestSweeper framework
+   - Support symmetric rank-k update (SYRK) and triangular matrix solve (TRSM)
+   - Support Cholesky factorization (POTRF)
