@@ -45,12 +45,13 @@ HiCMA is to develop fast linear algebra computations operating on the underlying
 tile low-rank data format, while satisfying a specified numerical accuracy and
 leveraging performance from massively parallel hardware architectures.
 
+![HCORE software stack](http://ecrc.github.io/hcorepp/artwork/github/software_stack.png)
 * * *
 
 ### Documentation
 
 * [INSTALL.md](INSTALL.md) for installation notes.
-* [HCORE Doxygen](https://ecrc.github.io/hcore/)
+* [HCORE Doxygen](https://ecrc.github.io/hcorepp/)
 * [HiCMA Users' Guide]()
 * [HiCMA Developers' Guide]()
 
