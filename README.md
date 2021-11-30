@@ -3,13 +3,11 @@
      __ | (    (   |   / _|__ __|__ __|
     _| _|\___|\___/ _|_\___| _|    _|
 
-**C++ software library provides the Basic Linear Algebra Subroutines (BLAS)**
-**operations and Linear Algebra PACKage (LAPACK) for matrices in tile**
-**low-rank format**
+**C++ API for the BLAS for Tile Low-rank Matrix Algebra**
 
-**Extreme Computing Research Center (ECRC)**
+**Extreme Computing Research Center**
 
-**King Abdullah University of Science and Technology (KAUST)**
+**King Abdullah University of Science and Technology**
 
 * * *
 
