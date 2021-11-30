@@ -3,7 +3,7 @@
      __ | (    (   |   / _|__ __|__ __|
     _| _|\___|\___/ _|_\___| _|    _|
 
-**C++ API for the BLAS for Tile Low-rank Matrix Algebra**
+**C++ API for the BLAS of Tile Low-rank Matrix Algebra**
 
 **Extreme Computing Research Center**
 
