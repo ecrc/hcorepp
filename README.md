@@ -1,4 +1,7 @@
-# HCORE
+
+     |  |  __|  _ \  _ \ __|  |     |
+     __ | (    (   |   / _|__ __|__ __|
+    _| _|\___|\___/ _|_\___| _|    _|
 
 **C++ software library provides the Basic Linear Algebra Subroutines (BLAS)**
 **operations and Linear Algebra PACKage (LAPACK) for matrices in tile**
