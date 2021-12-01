@@ -24,7 +24,7 @@
 
 ### About
 
-HCORE software library implements BLAS and LAPACK functionality in the form of
+HCORE software library implements BLAS functionality in the form of
 tile routines, which update one or a small number of individual tiles, generally
 sequentially on a single compute unit. Notably, an m-by-n matrix is a collection
 of individual mb-by-nb tiles. In the context of C++, HCORE tiles are first class
@@ -39,14 +39,15 @@ development in the C++ language, that, for the most part, preserves established
 conventions, while, at the same time, takes advantages of modern C++ features,
 e.g., classes, namespaces, templates, exceptions, standard containers, etc.
 
-HCORE is part of the HiCMA project (Hierarchical Computations on Manycore
-Architectures (HiCMA)), which aims to redesign existing dense linear algebra
+HCORE is part of the Hierarchical Computations on Manycore Architectures (HiCMA)
+project, which aims to redesign existing dense linear algebra
 libraries to exploit the data sparsity of the matrix operator. The core idea of
 HiCMA is to develop fast linear algebra computations operating on the underlying
 tile low-rank data format, while satisfying a specified numerical accuracy and
 leveraging performance from massively parallel hardware architectures.
 
 ![HCORE software stack](http://ecrc.github.io/hcorepp/artwork/github/software_stack.png)
+
 * * *
 
 ### Documentation
@@ -130,8 +131,8 @@ Supercomputing Laboratory at KAUST.
 
 ### License
 
-Copyright (c) 2017-2021, King Abdullah University of Science and Technology
-(KAUST). All rights reserved.
+Copyright (c) 2017-2021, King Abdullah University of Science and Technology.
+All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
