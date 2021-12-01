@@ -70,11 +70,11 @@ https://github.com/ecrc/hcorepp/issues to create a new issue.
 
 * Visit the [HiCMA website](https://cemse.kaust.edu.sa/hicma)
   for more information about the Hierarchical Computations on Manycore
-  Architectures (HiCMA) research group research group.
+  Architectures research group.
 * Visit the [ECRC website](https://cemse.kaust.edu.sa/ecrc)
-  to find out more about the Extreme Computing Research Center (ECRC).
+  to find out more about the Extreme Computing Research Center.
 * Visit the [HiCMA repository](https://github.com/ecrc/hicmapp)
-  for more information about the HiCMA project.
+  for more information about the HiCMA software project.
 * Visit the [BLAS++ repository](https://bitbucket.org/icl/blaspp)
   for more information about the C++ API for BLAS.
 * Visit the [LAPACK++ repository](https://bitbucket.org/icl/lapackpp)
