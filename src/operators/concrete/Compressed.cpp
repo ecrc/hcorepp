@@ -15,7 +15,7 @@ namespace hcorepp {
         }
 
         template<typename T>
-        vector<DataHolder<T>> &CompressedTile<T>::GetTileMatrices() {
+        DataHolder<T> & CompressedTile<T>::GetTileSubMatrix(size_t aIndex) {
         }
 
 

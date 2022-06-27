@@ -15,7 +15,7 @@ namespace hcorepp {
         }
 
         template<typename T>
-        vector<DataHolder<T>> & DenseTile<T>::GetTileMatrices() {
+        DataHolder<T> & DenseTile<T>::GetTileSubMatrix(size_t aIndex) {
         }
 
 

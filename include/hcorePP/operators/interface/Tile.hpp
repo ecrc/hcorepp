@@ -63,13 +63,16 @@ namespace hcorepp {
 
             /**
              * @brief
-             * Get matrices describing the tile.
+             * Get sub-matrix of a tile.
+             *
+             * @param[in]aIndex
+             * index of sub-matrix to get.
              *
              * @return
-             * vector of DataHolder object describing the Tile matrices.
+             * DataHolder object describing the Tile sub-matrix.
              */
-            virtual vector<DataHolder<T>> &
-            GetTileMatrices() = 0;
+            virtual DataHolder<T> &
+            GetTileSubMatrix(size_t aIndex) = 0;
 
             /**
              * @brief

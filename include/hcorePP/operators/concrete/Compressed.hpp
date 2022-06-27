@@ -33,8 +33,8 @@ namespace hcorepp {
              */
             ~CompressedTile();
 
-            vector <DataHolder<T>> &
-            GetTileMatrices() override;
+            DataHolder<T> &
+            GetTileSubMatrix(size_t aIndex) override;
 
             size_t
             GetNumberOfMatrices() override;
