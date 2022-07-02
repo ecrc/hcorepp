@@ -13,9 +13,19 @@ else ()
 endif ()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/prerequisites)
 
 add_subdirectory(src)
+
+#option(BUILD_TESTS "Option to enable building tests" OFF)
+#if (${BUILD_TESTS})
+message(STATUS "Building Tests")
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
+include(CTest)
+add_test(NAME hcorepp-tests
+        COMMAND hcorepp-tests
+        )
+#endif ()
 
 # search for BLAS library, if not already included
 message("")

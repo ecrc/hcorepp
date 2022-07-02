@@ -82,6 +82,10 @@ namespace hcorepp {
             /** leading dimension */
             size_t mLeadingDimension;
         };
+        template class DataHolder<int>;
+        template class DataHolder<long>;
+        template class DataHolder<float>;
+        template class DataHolder<double>;
     }
 }
 #endif //HCOREPP_DATA_UNITS_DATA_HOLDER_HPP
