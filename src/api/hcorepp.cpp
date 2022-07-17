@@ -1,6 +1,7 @@
 
-#include <hcorePP/api/hcoreOperations.hpp>
+#include <hcorepp/api/hcorepp.hpp>
 
+using namespace hcorepp::operators;
 using namespace hcorepp::dataunits;
 
 namespace hcorepp {

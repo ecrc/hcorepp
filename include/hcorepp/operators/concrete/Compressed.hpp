@@ -1,15 +1,8 @@
-//
-// Created by mirna on 21/06/2022.
-//
 
 #ifndef HCOREPP_OPERATORS_CONCRETE_COMPRESSED_HPP
 #define HCOREPP_OPERATORS_CONCRETE_COMPRESSED_HPP
 
-#include <hcorePP/operators/interface/Tile.hpp>
-#include <cstdint>
-
-using namespace hcorepp::dataunits;
-using namespace std;
+#include <hcorepp/operators/interface/Tile.hpp>
 
 namespace hcorepp {
     namespace operators {
@@ -28,28 +21,29 @@ namespace hcorepp {
              * Vector of Data arrays representing the dense tile.
              */
             CompressedTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim, int64_t aRank,
-                           real_t aAccuracy, blas::Layout aLayout = blas::Layout::ColMajor,
+                           blas::real_type<T> aAccuracy, blas::Layout aLayout = blas::Layout::ColMajor,
                            blas::Op aOperation = blas::Op::NoTrans, blas::Uplo aUplo = blas::Uplo::General);
 
 
             /**
              * @brief
-             * Dense Tile destructor.
+             * Compressed Tile destructor.
              */
             ~CompressedTile();
 
-            DataHolder<T> &
+            dataunits::DataHolder<T> &
             GetTileSubMatrix(size_t aIndex) override;
 
-            DataHolder<T> const *
+            dataunits::DataHolder<T> const *
             GetTileSubMatrixConst(size_t aIndex) const override;
 
             size_t
             GetNumberOfMatrices() override;
 
             void
-            Gemm(T &aAlpha, DataHolder<T> const &aTileA, blas::Op aTileAOp, DataHolder<T> const &aTileB,
-                 blas::Op aTileBOp, T &aBeta) override;
+            Gemm(T &aAlpha, dataunits::DataHolder<T> const &aTileA, blas::Op aTileAOp,
+                 dataunits::DataHolder<T> const &aTileB,
+                 blas::Op aTileBOp, T &aBeta, int64_t ldau, int64_t Ark, const helpers::SvdHelpers &aHelpers) override;
 
             /**
              * @brief
@@ -59,7 +53,7 @@ namespace hcorepp {
              * Matrix rank.
              */
             void
-            SetTileRank(int64_t &aMatrixRank) const;
+            SetTileRank(int64_t &aMatrixRank);
 
             /**
              * @brief
@@ -71,15 +65,16 @@ namespace hcorepp {
             int64_t
             GetTileRank() const;
 
-//            /**
-//             * @brief
-//             * Get matrix accuracy.
-//             *
-//             * @return
-//             * Matrix accuracy.
-//             */
-//            real_t
-//            GetAccuracy();
+            /**
+             * @brief
+             * Get matrix accuracy.
+             *
+             * @return
+             * Matrix accuracy.
+             */
+            blas::real_type<T>
+            GetAccuracy();
+
 //
 //            /**
 //             * @brief
@@ -90,6 +85,11 @@ namespace hcorepp {
 //             */
 //            void
 //            SetAccuracy(real_t aAccuracy);
+            size_t
+            GetNumOfRows() const;
+
+            size_t
+            GetNumOfCols() const;
 
             int64_t
             GetTileStride(size_t aIndex) const override;
@@ -99,16 +99,16 @@ namespace hcorepp {
 
         private:
             /** Vector of data arrays */
-            vector<DataHolder<T> &> mDataArrays;
+            std::vector<dataunits::DataHolder<T> &> mDataArrays;
             /** Linear Algebra Matrix rank*/
             int64_t mMatrixRank;
             /** Numerical error thershold */
-            real_t mAccuracy;
+            blas::real_type<T> mAccuracy;
             /** number of rows */
             size_t mNumOfRows;
             /** number of cols */
             size_t mNumOfCols;
-
+            static const int64_t FULL_RANK_ = -1;
         };
     }
 }

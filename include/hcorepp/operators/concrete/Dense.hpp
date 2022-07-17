@@ -2,7 +2,7 @@
 #ifndef HCOREPP_OPERATORS_CONCRETE_DENSE_HPP
 #define HCOREPP_OPERATORS_CONCRETE_DENSE_HPP
 
-#include <hcorePP/operators/interface/Tile.hpp>
+#include <hcorepp/operators/interface/Tile.hpp>
 
 namespace hcorepp {
     namespace operators {
@@ -30,20 +30,20 @@ namespace hcorepp {
              */
             ~DenseTile();
 
-            DataHolder<T> &
+            dataunits::DataHolder<T> &
             GetTileSubMatrix(size_t aIndex) override;
 
             size_t
             GetNumberOfMatrices() override;
 
             void
-            Gemm(T &aAlpha, DataHolder<T> const &aTileA, blas::Op aTileAOp, DataHolder<T> const &aTileB,
-                 blas::Op aTileBOp, T &aBeta) override;
-
+            Gemm(T &aAlpha, dataunits::DataHolder<T> const &aTileA, blas::Op aTileAOp, dataunits::DataHolder<T> const &aTileB,
+                 blas::Op aTileBOp, T &aBeta, int64_t ldau, int64_t Ark, const helpers::SvdHelpers &aHelpers) override;
+            
 
         private:
             /** vector of references to data arrays representing the Dense tile. */
-            vector<DataHolder<T> &> mDataArrays;
+            std::vector<dataunits::DataHolder<T> &> mDataArrays;
             /** number of rows */
             size_t mNumOfRows;
             /** number of cols */

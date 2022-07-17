@@ -2,12 +2,11 @@
 #ifndef HCOREPP_OPERATORS_INTERFACE_TILE_HPP
 #define HCOREPP_OPERATORS_INTERFACE_TILE_HPP
 
-#include <hcorePP/data-units/DataHolder.hpp>
 #include <vector>
+#include <cstdint>
 #include "blas.hh"
-
-using namespace hcorepp::dataunits;
-using namespace std;
+#include <hcorepp/data-units/DataHolder.hpp>
+#include <hcorepp/operators/helpers/SvdHelpers.hpp>
 
 namespace hcorepp {
     namespace operators {
@@ -63,16 +62,16 @@ namespace hcorepp {
 
             /**
              * @brief
-             * Get sub-matrix of a tile.
-             *
-             * @param[in]aIndex
-             * index of sub-matrix to get.
+             * Get matrices describing the tile.
              *
              * @return
-             * DataHolder object describing the Tile sub-matrix.
+             * vector of DataHolder object describing the Tile matrices.
              */
-            virtual DataHolder<T> &
+            virtual dataunits::DataHolder<T> &
             GetTileSubMatrix(size_t aIndex) = 0;
+
+            virtual const dataunits::DataHolder<T> &
+            GetTileSubMatrix(size_t aIndex) const = 0;
 
             /**
              * @brief
@@ -82,7 +81,7 @@ namespace hcorepp {
              * Number of matrices describing the tile.
              */
             virtual size_t
-            GetNumberOfMatrices() = 0;
+            GetNumberOfMatrices() const = 0;
 
             /**
              * @brief
@@ -98,12 +97,17 @@ namespace hcorepp {
              * The scalar beta.
              */
             virtual void
-            Gemm(T &aAlpha, DataHolder<T> const &aTileA, DataHolder<T> const &aTileB, T &aBeta) = 0;
+            Gemm(T &aAlpha, dataunits::DataHolder<T> const &aTileA, blas::Op aTileAOp, dataunits::DataHolder<T> const &aTileB,
+                 blas::Op aTileBOp, T &aBeta, int64_t ldau, int64_t Ark, const helpers::SvdHelpers &aHelpers) = 0;
+
+            virtual int64_t
+            GetTileStride(size_t aIndex) const = 0;
 
         protected:
             blas::Op mOperation;
             blas::Uplo mUpLo;
             blas::Layout mLayout;
+            int64_t mLeadingDim;
         };
     }
 }

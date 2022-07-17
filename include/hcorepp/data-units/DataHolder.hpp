@@ -21,7 +21,9 @@ namespace hcorepp {
              * @param[in] aLeadingDim
              * Which dimension is the leading one.
              * @param[in] apData
-             * pointer to the data array.
+             * pointer to a data array that can be null pointer,
+             * if a non null pointer was passed then data is copied to an allocated internal buffer
+             * of size = aRows * aLeadingDim * sizeof<T> assuming Row major format.
              *
              */
             DataHolder(size_t aRows, size_t aCols, size_t aLeadingDim, T *apData = nullptr);
@@ -45,13 +47,24 @@ namespace hcorepp {
 
             /**
              * @brief
+             * The dataHolder/ matrix array getter.
+             *
+             * @return
+             * Pointer to the data array.
+             *
+             */
+            const T *
+            GetData() const;
+
+            /**
+             * @brief
              * Number of rows getter.
              *
              * @return
              * Number of Rows.
              */
             size_t
-            GetNumOfRows();
+            GetNumOfRows() const;
 
             /**
              * @brief
@@ -61,7 +74,7 @@ namespace hcorepp {
              * Number of Columns.
              */
             size_t
-            GetNumOfCols();
+            GetNumOfCols() const;
 
             /**
              * The Data holder Leading dimension.
@@ -70,7 +83,10 @@ namespace hcorepp {
              * Leading dimension.
              */
             size_t
-            GetLeadingDim();
+            GetLeadingDim() const;
+
+            void
+            CopyDataArray(size_t aStIdx, T* aSrcDataArray, size_t aNumOfElements);
 
         private:
             /** pointer to data array */
@@ -86,6 +102,7 @@ namespace hcorepp {
         template class DataHolder<long>;
         template class DataHolder<float>;
         template class DataHolder<double>;
+
     }
 }
 #endif //HCOREPP_DATA_UNITS_DATA_HOLDER_HPP

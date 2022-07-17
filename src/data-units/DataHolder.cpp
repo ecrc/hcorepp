@@ -1,5 +1,7 @@
 
-#include <hcorePP/data-units/DataHolder.hpp>
+#include <hcorepp/data-units/DataHolder.hpp>
+#include <cstdlib>
+#include <cstring>
 
 namespace hcorepp {
     namespace dataunits {
@@ -9,11 +11,16 @@ namespace hcorepp {
             mNumOfRows = aRows;
             mNumOfCols = aCols;
             mLeadingDimension = aLeadingDim;
-            mDataArray = apData;
 #ifdef USE_CUDA
             cuda_malloc(&mDataArray, mNumofRows*mNumOfCols*sizeof(T));
+            if(apData!= nullptr) {
+                cuda_memcpy(mDataArray, apData, mNumOfRows * mNumOfCols * sizeof(T), cudaMemcpyHostToDevice);
+            }
 #else
             mDataArray = (T *) malloc(mNumOfRows * mNumOfCols * sizeof(T));
+            if (apData != nullptr) {
+                memcpy(mDataArray, apData, mNumOfRows * mNumOfCols * sizeof(T));
+            }
 #endif
         }
 
@@ -33,18 +40,31 @@ namespace hcorepp {
 
 
         template<typename T>
-        size_t DataHolder<T>::GetNumOfRows() {
+        size_t DataHolder<T>::GetNumOfRows() const{
             return mNumOfRows;
         }
 
         template<typename T>
-        size_t DataHolder<T>::GetNumOfCols() {
+        size_t DataHolder<T>::GetNumOfCols() const{
             return mNumOfCols;
         }
 
         template<typename T>
-        size_t DataHolder<T>::GetLeadingDim() {
+        size_t DataHolder<T>::GetLeadingDim() const{
             return mLeadingDimension;
+        }
+
+        template<typename T>
+        void DataHolder<T>::CopyDataArray(size_t aStIdx, T *aSrcDataArray, size_t aNumOfElements) {
+            if (aNumOfElements > mNumOfRows * mNumOfCols || aSrcDataArray == nullptr) {
+                return;
+            }
+#ifdef USE_CUDA
+            cuda_memcpy(&mDataArray[aStIdx], aSrcDataArray, aNumOfElements * sizeof(T), cudaMemcpyHostToDevice);
+#else
+            memcpy(&mDataArray[aStIdx], aSrcDataArray, aNumOfElements * sizeof(T));
+#endif
+
         }
     }
 }

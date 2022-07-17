@@ -1,5 +1,8 @@
 
-#include <hcorePP/operators/concrete/Dense.hpp>
+#include <hcorepp/operators/concrete/Dense.hpp>
+
+using namespace hcorepp::dataunits;
+using namespace hcorepp::helpers;
 
 namespace hcorepp {
     namespace operators {
@@ -32,7 +35,7 @@ namespace hcorepp {
 
         template<typename T>
         void DenseTile<T>::Gemm(T &aAlpha, DataHolder<T> const &aTileA, blas::Op aTileAOp, DataHolder<T> const &aTileB,
-                                blas::Op aTileBOp, T &aBeta) {
+                                blas::Op aTileBOp, T &aBeta, int64_t ldau, int64_t Ark, const SvdHelpers &aHelpers) {
 
             /**
              * Assuming that C operation is blas::Op::NoTrans
@@ -40,14 +43,15 @@ namespace hcorepp {
              */
             blas::gemm(blas::Layout::ColMajor, aTileAOp, aTileBOp,
                        this->mNumOfRows, this->mNumOfCols, aTileA.mNumOfCols,
-                       alpha, aTileA.GetData(), aTileA.GetLeadingDim(),
+                       aAlpha, aTileA.GetData(), aTileA.GetLeadingDim(),
                        aTileB.GetData(), aTileB.GetLeadingDim(),
-                       beta, GetTileSubMatrix(0), GetTileSubMatrix(0).GetLeadingDim());
+                       aBeta, GetTileSubMatrix(0), GetTileSubMatrix(0).GetLeadingDim());
         }
 
         template<typename T>
         size_t DenseTile<T>::GetNumberOfMatrices() {
             return mDataArrays.size();
         }
+
     }
 }
