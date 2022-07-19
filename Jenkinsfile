@@ -4,6 +4,10 @@ pipeline {
         // cron('H H(4-5) * * *')
         pollSCM('H/10 * * * *')
     }
+        options {
+        timeout(time: 1, unit: 'HOURS')   // timeout on whole pipeline job after 1 hour if it doesn't pass
+    }
+
     stages {
         stage('main') {
             matrix {
