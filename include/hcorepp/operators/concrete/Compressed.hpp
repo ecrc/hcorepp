@@ -31,18 +31,18 @@ namespace hcorepp {
              */
             ~CompressedTile();
 
-            dataunits::DataHolder<T> &
+            std::reference_wrapper<dataunits::DataHolder<T>>
             GetTileSubMatrix(size_t aIndex) override;
 
-            dataunits::DataHolder<T> const *
-            GetTileSubMatrixConst(size_t aIndex) const override;
+            std::reference_wrapper<dataunits::DataHolder<T>> const
+            GetTileSubMatrix(size_t aIndex) const override;
 
             size_t
-            GetNumberOfMatrices() override;
+            GetNumberOfMatrices() const override;
 
             void
-            Gemm(T &aAlpha, dataunits::DataHolder<T> const &aTileA, blas::Op aTileAOp,
-                 dataunits::DataHolder<T> const &aTileB,
+            Gemm(T &aAlpha, dataunits::DataHolder <T> const &aTileA, blas::Op aTileAOp,
+                 dataunits::DataHolder <T> const &aTileB,
                  blas::Op aTileBOp, T &aBeta, int64_t ldau, int64_t Ark, const helpers::SvdHelpers &aHelpers) override;
 
             /**
@@ -99,7 +99,8 @@ namespace hcorepp {
 
         private:
             /** Vector of data arrays */
-            std::vector<dataunits::DataHolder<T> &> mDataArrays;
+            std::vector<dataunits::DataHolder < T> *>
+            mDataArrays;
             /** Linear Algebra Matrix rank*/
             int64_t mMatrixRank;
             /** Numerical error thershold */
@@ -110,6 +111,18 @@ namespace hcorepp {
             size_t mNumOfCols;
             static const int64_t FULL_RANK_ = -1;
         };
+
+//        template
+//        class CompressedTile<int>;
+
+//        template
+//        class CompressedTile<long>;
+
+        template class CompressedTile<float>;
+
+        template
+        class CompressedTile<double>;
+
     }
 }
 

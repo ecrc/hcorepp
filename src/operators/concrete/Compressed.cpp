@@ -4,6 +4,7 @@
 #include "lapack/wrappers.hh"
 #include <hcorepp/operators/helpers/SvdHelpers.hpp>
 #include <hcorepp/operators/concrete/Compressed.hpp>
+#include <functional>
 
 using namespace hcorepp::dataunits;
 using namespace hcorepp::helpers;
@@ -40,37 +41,48 @@ namespace hcorepp {
                 ///     data array of U is stored in an ld-by-rk array buffer; and
                 ///     data array of V is stored in an rk-by-n array buffer.
 
-                this->mDataArrays.emplace_back(
-                        DataHolder<T>(this->mLeadingDim, this->mMatrixRank, aLeadingDim, aPdata));
-                this->mDataArrays.emplace_back(
-                        DataHolder<T>(this->mMatrixRank, aNumOfCols, aLeadingDim, aPdata + this->mLeadingDim *
-                                                                                           this->mMatrixRank));
+                this->mDataArrays.push_back(
+                        new DataHolder<T>(this->mLeadingDim, this->mMatrixRank, aLeadingDim, aPdata));
+                this->mDataArrays.push_back(new DataHolder<T>(this->mMatrixRank, aNumOfCols, aLeadingDim,
+                                                              aPdata + aNumOfRows * this->mMatrixRank));
+
+//                this->mDataArrays.emplace_back(
+//                        DataHolder<T>(this->mLeadingDim, this->mMatrixRank, aLeadingDim, aPdata));
+//                this->mDataArrays.emplace_back(
+//                        DataHolder<T>(this->mMatrixRank, aNumOfCols, aLeadingDim, aPdata + this->mLeadingDim *
+//                                                                                           this->mMatrixRank));
             } else {
                 ///     layout = blas::Layout::RowMajor: the data array of A is stored in an
                 ///     m-by-ld array buffer, the data array of U is stored in an
                 ///     m-by-rk array buffer, and data array of V is stored in an
                 ///     rk-by-ld array buffer.
 
-                this->mDataArrays.emplace_back(DataHolder<T>(aNumOfRows, this->mMatrixRank, aLeadingDim, aPdata));
-                this->mDataArrays.emplace_back(DataHolder<T>(this->mMatrixRank, this->mLeadingDim, aLeadingDim,
-                                                             aPdata + aNumOfRows * this->mMatrixRank));
+                this->mDataArrays.push_back(new DataHolder<T>(aNumOfRows, this->mMatrixRank, aLeadingDim, aPdata));
+                this->mDataArrays.push_back(new DataHolder<T>(this->mMatrixRank, this->mLeadingDim, aLeadingDim,
+                                                              aPdata + aNumOfRows * this->mMatrixRank));
+
+//                this->mDataArrays.emplace_back(DataHolder<T>(aNumOfRows, this->mMatrixRank, aLeadingDim, aPdata));
+//                this->mDataArrays.emplace_back(DataHolder<T>(this->mMatrixRank, this->mLeadingDim, aLeadingDim,
+//                                                             aPdata + aNumOfRows * this->mMatrixRank));
 
             }
         }
 
         template<typename T>
         CompressedTile<T>::~CompressedTile<T>() {
-
+            for (auto data_holder: this->mDataArrays) {
+                delete data_holder;
+            }
         }
 
         template<typename T>
-        DataHolder<T> &CompressedTile<T>::GetTileSubMatrix(size_t aIndex) {
-            return mDataArrays[aIndex];
+        std::reference_wrapper<dataunits::DataHolder<T>> CompressedTile<T>::GetTileSubMatrix(size_t aIndex) {
+            return *mDataArrays[aIndex];
         }
 
         template<typename T>
-        DataHolder<T> const *CompressedTile<T>::GetTileSubMatrixConst(size_t aIndex) const {
-            return &mDataArrays[aIndex];
+        std::reference_wrapper<dataunits::DataHolder<T>> const CompressedTile<T>::GetTileSubMatrix(size_t aIndex) const {
+            return *mDataArrays[aIndex];
         }
 
         template<typename T>
@@ -103,11 +115,11 @@ namespace hcorepp {
             int64_t m = GetNumOfRows();
             int64_t n = GetNumOfCols();
 
-            T *CU = this->GetTileSubMatrix(0).GetData();
-            size_t CU_leading_dim = this->GetTileSubMatrix(0).GetLeadingDim();
+            T *CU = this->GetTileSubMatrix(0).get().GetData();
+            size_t CU_leading_dim = this->GetTileSubMatrix(0).get().GetLeadingDim();
 
-            T *CV = this->GetTileSubMatrix(1).GetData();
-            size_t CV_leading_dim = this->GetTileSubMatrix(1).GetLeadingDim();
+            T *CV = this->GetTileSubMatrix(1).get().GetData();
+            size_t CV_leading_dim = this->GetTileSubMatrix(1).get().GetLeadingDim();
 
             int64_t Crk = this->GetTileRank();
 
@@ -135,7 +147,7 @@ namespace hcorepp {
             T *Utau = Utau_dataholder->GetData();
             /** move the U_0 and U_1 data arrays to U */
             auto U_dataholder = new DataHolder<T>(Um, Un, Um);
-            U_dataholder.CopyDataArray(0, U0, m * Crk);
+            U_dataholder->CopyDataArray(0, U0, m * Crk);
             U_dataholder->CopyDataArray(m * Crk, U1, m * Ark);
 
             delete U0_dataholder;
@@ -376,11 +388,11 @@ namespace hcorepp {
 #endif
             }
 
-            size_t u_size = this->GetTileSubMatrix(0).GetNumOfRows() * this->GetTileSubMatrix(0).GetNumOfCols();
-            size_t v_size = this->GetTileSubMatrix(1).GetNumOfRows() * this->GetTileSubMatrix(1).GetNumOfCols();
+            size_t u_size = this->GetTileSubMatrix(0).get().GetNumOfRows() * this->GetTileSubMatrix(0).get().GetNumOfCols();
+            size_t v_size = this->GetTileSubMatrix(1).get().GetNumOfRows() * this->GetTileSubMatrix(1).get().GetNumOfCols();
 
-            this->GetTileSubMatrix(0).CopyDataArray(0, UV, u_size);
-            this->GetTileSubMatrix(1).CopyDataArray(0, &UV[u_size], v_size);
+            this->GetTileSubMatrix(0).get().CopyDataArray(0, UV, u_size);
+            this->GetTileSubMatrix(1).get().CopyDataArray(0, &UV[u_size], v_size);
             this->SetTileRank(rk_new);
 
             delete uv_dataHolder;
@@ -391,7 +403,7 @@ namespace hcorepp {
         }
 
         template<typename T>
-        size_t CompressedTile<T>::GetNumberOfMatrices() {
+        size_t CompressedTile<T>::GetNumberOfMatrices() const {
             return mDataArrays.size();
         }
 
@@ -409,27 +421,25 @@ namespace hcorepp {
         int64_t CompressedTile<T>::GetTileRank() const {
             if (this->mMatrixRank == FULL_RANK_) {
                 return std::min(this->mNumOfRows, this->mNumOfCols);
-            } else {
-                this->mMatrixRank;
             }
+            return this->mMatrixRank;
         }
 
         template<typename T>
         size_t CompressedTile<T>::GetNumOfRows() const {
             if (this->mOperation == blas::Op::NoTrans) {
                 return mNumOfRows;
-            } else {
-                return mNumOfCols;
             }
+            return mNumOfCols;
+
         }
 
         template<typename T>
         size_t CompressedTile<T>::GetNumOfCols() const {
             if (this->mOperation == blas::Op::NoTrans) {
                 return mNumOfCols;
-            } else {
-                return mNumOfRows;
             }
+            return mNumOfRows;
         }
 
 

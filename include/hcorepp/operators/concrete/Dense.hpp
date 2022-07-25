@@ -30,11 +30,17 @@ namespace hcorepp {
              */
             ~DenseTile();
 
-            dataunits::DataHolder<T> &
+            std::reference_wrapper<dataunits::DataHolder<T>>
             GetTileSubMatrix(size_t aIndex) override;
 
+            const std::reference_wrapper<dataunits::DataHolder<T>>
+            GetTileSubMatrix(size_t aIndex) const override;
+
             size_t
-            GetNumberOfMatrices() override;
+            GetNumberOfMatrices() const override;
+
+            int64_t
+            GetTileStride(size_t aIndex) const override;
 
             void
             Gemm(T &aAlpha, dataunits::DataHolder<T> const &aTileA, blas::Op aTileAOp, dataunits::DataHolder<T> const &aTileB,
@@ -43,14 +49,20 @@ namespace hcorepp {
 
         private:
             /** vector of references to data arrays representing the Dense tile. */
-            std::vector<dataunits::DataHolder<T> &> mDataArrays;
+            std::vector<dataunits::DataHolder<T> *> mDataArrays;
             /** number of rows */
             size_t mNumOfRows;
             /** number of cols */
             size_t mNumOfCols;
 
         };
+//        template class DenseTile<int>;
+//        template class DenseTile<long>;
+        template class DenseTile<float>;
+        template class DenseTile<double>;
+
     }
+
 }
 
 #endif //HCOREPP_DENSE_HPP

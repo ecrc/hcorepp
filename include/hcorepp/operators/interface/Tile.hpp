@@ -60,6 +60,10 @@ namespace hcorepp {
                 return mLayout;
             }
 
+            blas::Op operation() const {
+                return mOperation;
+            }
+
             /**
              * @brief
              * Get matrices describing the tile.
@@ -67,10 +71,10 @@ namespace hcorepp {
              * @return
              * vector of DataHolder object describing the Tile matrices.
              */
-            virtual dataunits::DataHolder<T> &
+            virtual std::reference_wrapper<dataunits::DataHolder<T>>
             GetTileSubMatrix(size_t aIndex) = 0;
 
-            virtual const dataunits::DataHolder<T> &
+            virtual const std::reference_wrapper<dataunits::DataHolder<T>>
             GetTileSubMatrix(size_t aIndex) const = 0;
 
             /**
@@ -97,7 +101,8 @@ namespace hcorepp {
              * The scalar beta.
              */
             virtual void
-            Gemm(T &aAlpha, dataunits::DataHolder<T> const &aTileA, blas::Op aTileAOp, dataunits::DataHolder<T> const &aTileB,
+            Gemm(T &aAlpha, dataunits::DataHolder<T> const &aTileA, blas::Op aTileAOp,
+                 dataunits::DataHolder<T> const &aTileB,
                  blas::Op aTileBOp, T &aBeta, int64_t ldau, int64_t Ark, const helpers::SvdHelpers &aHelpers) = 0;
 
             virtual int64_t
@@ -109,6 +114,11 @@ namespace hcorepp {
             blas::Layout mLayout;
             int64_t mLeadingDim;
         };
+//        template class Tile<int>;
+//        template class Tile<long>;
+//        template class Tile<float>;
+//        template class Tile<double>;
+
     }
 }
 

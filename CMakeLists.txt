@@ -5,7 +5,7 @@ cmake_policy(SET CMP0048 NEW)
 project(hcorepp VERSION 1.0.0)
 # Project Options.
 option(USE_CUDA "Use Cuda, if available" false)
-option(HCOREPP_BUILD_TESTS "Option to enable building tests" OFF)
+option(HCOREPP_BUILD_TESTS "Option to enable building tests" ON)
 
 # Cmake Module Paths
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)

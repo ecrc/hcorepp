@@ -1,7 +1,7 @@
 
 #include <libraries/catch/catch.hpp>
 
-#include <hcorePP/data-units/DataHolder.hpp>
+#include <hcorepp/data-units/DataHolder.hpp>
 
 using namespace std;
 using namespace hcorepp::dataunits;

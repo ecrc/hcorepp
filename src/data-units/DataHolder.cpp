@@ -38,6 +38,11 @@ namespace hcorepp {
             return mDataArray;
         }
 
+        template<typename T>
+        const T *DataHolder<T>::GetData() const{
+            return mDataArray;
+        }
+
 
         template<typename T>
         size_t DataHolder<T>::GetNumOfRows() const{
