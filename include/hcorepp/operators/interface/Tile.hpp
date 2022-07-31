@@ -108,6 +108,10 @@ namespace hcorepp {
             virtual int64_t
             GetTileStride(size_t aIndex) const = 0;
 
+            virtual void
+            ReadjustTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim,
+                         int64_t aRank) = 0;
+
         protected:
             blas::Op mOperation;
             blas::Uplo mUpLo;

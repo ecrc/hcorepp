@@ -25,17 +25,24 @@ namespace hcorepp {
                            blas::Op aOperation = blas::Op::NoTrans, blas::Uplo aUplo = blas::Uplo::General);
 
 
+            CompressedTile(CompressedTile<T> &atile);
+
             /**
              * @brief
              * Compressed Tile destructor.
              */
             ~CompressedTile();
 
-            std::reference_wrapper<dataunits::DataHolder<T>>
-            GetTileSubMatrix(size_t aIndex) override;
+            std::reference_wrapper<dataunits::DataHolder < T>>
+            GetTileSubMatrix(
+            size_t aIndex
+            )
+            override;
 
-            std::reference_wrapper<dataunits::DataHolder<T>> const
-            GetTileSubMatrix(size_t aIndex) const override;
+            std::reference_wrapper<dataunits::DataHolder < T>> const
+            GetTileSubMatrix(size_t
+            aIndex)
+            const override;
 
             size_t
             GetNumberOfMatrices() const override;
@@ -75,16 +82,6 @@ namespace hcorepp {
             blas::real_type<T>
             GetAccuracy();
 
-//
-//            /**
-//             * @brief
-//             * Set matrix accuracy.
-//             *
-//             * @param[in] aAccuracy
-//             * matrix accuracy to set.
-//             */
-//            void
-//            SetAccuracy(real_t aAccuracy);
             size_t
             GetNumOfRows() const;
 
@@ -94,8 +91,10 @@ namespace hcorepp {
             int64_t
             GetTileStride(size_t aIndex) const override;
 
-//            bool
-//            IsFullRank() const;
+
+            void
+            ReadjustTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim,
+                         int64_t aRank) override;
 
         private:
             /** Vector of data arrays */
@@ -118,7 +117,8 @@ namespace hcorepp {
 //        template
 //        class CompressedTile<long>;
 
-        template class CompressedTile<float>;
+        template
+        class CompressedTile<float>;
 
         template
         class CompressedTile<double>;

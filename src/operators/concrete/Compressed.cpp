@@ -5,6 +5,7 @@
 #include <hcorepp/operators/helpers/SvdHelpers.hpp>
 #include <hcorepp/operators/concrete/Compressed.hpp>
 #include <functional>
+#include <iostream>
 
 using namespace hcorepp::dataunits;
 using namespace hcorepp::helpers;
@@ -20,8 +21,7 @@ namespace hcorepp {
         template<typename T>
         CompressedTile<T>::CompressedTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim,
                                           int64_t aRank, blas::real_type<T> aAccuracy, blas::Layout aLayout,
-                                          blas::Op aOperation,
-                                          blas::Uplo aUplo) {
+                                          blas::Op aOperation, blas::Uplo aUplo) {
             if (aRank < 0 || aAccuracy < 0) {
             }
             this->mOperation = aOperation;
@@ -42,15 +42,10 @@ namespace hcorepp {
                 ///     data array of V is stored in an rk-by-n array buffer.
 
                 this->mDataArrays.push_back(
-                        new DataHolder<T>(this->mLeadingDim, this->mMatrixRank, aLeadingDim, aPdata));
-                this->mDataArrays.push_back(new DataHolder<T>(this->mMatrixRank, aNumOfCols, aLeadingDim,
+                        new DataHolder<T>(this->mNumOfRows, this->mMatrixRank, this->mNumOfRows, aPdata));
+                this->mDataArrays.push_back(new DataHolder<T>(this->mMatrixRank, this->mNumOfCols, this->mMatrixRank,
                                                               aPdata + aNumOfRows * this->mMatrixRank));
 
-//                this->mDataArrays.emplace_back(
-//                        DataHolder<T>(this->mLeadingDim, this->mMatrixRank, aLeadingDim, aPdata));
-//                this->mDataArrays.emplace_back(
-//                        DataHolder<T>(this->mMatrixRank, aNumOfCols, aLeadingDim, aPdata + this->mLeadingDim *
-//                                                                                           this->mMatrixRank));
             } else {
                 ///     layout = blas::Layout::RowMajor: the data array of A is stored in an
                 ///     m-by-ld array buffer, the data array of U is stored in an
@@ -81,7 +76,8 @@ namespace hcorepp {
         }
 
         template<typename T>
-        std::reference_wrapper<dataunits::DataHolder<T>> const CompressedTile<T>::GetTileSubMatrix(size_t aIndex) const {
+        std::reference_wrapper<dataunits::DataHolder<T>> const
+        CompressedTile<T>::GetTileSubMatrix(size_t aIndex) const {
             return *mDataArrays[aIndex];
         }
 
@@ -112,8 +108,29 @@ namespace hcorepp {
             T zero = 0.0;
             T one = 1.0;
 
-            int64_t m = GetNumOfRows();
-            int64_t n = GetNumOfCols();
+            int64_t m = this->GetNumOfRows();
+            int64_t n = this->GetNumOfCols();
+
+//            printf("beta : %f , ldau : %d, Ark : %d \n", aBeta, ldau, Ark);
+//            printf("AU==================== \n");
+//            printf("AU ROWS = %d \t AU COLS = %d \n", m, Ark);
+//            for (int i = 0; i < Ark; i++) {
+//                for (int j = 0; j < m; j++) {
+//                    int index = i * m + j;
+//                    printf(" element %d : %f \n", index, aTileA.GetData()[index]);
+//                }
+//            }
+//
+//            printf("AV==================== \n");
+//
+//            printf("AV ROWS = %d \t AV COLS = %d \n", Ark, n);
+//            for (int i = 0; i < n; i++) {
+//                for (int j = 0; j < Ark; j++) {
+//                    int index = i * Ark + j;
+//                    printf(" element %d : %f \n", index, aTileB.GetData()[index]);
+//                }
+//            }
+
 
             T *CU = this->GetTileSubMatrix(0).get().GetData();
             size_t CU_leading_dim = this->GetTileSubMatrix(0).get().GetLeadingDim();
@@ -130,30 +147,19 @@ namespace hcorepp {
 
             int64_t ldcu = CU_leading_dim;
 
-            auto U0_dataholder = new DataHolder<T>(m, Crk, Um);
-            auto U1_dataholder = new DataHolder<T>(m, Ark, Um);
+            auto U_dataholder = new DataHolder<T>(Um, Un, Um);
 
-            T *U0 = U0_dataholder->GetData();
-            T *U1 = U1_dataholder->GetData();
+            T *U = U_dataholder->GetData();
 
             lapack::lacpy(
-                    lapack::MatrixType::General, m, Crk, CU, ldcu, U0, Um);
+                    lapack::MatrixType::General, m, Crk, CU, ldcu, U, Um);
             lapack::lacpy(
-                    lapack::MatrixType::General, m, Ark, aTileA.GetData(), ldau, U1, Um);
+                    lapack::MatrixType::General, m, Ark, aTileA.GetData(), ldau, &U[m * Crk], Um);
 
             int64_t min_Um_Un = std::min(Um, Un);
 
-            auto Utau_dataholder = new DataHolder<T>(1, min_Um_Un, 1);
+            auto Utau_dataholder = new DataHolder<T>(min_Um_Un, 1, min_Um_Un);
             T *Utau = Utau_dataholder->GetData();
-            /** move the U_0 and U_1 data arrays to U */
-            auto U_dataholder = new DataHolder<T>(Um, Un, Um);
-            U_dataholder->CopyDataArray(0, U0, m * Crk);
-            U_dataholder->CopyDataArray(m * Crk, U1, m * Ark);
-
-            delete U0_dataholder;
-            delete U1_dataholder;
-
-            T *U = U_dataholder->GetData();
 
             lapack::geqrf(Um, Un, U, Um, Utau);
 
@@ -187,13 +193,13 @@ namespace hcorepp {
                 }
             }
 
-            V = &V[n * Crk];
             for (int64_t j = 0; j < n; ++j) {
+                T *Vptr = &V[n * Crk];
                 for (int64_t i = 0; i < Ark; ++i) {
                     if (aHelpers.GetUngqr()) {
-                        V[j + i * Vm] = conj(aTileB.GetData()[i + j * Ark]);
+                        Vptr[j + i * Vm] = conj(aTileB.GetData()[i + j * Ark]);
                     } else {
-                        V[j + i * Vm] = aTileB.GetData()[i + j * Ark];
+                        Vptr[j + i * Vm] = aTileB.GetData()[i + j * Ark];
                     }
                 }
             }
@@ -201,7 +207,7 @@ namespace hcorepp {
 
             int64_t min_Vm_Vn = std::min(Vm, Vn);
 
-            auto Vtau_dataholder = new DataHolder<T>(1, min_Vm_Vn, 1);
+            auto Vtau_dataholder = new DataHolder<T>(min_Vm_Vn, 1, min_Vm_Vn);
             T *Vtau = Vtau_dataholder->GetData();
 
             lapack::geqrf(Vm, Vn, V, Vm, Vtau);
@@ -226,7 +232,7 @@ namespace hcorepp {
             // allocate max rows (m) because we truncate columns not rows, after unmqr
             auto Unew_dataHolder = new DataHolder<T>(max_rows, sizeS, max_rows);
             // allocate max colums (n) because we truncate rows not columns, after unmqr
-            auto VTnew_dataHolder = new DataHolder<T>(max_cols, sizeS, max_cols);
+            auto VTnew_dataHolder = new DataHolder<T>(sizeS, max_cols, sizeS);
 
             T *Unew = Unew_dataHolder->GetData();
             T *VTnew = VTnew_dataHolder->GetData();
@@ -333,8 +339,6 @@ namespace hcorepp {
                 lapack::lacpy(lapack::MatrixType::General, Um, rk_new, Unew, Um, UV, ldcu);
             }
 
-            delete U_dataholder;
-            delete Utau_dataholder;
 
             // VTnew eats Sigma.
             // todo: we may need to have uplo parameter:
@@ -388,18 +392,40 @@ namespace hcorepp {
 #endif
             }
 
-            size_t u_size = this->GetTileSubMatrix(0).get().GetNumOfRows() * this->GetTileSubMatrix(0).get().GetNumOfCols();
-            size_t v_size = this->GetTileSubMatrix(1).get().GetNumOfRows() * this->GetTileSubMatrix(1).get().GetNumOfCols();
+
+            this->SetTileRank(rk_new);
+            this->GetTileSubMatrix(0).get().Resize(this->GetTileSubMatrix(0).get().GetNumOfRows(), rk_new,
+                                                   this->GetTileSubMatrix(0).get().GetNumOfRows());
+            this->GetTileSubMatrix(1).get().Resize(rk_new, this->GetTileSubMatrix(1).get().GetNumOfCols(), rk_new);
+
+            size_t u_size =
+                    this->GetTileSubMatrix(0).get().GetNumOfRows() * this->GetTileSubMatrix(0).get().GetNumOfCols();
+            size_t v_size =
+                    this->GetTileSubMatrix(1).get().GetNumOfRows() * this->GetTileSubMatrix(1).get().GetNumOfCols();
+
+//            std::cout << " U size  = = " << u_size << "\n";
+//            std::cout << " V size  = = " << v_size << "\n";
+//            std::cout << " NEW RNK  = = " << rk_new << "\n";
+//
+//            std::cout << " uv data holder Num of rows ==  " << uv_dataHolder->GetNumOfRows() << "\n";
+//            std::cout << " uv data holder Num of cols ==  " << uv_dataHolder->GetNumOfCols() << "\n";
+//
+//            for (int i = 0; i < uv_dataHolder->GetNumOfCols() * uv_dataHolder->GetNumOfRows(); i++) {
+//                std::cout << " ELmeent " << i << " ==  " << UV[i] << "\n";
+//            }
 
             this->GetTileSubMatrix(0).get().CopyDataArray(0, UV, u_size);
             this->GetTileSubMatrix(1).get().CopyDataArray(0, &UV[u_size], v_size);
-            this->SetTileRank(rk_new);
+
+            delete U_dataholder;
 
             delete uv_dataHolder;
             delete VTnew_dataHolder;
             delete Unew_dataHolder;
             delete Vtau_dataholder;
             delete V_dataholder;
+            delete Utau_dataholder;
+
         }
 
         template<typename T>
@@ -447,21 +473,75 @@ namespace hcorepp {
         blas::real_type<T> CompressedTile<T>::GetAccuracy() {
             return this->mAccuracy;
         }
-/*
-        template<typename T>
-        void CompressedTile<T>::SetAccuracy(real_t aAccuracy) {
-            this->mAccuracy = aAccuracy;
-        }
 
         template<typename T>
-        bool CompressedTile<T>::IsFullRank() const {
-            if (this->mMatrixRank == FULL_RANK_) {
-                return true;
-            }
-            return false;
-        }
+        void
+        CompressedTile<T>::ReadjustTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim,
+                                        int64_t aRank) {
 
-*/
+//
+//            for (auto data_holder: mDataArrays) {
+//                delete data_holder;
+//            }
+            this->mMatrixRank = aRank;
+            this->mLeadingDim = aLeadingDim;
+            this->mNumOfRows = aNumOfRows;
+            this->mNumOfCols = aNumOfCols;
+
+//            ///     The m-by-n matrix compressed tile (A=UV): A is m-by-n, U is
+//            ///     m-by-rk, and V is rk-by-n.
+//            if (this->mLayout == blas::Layout::ColMajor) {
+//                ///     If layout = blas::Layout::ColMajor,
+//                ///     the data array of A is stored in an ld-by-n array buffer; the
+//                ///     data array of U is stored in an ld-by-rk array buffer; and
+//                ///     data array of V is stored in an rk-by-n array buffer.
+//
+//                this->mDataArrays.push_back(
+//                        new DataHolder<T>(this->mNumOfRows, this->mMatrixRank, this->mNumOfRows, aPdata));
+//                this->mDataArrays.push_back(new DataHolder<T>(this->mMatrixRank, this->mNumOfCols, this->mMatrixRank,
+//                                                              aPdata + aNumOfRows * this->mMatrixRank));
+//
+//            } else {
+//                ///     layout = blas::Layout::RowMajor: the data array of A is stored in an
+//                ///     m-by-ld array buffer, the data array of U is stored in an
+//                ///     m-by-rk array buffer, and data array of V is stored in an
+//                ///     rk-by-ld array buffer.
+//
+//                this->mDataArrays.push_back(new DataHolder<T>(aNumOfRows, this->mMatrixRank, aLeadingDim, aPdata));
+//                this->mDataArrays.push_back(new DataHolder<T>(this->mMatrixRank, this->mLeadingDim, aLeadingDim,
+//                                                              aPdata + aNumOfRows * this->mMatrixRank));
+//
+////                this->mDataArrays.emplace_back(DataHolder<T>(aNumOfRows, this->mMatrixRank, aLeadingDim, aPdata));
+////                this->mDataArrays.emplace_back(DataHolder<T>(this->mMatrixRank, this->mLeadingDim, aLeadingDim,
+////                                                             aPdata + aNumOfRows * this->mMatrixRank));
+//
+//            }
+            this->SetTileRank(aRank);
+            this->GetTileSubMatrix(0).get().Resize(this->GetTileSubMatrix(0).get().GetNumOfRows(), aRank,
+                                                   this->GetTileSubMatrix(0).get().GetNumOfRows());
+            this->GetTileSubMatrix(1).get().Resize(aRank, this->GetTileSubMatrix(1).get().GetNumOfCols(), aRank);
+
+            size_t u_size =
+                    this->GetTileSubMatrix(0).get().GetNumOfRows() * this->GetTileSubMatrix(0).get().GetNumOfCols();
+            size_t v_size =
+                    this->GetTileSubMatrix(1).get().GetNumOfRows() * this->GetTileSubMatrix(1).get().GetNumOfCols();
+
+//            std::cout << " U size  = = " << u_size << "\n";
+//            std::cout << " V size  = = " << v_size << "\n";
+//            std::cout << " NEW RNK  = = " << rk_new << "\n";
+//
+//            std::cout << " uv data holder Num of rows ==  " << uv_dataHolder->GetNumOfRows() << "\n";
+//            std::cout << " uv data holder Num of cols ==  " << uv_dataHolder->GetNumOfCols() << "\n";
+//
+//            for (int i = 0; i < uv_dataHolder->GetNumOfCols() * uv_dataHolder->GetNumOfRows(); i++) {
+//                std::cout << " ELmeent " << i << " ==  " << UV[i] << "\n";
+//            }
+
+            this->GetTileSubMatrix(0).get().CopyDataArray(0, aPdata, u_size);
+            this->GetTileSubMatrix(1).get().CopyDataArray(0, &aPdata[u_size], v_size);
+
+
+        }
 
 
     }

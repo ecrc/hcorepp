@@ -88,6 +88,9 @@ namespace hcorepp {
             void
             CopyDataArray(size_t aStIdx, T* aSrcDataArray, size_t aNumOfElements);
 
+            void
+            Resize(size_t aRows, size_t aCols, size_t aLeadingDim);
+
         private:
             /** pointer to data array */
             T *mDataArray;

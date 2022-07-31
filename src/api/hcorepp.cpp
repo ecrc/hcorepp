@@ -2,6 +2,7 @@
 #include <hcorepp/api/hcorepp.hpp>
 #include <iostream>
 #include <functional>
+#include <cstring>
 
 using namespace hcorepp::operators;
 using namespace hcorepp::dataunits;
@@ -10,136 +11,17 @@ namespace hcorepp {
     namespace api {
 
         template<typename T>
-        void set_parameters(api::INPUT_TILES input, Tile<T> const &A, Tile<T> const &B, Tile<T> &C,
-                            int &num_of_rows, int &num_of_cols, int64_t &leading_dim, int64_t &rank, int iteration) {
-            switch (input) {
-                case api::DENSE_DENSE_DENSE:
-                    num_of_rows = C.GetTileSubMatrix(0).get().GetNumOfRows();
-                    num_of_cols = C.GetTileSubMatrix(0).get().GetNumOfCols();
-                    leading_dim = C.GetTileSubMatrix(0).get().GetLeadingDim();
-                    rank = leading_dim;
-                    break;
-                case api::DENSE_DENSE_COMPRESSED:
-                    num_of_rows = C.GetTileSubMatrix(0).get().GetNumOfRows();
-                    num_of_cols = C.GetTileSubMatrix(0).get().GetNumOfCols();
-                    leading_dim = C.GetTileSubMatrix(0).get().GetLeadingDim();
-                    rank = leading_dim;
-                    break;
-                case api::COMPRESSED_DENSE_DENSE:
-                    num_of_rows = A.GetTileSubMatrix(0).get().GetNumOfRows();
-                    num_of_cols = C.GetTileSubMatrix(0).get().GetNumOfCols();
-                    leading_dim = num_of_rows;
-                    rank = num_of_rows;
-                    break;
-                case api::COMPRESSED_DENSE_COMPRESSED:
-                    num_of_rows = A.GetTileSubMatrix(0).get().GetNumOfRows();
-                    num_of_cols = C.GetTileSubMatrix(0).get().GetNumOfCols();
-                    leading_dim = num_of_rows;
-                    rank = num_of_rows;
-                    break;
-                case api::COMPRESSED_COMPRESSED_DENSE:
-                    if (iteration == 0) {
-                        num_of_rows = A.GetTileSubMatrix(0).get().GetNumOfRows();
-                        num_of_cols = B.GetTileSubMatrix(0).get().GetNumOfCols();
-                        leading_dim = num_of_rows;
-                        rank = num_of_rows;
-                    } else if (iteration == 1) {
-                        num_of_rows = A.GetTileSubMatrix(1).get().GetNumOfRows();
-                        num_of_cols = C.GetTileSubMatrix(0).get().GetNumOfCols();
-                        leading_dim = num_of_rows;
-                        rank = num_of_rows;
-                    } else {
-                        num_of_rows = C.GetTileSubMatrix(0).get().GetNumOfRows();
-                        num_of_cols = C.GetTileSubMatrix(0).get().GetNumOfCols();
-                        leading_dim = C.GetTileSubMatrix(0).get().GetLeadingDim();
-                        rank = leading_dim;
-                    }
-                    break;
-                case api::COMPRESSED_COMPRESSED_COMPRESSED:
-                    if (iteration == 0) {
-                        num_of_rows = A.GetTileSubMatrix(0).get().GetNumOfRows();
-                        num_of_cols = B.GetTileSubMatrix(0).get().GetNumOfCols();
-                        leading_dim = num_of_rows;
-                        rank = num_of_rows;
-                    } else if (iteration == 1) {
-                        num_of_rows = A.GetTileSubMatrix(1).get().GetNumOfRows();
-                        num_of_cols = C.GetTileSubMatrix(1).get().GetNumOfCols();
-                        leading_dim = num_of_rows;
-                        rank = num_of_rows;
-                    } else {
-                        num_of_rows = C.GetTileSubMatrix(0).get().GetNumOfRows();
-                        num_of_cols = C.GetTileSubMatrix(0).get().GetNumOfCols();
-                        leading_dim = C.GetTileSubMatrix(0).get().GetLeadingDim();
-                        rank = leading_dim;
-                    }
-                    break;
-                case api::DENSE_COMPRESSED_DENSE:
-                    num_of_rows = C.GetTileSubMatrix(0).get().GetNumOfRows();
-                    num_of_cols = B.GetTileSubMatrix(0).get().GetNumOfCols();
-                    leading_dim = num_of_rows;
-                    rank = num_of_rows;
-                    break;
-                case api::DENSE_COMPRESSED_COMPRESSED:
-                    num_of_rows = C.GetTileSubMatrix(0).get().GetNumOfRows();
-                    num_of_cols = B.GetTileSubMatrix(0).get().GetNumOfRows();
-                    leading_dim = num_of_rows;
-                    rank = num_of_rows;
-                    break;
-                default:
-                    break;
-            }
-
-
-        }
-
-        template void set_parameters(api::INPUT_TILES, Tile<float> const &, Tile<float> const &, Tile<float> &,
-                                     int &, int &, int64_t &, int64_t &, int);
-
-        template void set_parameters(api::INPUT_TILES, Tile<double> const &, Tile<double> const &, Tile<double> &,
-                                     int &, int &, int64_t &, int64_t &, int);
-
-        template<typename T>
         void
         gemm(T alpha, Tile<T> const &A, Tile<T> const &B, T beta, Tile<T> &C) {
             int tile_a_size = A.GetNumberOfMatrices();
             int tile_b_size = B.GetNumberOfMatrices();
             int tile_c_size = C.GetNumberOfMatrices();
 
-            api::INPUT_TILES input;
-
-            if (tile_a_size == 1) {
-                if (tile_b_size == 1) {
-                    if (tile_c_size == 1) {
-                        input = api::DENSE_DENSE_DENSE;
-                    } else {
-                        input = api::DENSE_DENSE_COMPRESSED;
-                    }
-                } else {
-                    if (tile_c_size == 1) {
-                        input = api::DENSE_COMPRESSED_DENSE;
-                    } else {
-                        input = api::DENSE_COMPRESSED_COMPRESSED;
-                    }
-                }
-            } else {
-                if (tile_b_size == 1) {
-                    if (tile_c_size == 1) {
-                        input = api::COMPRESSED_DENSE_DENSE;
-                    } else {
-                        input = api::COMPRESSED_DENSE_COMPRESSED;
-                    }
-                } else {
-                    if (tile_c_size == 1) {
-                        input = api::COMPRESSED_COMPRESSED_DENSE;
-                    } else {
-                        input = api::COMPRESSED_COMPRESSED_COMPRESSED;
-                    }
-                }
-            }
-
             int total_input_tiles = tile_a_size + tile_b_size;
+            bool dense_dense_comp = (total_input_tiles == 2 && tile_c_size == 2);
+
             int iterations = 0;
-            if (total_input_tiles == 3 || input == api::DENSE_DENSE_COMPRESSED) {
+            if (total_input_tiles == 3 || dense_dense_comp) {
                 iterations = 1;
             } else if (total_input_tiles == 4) {
                 iterations = 2;
@@ -147,86 +29,164 @@ namespace hcorepp {
                 iterations = 0;
             }
 
-            int tile_a_st_idx = tile_a_size - 1;
-            int tile_b_st_idx = 0;
-
-            int num_of_rows = 0;
-            int num_of_cols = 0;
-            int64_t leading_dim = 0;
-            int64_t rank = 0;
-
-            std::vector<DenseTile<T> *> temp_tiles;
-            temp_tiles.resize(iterations);
-
-            helpers::SvdHelpers helpers;
-            int i = 0;
-
-            std::vector<std::reference_wrapper<DataHolder<T>>> a_pairs;
             blas::Op a_operation = A.operation();
-
+            std::vector<std::reference_wrapper<DataHolder<T>>> a_pairs;
             a_pairs.reserve(tile_a_size);
             for (int j = 0; j < tile_a_size; j++) {
-                auto a_tile = (A.GetTileSubMatrix(j));
-                a_pairs[j]= a_tile;
+                a_pairs[j] = A.GetTileSubMatrix(j);
             }
 
-            std::vector<std::reference_wrapper<DataHolder<T>>> b_pairs;
             blas::Op b_operation = B.operation();
-
+            std::vector<std::reference_wrapper<DataHolder<T>>> b_pairs;
             b_pairs.reserve(tile_b_size);
             for (int j = 0; j < tile_b_size; j++) {
-                auto b_tile = (B.GetTileSubMatrix(j));
-                b_pairs[j]= b_tile;
+                b_pairs[j] = B.GetTileSubMatrix(j);
             }
 
             T alpha_local = 1;
             T beta_local = 0;
-            if (api::DENSE_DENSE_COMPRESSED) {
+            if (dense_dense_comp) {
                 alpha_local = alpha;
             }
 
+            std::vector<DenseTile<T> *> temp_tiles;
+//            temp_tiles.reserve(iterations);
+            helpers::SvdHelpers helpers;
+            int tile_a_st_idx = tile_a_size - 1;
+            int tile_b_st_idx = 0;
 
             while (iterations > 0) {
+                std::cout << " iteration  " << iterations << "\n";
                 auto a_data = a_pairs[tile_a_st_idx];
                 auto a_op = a_operation;
                 auto b_data = b_pairs[tile_b_st_idx];
                 auto b_op = b_operation;
 
-                api::set_parameters(input, A, B, C, num_of_rows, num_of_cols, leading_dim, rank, i);
+//                std::cout << " INput A \n";
+//
+//                int m = a_data.get().GetNumOfRows();
+//                int n = a_data.get().GetNumOfCols();
+//                T *output = a_data.get().GetData();
 
-                temp_tiles[i] = new DenseTile<T>(num_of_rows, num_of_cols, nullptr, leading_dim);
+//                for (int i = 0; i < m; i++) {
+//                    std::cout << "{ ";
+//                    for (int j = 0; j < n; j++) {
+//                        int index = i * n + j;
+////                REQUIRE(output[index] == matrix_C[i][j]);
+//                        std::cout << output[index] << ", ";
+//                    }
+//                    std::cout << "} \n";
+//                }
 
-                temp_tiles[i]->Gemm(alpha_local, a_data, a_op, b_data, b_op, beta_local, a_data.get().GetLeadingDim(),
-                                    rank, helpers);
+//                std::cout << " INput B \n";
+//
+//                m = b_data.get().GetNumOfRows();
+//                n = b_data.get().GetNumOfCols();
+//                output = b_data.get().GetData();
+//
+//                for (int i = 0; i < m; i++) {
+//                    std::cout << "{ ";
+//                    for (int j = 0; j < n; j++) {
+//                        int index = i * n + j;
+////                REQUIRE(output[index] == matrix_C[i][j]);
+//
+//                        std::cout << output[index] << ", ";
+//                    }
+//                    std::cout << "} \n";
+//                }
+
+//                auto temp_data_holder = new DataHolder<T>(a_data.get().GetNumOfRows(), b_data.get().GetNumOfCols(),
+//                                                          a_data.get().GetNumOfRows(), nullptr);
+//
+//                blas::gemm(blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
+//                           a_data.get().GetNumOfRows(), b_data.get().GetNumOfCols(), a_data.get().GetNumOfCols(),
+//                           1, (const T *) a_data.get().GetData(), a_data.get().GetLeadingDim(),
+//                           (const T *) b_data.get().GetData(), b_data.get().GetLeadingDim(),
+//                           0, temp_data_holder->GetData(), temp_data_holder->GetLeadingDim());
+//
+//                output = temp_data_holder->GetData();
+//
+//                m = temp_data_holder->GetNumOfRows();
+//                n = temp_data_holder->GetNumOfCols();
+//
+//                std::cout << " Output \n";
+//
+//                for (int i = 0; i < m; i++) {
+//                    std::cout << "{ ";
+//                    for (int j = 0; j < n; j++) {
+//                        int index = i * m + j;
+////                REQUIRE(output[index] == matrix_C[i][j]);
+//                        std::cout << output[index] << ", ";
+//                    }
+//                    std::cout << "} \n";
+//                }
+//
+//                delete temp_data_holder;
+//
+//                return;
+//
+//                std::cout << " Temp tile properties : " << " num of rows :  " << a_data.get().GetNumOfRows()
+//                          << " Num of cols :" << a_data.get().GetNumOfCols() << " LEading dim "
+//                          << a_data.get().GetLeadingDim() << "\n";
+//                std::cout << " Tile B properties : " << " num of rows :  " << b_data.get().GetNumOfRows()
+//                          << " Num of cols :" << b_data.get().GetNumOfCols() << " LEading dim "
+//                          << b_data.get().GetLeadingDim() << "\n";
+
+                temp_tiles.emplace_back(new DenseTile<T>(a_data.get().GetNumOfRows(), b_data.get().GetNumOfCols(),
+                                                         nullptr, a_data.get().GetLeadingDim()));
+
+
+                auto tile = temp_tiles.back();
+
+
+                tile->Gemm(alpha_local, a_data, a_op, b_data, b_op, beta_local, a_data.get().GetLeadingDim(),
+                           std::min(b_data.get().GetNumOfRows(), b_data.get().GetNumOfCols()), helpers);
+
+//                output = tile->GetTileSubMatrix(0).get().GetData();
+//
+//                m = tile->GetTileSubMatrix(0).get().GetNumOfRows();
+//                n = tile->GetTileSubMatrix(0).get().GetNumOfCols();
+//
+//                std::cout << " Output \n";
+//
+//                for (int i = 0; i < m; i++) {
+//                    std::cout << "{ ";
+//                    for (int j = 0; j < n; j++) {
+//                        int index = i * n + j;
+////                REQUIRE(output[index] == matrix_C[i][j]);
+//                        std::cout << output[index] << ", ";
+//                    }
+//                    std::cout << "} \n";
+//                }
 
                 if (iterations == 2) {
-                    auto a_tile = (temp_tiles[i]->GetTileSubMatrix(0));
-                    a_operation = temp_tiles[i]->operation();
+                    auto a_data_holder = (tile->GetTileSubMatrix(0));
+                    a_operation = tile->operation();
 
-                    a_pairs[tile_a_st_idx] = a_tile;
+                    a_pairs[tile_a_st_idx] = a_data_holder;
                     tile_b_st_idx++;
                 } else if (iterations == 1) {
                     if (tile_a_st_idx == 0) {
-                        auto a_tile = (temp_tiles[i]->GetTileSubMatrix(0));
-                        a_operation = temp_tiles[i]->operation();
+                        auto a_tile = (tile->GetTileSubMatrix(0));
+                        a_operation = tile->operation();
 
                         a_pairs[tile_a_st_idx] = a_tile;
                         tile_b_st_idx++;
                     } else {
-                        auto b_tile = temp_tiles[i]->GetTileSubMatrix(0);
-                        a_operation = temp_tiles[i]->operation();
+                        auto b_tile = tile->GetTileSubMatrix(0);
+                        b_operation = tile->operation();
 
                         b_pairs[tile_b_st_idx] = b_tile;
                         tile_a_st_idx--;
                     }
                 }
                 iterations--;
-                i++;
             }
 
 
             if (iterations == 0) {
-                if (input == api::DENSE_DENSE_COMPRESSED) {
+
+                if (dense_dense_comp) {
                     auto target = temp_tiles[0];
                     auto a_data = C.GetTileSubMatrix(0);
                     auto a_op = C.operation();
@@ -234,15 +194,48 @@ namespace hcorepp {
                     auto b_op = C.operation();
                     alpha_local = 1;
 
-                    target->Gemm(beta, a_data, a_op, b_data, b_op, alpha_local, a_data.get().GetLeadingDim(), rank, helpers);
+                    target->Gemm(beta, a_data, a_op, b_data, b_op, alpha_local, a_data.get().GetLeadingDim(),
+                                 std::min(b_data.get().GetNumOfRows(), b_data.get().GetNumOfCols()), helpers);
 
+                    int num_of_rows = target->GetTileSubMatrix(0).get().GetNumOfRows();
+                    int num_of_cols = target->GetTileSubMatrix(0).get().GetNumOfCols();
+
+
+                    int64_t c_rank;
+                    c_rank = C.GetTileSubMatrix(0).get().GetNumOfCols();
+
+                    if (c_rank == std::min(C.GetTileSubMatrix(0).get().GetNumOfRows(),
+                                           C.GetTileSubMatrix(1).get().GetNumOfCols())) {
+                        c_rank = -1;
+                    }
+
+                    C.ReadjustTile(target->GetTileSubMatrix(0).get().GetNumOfRows(),
+                                   target->GetTileSubMatrix(0).get().GetNumOfCols(),
+                                   target->GetTileSubMatrix(0).get().GetData(),num_of_rows, c_rank);
+
+//                    C.GetTileSubMatrix(0).get().Resize(num_of_rows, c_rank, num_of_rows);
+//                    C.GetTileSubMatrix(1).get().Resize(c_rank, num_of_cols, c_rank);
+//
+//                    C.GetTileSubMatrix(0).get().CopyDataArray(0, target->GetTileSubMatrix(0).get().GetData(),
+//                                                              num_of_rows * c_rank);
+//                    C.GetTileSubMatrix(1).get().CopyDataArray(0,
+//                                                              &target->GetTileSubMatrix(0).get().GetData()[num_of_rows *
+//                                                                                                           c_rank],
+//                                                              c_rank * num_of_cols);
                 } else {
                     auto a_data = a_pairs[tile_a_st_idx];
                     auto b_data = b_pairs[tile_b_st_idx];
 
-                    C.Gemm(alpha, a_data, a_operation, b_data, b_operation, beta, a_data.get().GetLeadingDim(), rank,
-                           helpers);
+                    int64_t c_rank;
+                    c_rank = a_data.get().GetNumOfCols();
+
+                    C.Gemm(alpha, a_data, a_operation, b_data, b_operation, beta, a_data.get().GetLeadingDim(),
+                           c_rank, helpers);
                 }
+            }
+
+            for (auto tile: temp_tiles) {
+                delete tile;
             }
         }
 

@@ -15,11 +15,15 @@ namespace hcorepp {
             cuda_malloc(&mDataArray, mNumofRows*mNumOfCols*sizeof(T));
             if(apData!= nullptr) {
                 cuda_memcpy(mDataArray, apData, mNumOfRows * mNumOfCols * sizeof(T), cudaMemcpyHostToDevice);
+            } else {
+                // add cudamemset.
             }
 #else
             mDataArray = (T *) malloc(mNumOfRows * mNumOfCols * sizeof(T));
             if (apData != nullptr) {
                 memcpy(mDataArray, apData, mNumOfRows * mNumOfCols * sizeof(T));
+            } else {
+                memset((void *) mDataArray, 0, mNumOfRows * mNumOfCols * sizeof(T));
             }
 #endif
         }
@@ -39,23 +43,23 @@ namespace hcorepp {
         }
 
         template<typename T>
-        const T *DataHolder<T>::GetData() const{
+        const T *DataHolder<T>::GetData() const {
             return mDataArray;
         }
 
 
         template<typename T>
-        size_t DataHolder<T>::GetNumOfRows() const{
+        size_t DataHolder<T>::GetNumOfRows() const {
             return mNumOfRows;
         }
 
         template<typename T>
-        size_t DataHolder<T>::GetNumOfCols() const{
+        size_t DataHolder<T>::GetNumOfCols() const {
             return mNumOfCols;
         }
 
         template<typename T>
-        size_t DataHolder<T>::GetLeadingDim() const{
+        size_t DataHolder<T>::GetLeadingDim() const {
             return mLeadingDimension;
         }
 
@@ -71,5 +75,27 @@ namespace hcorepp {
 #endif
 
         }
+
+        template<typename T>
+        void DataHolder<T>::Resize(size_t aRows, size_t aCols, size_t aLeadingDim) {
+            mNumOfRows = aRows;
+            mNumOfCols = aCols;
+            mLeadingDimension = aLeadingDim;
+#ifdef USE_CUDA
+            cuda_malloc(&mDataArray, mNumofRows*mNumOfCols*sizeof(T));
+            if(apData!= nullptr) {
+                cuda_memcpy(mDataArray, apData, mNumOfRows * mNumOfCols * sizeof(T), cudaMemcpyHostToDevice);
+            } else {
+                // add cudamemset.
+            }
+#else
+            free(mDataArray);
+
+            mDataArray = (T *) malloc(mNumOfRows * mNumOfCols * sizeof(T));
+            memset((void *) mDataArray, 0, mNumOfRows * mNumOfCols * sizeof(T));
+#endif
+        }
+
+
     }
 }

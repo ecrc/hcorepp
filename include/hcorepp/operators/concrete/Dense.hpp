@@ -45,7 +45,11 @@ namespace hcorepp {
             void
             Gemm(T &aAlpha, dataunits::DataHolder<T> const &aTileA, blas::Op aTileAOp, dataunits::DataHolder<T> const &aTileB,
                  blas::Op aTileBOp, T &aBeta, int64_t ldau, int64_t Ark, const helpers::SvdHelpers &aHelpers) override;
-            
+
+            void
+            ReadjustTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim,
+                         int64_t aRank) override;
+
 
         private:
             /** vector of references to data arrays representing the Dense tile. */
