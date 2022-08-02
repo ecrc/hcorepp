@@ -78,7 +78,9 @@ void TEST_GEMM() {
             }
             std::cout << "} \n";
         }
-    }SECTION("Gemm test 2") {
+    }
+
+    SECTION("Gemm test 2") {
         std::cout
                 << " Test2: Non Square matrices multiplication using blas::gemm directly \n =========================== \n";
 
@@ -139,7 +141,9 @@ void TEST_GEMM() {
             std::cout << "} \n";
         }
 
-    }SECTION("Gemm Test 3") {
+    }
+
+    SECTION("Gemm Test 3") {
         std::cout
                 << " Test3: Non Square matrices multiplication using blas::gemm directly \n =========================== \n";
 
@@ -218,7 +222,9 @@ void TEST_GEMM() {
         }
 
 
-    }SECTION("Compressed_Dense_Dense_Gemm") {
+    }
+
+    SECTION("Compressed_Dense_Dense_Gemm") {
         std::cout
                 << "Test 3: GEMM-CompressedDenseDense-\n =========================== \n";
         float matrix_Au[3][1] = {{1},
@@ -300,7 +306,9 @@ void TEST_GEMM() {
         delete[] b_input;
 
         free(compressed_tile_a_data);
-    }SECTION("Dense_Compressed_Dense_Gemm") {
+    }
+
+    SECTION("Dense_Compressed_Dense_Gemm") {
         std::cout
                 << "Test 3: GEMM-DenseCompressedDense-\n =========================== \n";
         float matrix_A[3][3] = {{2,  1,  4},
@@ -377,7 +385,9 @@ void TEST_GEMM() {
         delete[] bv_input;
         free(compressed_tile_b_data);
 
-    }SECTION("Compressed_Compressed_Dense_Gemm") {
+    }
+
+    SECTION("Compressed_Compressed_Dense_Gemm") {
         std::cout
                 << "Test 3: GEMM-CompressedCompressedDense-\n =========================== \n";
 
@@ -470,7 +480,9 @@ void TEST_GEMM() {
         delete[] bv_input;
         free(compressed_tile_a_data);
         free(compressed_tile_b_data);
-    }SECTION("Compressed_Dense_Compressed_Gemm") {
+    }
+
+    SECTION("Compressed_Dense_Compressed_Gemm") {
         std::cout
                 << "Test 3: GEMM-CompressedDenseCompressed-\n =========================== \n";
         float matrix_Au[3][2] = {{2, 8},
@@ -592,7 +604,9 @@ void TEST_GEMM() {
         delete[] cu_output_row;
 
         free(compressed_tile_a_data);
-    }SECTION("DENSE_COMPRESSED_COMPRESSED ") {
+    }
+
+    SECTION("DENSE_COMPRESSED_COMPRESSED ") {
         std::cout
                 << "Test 4: GEMM-DenseCompressedCompressed-\n =========================== \n";
         float matrix_A[3][4] = {{2, 8,  14, 20},
@@ -891,20 +905,17 @@ void TEST_GEMM() {
                                 {4, 10, 16, 22},
                                 {6, 12, 18, 24}};
 
-        float matrix_CU[5][2] = {{0.37726,  0.67687},
-                                 {0.410963, 0.36179},
-                                 {0.444666, 0.0474023},
-                                 {0.47837,  -0.266773},
-                                 {0.512073, -0.580978,}};
+        float matrix_CU[5][4] = {{162, 348, 534, 720},
+                                 {174, 378, 582, 786},
+                                 {186, 408, 630, 852},
+                                 {198, 438, 678, 918},
+                                 {210, 468, 726, 984}};
 
-        float matrix_CV[2][4] = {{728497,  1.57534e+06, 0, 0},
-                                 {40.5026, -18.7299,    0, 0}};
+        float matrix_CV[4][4] = {{1, 0, 0, 0},
+                                 {0, 1, 0, 0},
+                                 {0, 0, 1, 0},
+                                 {0, 0, 0, 1}};
 
-        float matrix_D[5][4] = {{0, 0, 0, 0},
-                                {0, 0, 0, 0},
-                                {0, 0, 0, 0},
-                                {0, 0, 0, 0},
-                                {0, 0, 0, 0}};
 
         float alpha = 1;
         float beta = 1;
@@ -934,12 +945,40 @@ void TEST_GEMM() {
 
         float *a_input = new float[a_size];
         float *b_input = new float[b_size];
-        float *c_input = new float[cu_size * cv_size];
+        float *c_input = new float[cu_size + cv_size];
+        float *cu_input_R = (float *) malloc((cu_size) * sizeof(float));
+        float *cv_input_R = (float *) malloc((cv_size) * sizeof(float));
+
+        float *cu_input_C = (float *) malloc((cu_size) * sizeof(float));
+        float *cv_input_C = (float *) malloc((cv_size) * sizeof(float));
+
+        memset(cu_input_R, 0, (cu_size) * sizeof(float));
+        memset(cv_input_R, 0, (cv_size) * sizeof(float));
+
+//        for (int i = 0; i < cu_size; i++) {
+//            std::cout << " cu_input_R_BEFORE i= " << i << " == " << cu_input_R[i] << "\n";
+//        }
+//
+//        for (int i = 0; i < cv_size; i++) {
+//            std::cout << " cv_input_R_BEFORE i= " << i << " == " << cv_input_R[i] << "\n";
+//        }
+//
+
+        std::cout << " ROws size == " << cu_size << " COls size == " << cv_size << "\n";
 
         rowMajorToColumnMajor<float>((float *) matrix_A, a_n, a_m, a_input);
         rowMajorToColumnMajor<float>((float *) matrix_B, b_n, b_m, b_input);
 
-        rowMajorToColumnMajor<float>((float *) matrix_D, c_n, c_m, c_input);
+        rowMajorToColumnMajor<float>((float *) cu_input_R, cu_n, cu_m, cu_input_C);
+        rowMajorToColumnMajor<float>((float *) cv_input_R, cv_n, cv_m, cv_input_C);
+
+        memcpy(c_input, cu_input_C, cu_size * sizeof(float));
+        memcpy(&c_input[cu_size], cv_input_C, cv_size * sizeof(float));
+
+//        for (int i = 0; i < cv_size + cu_size; i++) {
+//            std::cout << " c_input_R_AFTER i= " << i << " == " << c_input[i] << "\n";
+//        }
+
 
         DenseTile<float> dense_tile_A(a_m, a_n, (float *) a_input, lda);
         DenseTile<float> dense_tile_B(b_m, b_n, (float *) b_input, ldb);
@@ -968,7 +1007,7 @@ void TEST_GEMM() {
         for (int i = 0; i < cu_m; i++) {
             std::cout << "{ ";
             for (int j = 0; j < cu_n; j++) {
-//                REQUIRE(cu_output_row[index] == Approx(matrix_CU[i][j]).epsilon(1e-2));
+                REQUIRE(cu_output_row[index] == Approx(matrix_CU[i][j]).epsilon(1e-2));
                 std::cout << cu_output_row[index] << ", ";
                 index++;
             }
@@ -980,7 +1019,7 @@ void TEST_GEMM() {
         for (int i = 0; i < cv_m; i++) {
             std::cout << "{ ";
             for (int j = 0; j < cv_n; j++) {
-//                REQUIRE(cv_output_row[index] == Approx(matrix_CV[i][j]).epsilon(1e-2));
+                REQUIRE(cv_output_row[index] == Approx(matrix_CV[i][j]).epsilon(1e-2));
                 std::cout << cv_output_row[index] << ", ";
                 index++;
             }
@@ -991,6 +1030,10 @@ void TEST_GEMM() {
         delete[] b_input;
         delete[] cv_output_row;
         delete[] cu_output_row;
+        free(cu_input_R);
+        free(cu_input_C);
+        free(cv_input_R);
+        free(cv_input_C);
 
     }
 }

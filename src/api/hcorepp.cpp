@@ -50,87 +50,15 @@ namespace hcorepp {
             }
 
             std::vector<DenseTile<T> *> temp_tiles;
-//            temp_tiles.reserve(iterations);
             helpers::SvdHelpers helpers;
             int tile_a_st_idx = tile_a_size - 1;
             int tile_b_st_idx = 0;
 
             while (iterations > 0) {
-                std::cout << " iteration  " << iterations << "\n";
                 auto a_data = a_pairs[tile_a_st_idx];
                 auto a_op = a_operation;
                 auto b_data = b_pairs[tile_b_st_idx];
                 auto b_op = b_operation;
-
-//                std::cout << " INput A \n";
-//
-//                int m = a_data.get().GetNumOfRows();
-//                int n = a_data.get().GetNumOfCols();
-//                T *output = a_data.get().GetData();
-
-//                for (int i = 0; i < m; i++) {
-//                    std::cout << "{ ";
-//                    for (int j = 0; j < n; j++) {
-//                        int index = i * n + j;
-////                REQUIRE(output[index] == matrix_C[i][j]);
-//                        std::cout << output[index] << ", ";
-//                    }
-//                    std::cout << "} \n";
-//                }
-
-//                std::cout << " INput B \n";
-//
-//                m = b_data.get().GetNumOfRows();
-//                n = b_data.get().GetNumOfCols();
-//                output = b_data.get().GetData();
-//
-//                for (int i = 0; i < m; i++) {
-//                    std::cout << "{ ";
-//                    for (int j = 0; j < n; j++) {
-//                        int index = i * n + j;
-////                REQUIRE(output[index] == matrix_C[i][j]);
-//
-//                        std::cout << output[index] << ", ";
-//                    }
-//                    std::cout << "} \n";
-//                }
-
-//                auto temp_data_holder = new DataHolder<T>(a_data.get().GetNumOfRows(), b_data.get().GetNumOfCols(),
-//                                                          a_data.get().GetNumOfRows(), nullptr);
-//
-//                blas::gemm(blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
-//                           a_data.get().GetNumOfRows(), b_data.get().GetNumOfCols(), a_data.get().GetNumOfCols(),
-//                           1, (const T *) a_data.get().GetData(), a_data.get().GetLeadingDim(),
-//                           (const T *) b_data.get().GetData(), b_data.get().GetLeadingDim(),
-//                           0, temp_data_holder->GetData(), temp_data_holder->GetLeadingDim());
-//
-//                output = temp_data_holder->GetData();
-//
-//                m = temp_data_holder->GetNumOfRows();
-//                n = temp_data_holder->GetNumOfCols();
-//
-//                std::cout << " Output \n";
-//
-//                for (int i = 0; i < m; i++) {
-//                    std::cout << "{ ";
-//                    for (int j = 0; j < n; j++) {
-//                        int index = i * m + j;
-////                REQUIRE(output[index] == matrix_C[i][j]);
-//                        std::cout << output[index] << ", ";
-//                    }
-//                    std::cout << "} \n";
-//                }
-//
-//                delete temp_data_holder;
-//
-//                return;
-//
-//                std::cout << " Temp tile properties : " << " num of rows :  " << a_data.get().GetNumOfRows()
-//                          << " Num of cols :" << a_data.get().GetNumOfCols() << " LEading dim "
-//                          << a_data.get().GetLeadingDim() << "\n";
-//                std::cout << " Tile B properties : " << " num of rows :  " << b_data.get().GetNumOfRows()
-//                          << " Num of cols :" << b_data.get().GetNumOfCols() << " LEading dim "
-//                          << b_data.get().GetLeadingDim() << "\n";
 
                 temp_tiles.emplace_back(new DenseTile<T>(a_data.get().GetNumOfRows(), b_data.get().GetNumOfCols(),
                                                          nullptr, a_data.get().GetLeadingDim()));
@@ -141,23 +69,6 @@ namespace hcorepp {
 
                 tile->Gemm(alpha_local, a_data, a_op, b_data, b_op, beta_local, a_data.get().GetLeadingDim(),
                            std::min(b_data.get().GetNumOfRows(), b_data.get().GetNumOfCols()), helpers);
-
-//                output = tile->GetTileSubMatrix(0).get().GetData();
-//
-//                m = tile->GetTileSubMatrix(0).get().GetNumOfRows();
-//                n = tile->GetTileSubMatrix(0).get().GetNumOfCols();
-//
-//                std::cout << " Output \n";
-//
-//                for (int i = 0; i < m; i++) {
-//                    std::cout << "{ ";
-//                    for (int j = 0; j < n; j++) {
-//                        int index = i * n + j;
-////                REQUIRE(output[index] == matrix_C[i][j]);
-//                        std::cout << output[index] << ", ";
-//                    }
-//                    std::cout << "} \n";
-//                }
 
                 if (iterations == 2) {
                     auto a_data_holder = (tile->GetTileSubMatrix(0));
@@ -200,28 +111,16 @@ namespace hcorepp {
                     int num_of_rows = target->GetTileSubMatrix(0).get().GetNumOfRows();
                     int num_of_cols = target->GetTileSubMatrix(0).get().GetNumOfCols();
 
-
-                    int64_t c_rank;
-                    c_rank = C.GetTileSubMatrix(0).get().GetNumOfCols();
+                    int64_t c_rank = -1;
 
                     if (c_rank == std::min(C.GetTileSubMatrix(0).get().GetNumOfRows(),
                                            C.GetTileSubMatrix(1).get().GetNumOfCols())) {
                         c_rank = -1;
                     }
 
-                    C.ReadjustTile(target->GetTileSubMatrix(0).get().GetNumOfRows(),
-                                   target->GetTileSubMatrix(0).get().GetNumOfCols(),
-                                   target->GetTileSubMatrix(0).get().GetData(),num_of_rows, c_rank);
+                    C.ReadjustTile(num_of_rows, num_of_cols, target->GetTileSubMatrix(0).get().GetData(), num_of_rows,
+                                   c_rank);
 
-//                    C.GetTileSubMatrix(0).get().Resize(num_of_rows, c_rank, num_of_rows);
-//                    C.GetTileSubMatrix(1).get().Resize(c_rank, num_of_cols, c_rank);
-//
-//                    C.GetTileSubMatrix(0).get().CopyDataArray(0, target->GetTileSubMatrix(0).get().GetData(),
-//                                                              num_of_rows * c_rank);
-//                    C.GetTileSubMatrix(1).get().CopyDataArray(0,
-//                                                              &target->GetTileSubMatrix(0).get().GetData()[num_of_rows *
-//                                                                                                           c_rank],
-//                                                              c_rank * num_of_cols);
                 } else {
                     auto a_data = a_pairs[tile_a_st_idx];
                     auto b_data = b_pairs[tile_b_st_idx];

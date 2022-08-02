@@ -111,27 +111,6 @@ namespace hcorepp {
             int64_t m = this->GetNumOfRows();
             int64_t n = this->GetNumOfCols();
 
-//            printf("beta : %f , ldau : %d, Ark : %d \n", aBeta, ldau, Ark);
-//            printf("AU==================== \n");
-//            printf("AU ROWS = %d \t AU COLS = %d \n", m, Ark);
-//            for (int i = 0; i < Ark; i++) {
-//                for (int j = 0; j < m; j++) {
-//                    int index = i * m + j;
-//                    printf(" element %d : %f \n", index, aTileA.GetData()[index]);
-//                }
-//            }
-//
-//            printf("AV==================== \n");
-//
-//            printf("AV ROWS = %d \t AV COLS = %d \n", Ark, n);
-//            for (int i = 0; i < n; i++) {
-//                for (int j = 0; j < Ark; j++) {
-//                    int index = i * Ark + j;
-//                    printf(" element %d : %f \n", index, aTileB.GetData()[index]);
-//                }
-//            }
-
-
             T *CU = this->GetTileSubMatrix(0).get().GetData();
             size_t CU_leading_dim = this->GetTileSubMatrix(0).get().GetLeadingDim();
 
@@ -403,16 +382,6 @@ namespace hcorepp {
             size_t v_size =
                     this->GetTileSubMatrix(1).get().GetNumOfRows() * this->GetTileSubMatrix(1).get().GetNumOfCols();
 
-//            std::cout << " U size  = = " << u_size << "\n";
-//            std::cout << " V size  = = " << v_size << "\n";
-//            std::cout << " NEW RNK  = = " << rk_new << "\n";
-//
-//            std::cout << " uv data holder Num of rows ==  " << uv_dataHolder->GetNumOfRows() << "\n";
-//            std::cout << " uv data holder Num of cols ==  " << uv_dataHolder->GetNumOfCols() << "\n";
-//
-//            for (int i = 0; i < uv_dataHolder->GetNumOfCols() * uv_dataHolder->GetNumOfRows(); i++) {
-//                std::cout << " ELmeent " << i << " ==  " << UV[i] << "\n";
-//            }
 
             this->GetTileSubMatrix(0).get().CopyDataArray(0, UV, u_size);
             this->GetTileSubMatrix(1).get().CopyDataArray(0, &UV[u_size], v_size);
@@ -479,71 +448,36 @@ namespace hcorepp {
         CompressedTile<T>::ReadjustTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim,
                                         int64_t aRank) {
 
-//
-//            for (auto data_holder: mDataArrays) {
-//                delete data_holder;
-//            }
-            this->mMatrixRank = aRank;
+            if (aRank == -1) {
+                this->mMatrixRank = std::min(aNumOfRows, aNumOfCols);
+            } else {
+                this->mMatrixRank = aRank;
+            }
+
             this->mLeadingDim = aLeadingDim;
             this->mNumOfRows = aNumOfRows;
             this->mNumOfCols = aNumOfCols;
 
-//            ///     The m-by-n matrix compressed tile (A=UV): A is m-by-n, U is
-//            ///     m-by-rk, and V is rk-by-n.
-//            if (this->mLayout == blas::Layout::ColMajor) {
-//                ///     If layout = blas::Layout::ColMajor,
-//                ///     the data array of A is stored in an ld-by-n array buffer; the
-//                ///     data array of U is stored in an ld-by-rk array buffer; and
-//                ///     data array of V is stored in an rk-by-n array buffer.
-//
-//                this->mDataArrays.push_back(
-//                        new DataHolder<T>(this->mNumOfRows, this->mMatrixRank, this->mNumOfRows, aPdata));
-//                this->mDataArrays.push_back(new DataHolder<T>(this->mMatrixRank, this->mNumOfCols, this->mMatrixRank,
-//                                                              aPdata + aNumOfRows * this->mMatrixRank));
-//
-//            } else {
-//                ///     layout = blas::Layout::RowMajor: the data array of A is stored in an
-//                ///     m-by-ld array buffer, the data array of U is stored in an
-//                ///     m-by-rk array buffer, and data array of V is stored in an
-//                ///     rk-by-ld array buffer.
-//
-//                this->mDataArrays.push_back(new DataHolder<T>(aNumOfRows, this->mMatrixRank, aLeadingDim, aPdata));
-//                this->mDataArrays.push_back(new DataHolder<T>(this->mMatrixRank, this->mLeadingDim, aLeadingDim,
-//                                                              aPdata + aNumOfRows * this->mMatrixRank));
-//
-////                this->mDataArrays.emplace_back(DataHolder<T>(aNumOfRows, this->mMatrixRank, aLeadingDim, aPdata));
-////                this->mDataArrays.emplace_back(DataHolder<T>(this->mMatrixRank, this->mLeadingDim, aLeadingDim,
-////                                                             aPdata + aNumOfRows * this->mMatrixRank));
-//
-//            }
-            this->SetTileRank(aRank);
-            this->GetTileSubMatrix(0).get().Resize(this->GetTileSubMatrix(0).get().GetNumOfRows(), aRank,
-                                                   this->GetTileSubMatrix(0).get().GetNumOfRows());
-            this->GetTileSubMatrix(1).get().Resize(aRank, this->GetTileSubMatrix(1).get().GetNumOfCols(), aRank);
+            this->GetTileSubMatrix(0).get().Resize(this->mNumOfRows, this->mMatrixRank, this->mNumOfRows);
+            this->GetTileSubMatrix(1).get().Resize(this->mMatrixRank, this->mNumOfCols, this->mMatrixRank);
 
-            size_t u_size =
-                    this->GetTileSubMatrix(0).get().GetNumOfRows() * this->GetTileSubMatrix(0).get().GetNumOfCols();
-            size_t v_size =
-                    this->GetTileSubMatrix(1).get().GetNumOfRows() * this->GetTileSubMatrix(1).get().GetNumOfCols();
-
-//            std::cout << " U size  = = " << u_size << "\n";
-//            std::cout << " V size  = = " << v_size << "\n";
-//            std::cout << " NEW RNK  = = " << rk_new << "\n";
-//
-//            std::cout << " uv data holder Num of rows ==  " << uv_dataHolder->GetNumOfRows() << "\n";
-//            std::cout << " uv data holder Num of cols ==  " << uv_dataHolder->GetNumOfCols() << "\n";
-//
-//            for (int i = 0; i < uv_dataHolder->GetNumOfCols() * uv_dataHolder->GetNumOfRows(); i++) {
-//                std::cout << " ELmeent " << i << " ==  " << UV[i] << "\n";
-//            }
+            size_t u_size = this->mNumOfRows * this->mMatrixRank;
+            size_t v_size = this->mMatrixRank * this->mNumOfCols;
 
             this->GetTileSubMatrix(0).get().CopyDataArray(0, aPdata, u_size);
-            this->GetTileSubMatrix(1).get().CopyDataArray(0, &aPdata[u_size], v_size);
 
+            if (aRank == -1) {
+                T *identity_matrix = this->GetTileSubMatrix(1).get().GetData();
+
+                for (int i = 0; i < this->mNumOfCols; i++) {
+                    int index = i * this->mNumOfCols + i;
+                    identity_matrix[index] = 1;
+                }
+            } else {
+                this->GetTileSubMatrix(1).get().CopyDataArray(0, &aPdata[u_size], v_size);
+            }
 
         }
-
-
     }
 
 }

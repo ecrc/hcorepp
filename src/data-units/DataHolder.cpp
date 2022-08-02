@@ -2,6 +2,7 @@
 #include <hcorepp/data-units/DataHolder.hpp>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 
 namespace hcorepp {
     namespace dataunits {
@@ -89,7 +90,9 @@ namespace hcorepp {
                 // add cudamemset.
             }
 #else
-            free(mDataArray);
+            if(mDataArray != nullptr ) {
+                free(mDataArray);
+            }
 
             mDataArray = (T *) malloc(mNumOfRows * mNumOfCols * sizeof(T));
             memset((void *) mDataArray, 0, mNumOfRows * mNumOfCols * sizeof(T));
