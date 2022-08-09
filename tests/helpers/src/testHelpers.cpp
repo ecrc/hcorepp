@@ -4,7 +4,7 @@
 #include <lapack/wrappers.hh>
 #include <hcorepp/test-helpers/testHelpers.hpp>
 #include <hcorepp/test-helpers/lapack_wrappers.hpp>
-
+#include <libraries/catch/catch.hpp>
 
 namespace hcorepp {
     namespace test_helpers {
@@ -44,5 +44,42 @@ namespace hcorepp {
         template
         void
         columnMajorToRowMajor(float *pInputArray, int64_t aNumOfCols, int64_t aNumOfRows, float *pOutputArray);
+
+        template<typename T>
+        void
+        printMatrix(T *pInput, int64_t aNumOfRows, int64_t aNumOfCols) {
+
+            int index = 0;
+
+            for (int i = 0; i < aNumOfRows; i++) {
+                std::cout << "{ ";
+                for (int j = 0; j < aNumOfCols; j++) {
+                    index = i * aNumOfCols + j;
+                    std::cout << pInput[index] << ", ";
+                }
+                std::cout << "} \n";
+            }
+        }
+
+        template
+        void
+        printMatrix(float *pInput, int64_t aNumOfRows, int64_t aNumOfCols);
+
+        template<typename T>
+        void
+        validateOutput(T *pInput, int64_t aNumOfRows, int64_t aNumOfCols, T *pExpectedOutput) {
+
+            int index = 0;
+            for (int i = 0; i < aNumOfRows * aNumOfCols; i++) {
+                REQUIRE(pInput[i] == Approx(pExpectedOutput[i]).epsilon(1e-2));
+
+            }
+
+        }
+
+        template
+        void
+        validateOutput(float *pInput, int64_t aNumOfRows, int64_t aNumOfCols, float *pExpectedOutput);
+
     }
 }
