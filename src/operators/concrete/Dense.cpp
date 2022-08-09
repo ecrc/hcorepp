@@ -45,7 +45,7 @@ namespace hcorepp {
 
         template<typename T>
         void DenseTile<T>::Gemm(T &aAlpha, DataHolder<T> const &aTileA, blas::Op aTileAOp, DataHolder<T> const &aTileB,
-                                blas::Op aTileBOp, T &aBeta, int64_t ldau, int64_t Ark, const SvdHelpers &aHelpers) {
+                                blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank, const SvdHelpers &aHelpers) {
 
             /**
              * Assuming that C operation is blas::Op::NoTrans

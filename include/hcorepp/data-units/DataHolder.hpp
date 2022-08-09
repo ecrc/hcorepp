@@ -14,6 +14,7 @@ namespace hcorepp {
             /**
              * @brief
              * Data Holder constructor.
+             *
              * @param[in] aRows
              * Number of Rows.
              * @param[in] aCols
@@ -77,6 +78,7 @@ namespace hcorepp {
             GetNumOfCols() const;
 
             /**
+             * @brief
              * The Data holder Leading dimension.
              *
              * @return
@@ -85,9 +87,33 @@ namespace hcorepp {
             size_t
             GetLeadingDim() const;
 
+            /**
+             * @brief
+             * Copy Data from source array to the current data holder array.
+             *
+             * @param aStIdx
+             * Target starting index in current array.
+             * @param aSrcDataArray
+             * Source array to copy from.
+             * @param aNumOfElements
+             * Num of elements to be copied from source array.
+             *
+             */
             void
             CopyDataArray(size_t aStIdx, T* aSrcDataArray, size_t aNumOfElements);
 
+            /**
+             * @brief
+             * Resize the data holder to use new number of rows, cols and a leading dimension.
+             * Function destroys previously allocated buffer and re-initializes them again.
+             *
+             * @param aRows
+             * New number of rows.
+             * @param aCols
+             * New number of cols.
+             * @param aLeadingDim
+             * New leading dimension.
+             */
             void
             Resize(size_t aRows, size_t aCols, size_t aLeadingDim);
 
@@ -101,6 +127,7 @@ namespace hcorepp {
             /** leading dimension */
             size_t mLeadingDimension;
         };
+
         template class DataHolder<int>;
         template class DataHolder<long>;
         template class DataHolder<float>;

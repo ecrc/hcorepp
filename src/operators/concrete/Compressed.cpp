@@ -76,7 +76,7 @@ namespace hcorepp {
         }
 
         template<typename T>
-        std::reference_wrapper<dataunits::DataHolder<T>> const
+        const std::reference_wrapper<dataunits::DataHolder<T>>
         CompressedTile<T>::GetTileSubMatrix(size_t aIndex) const {
             return *mDataArrays[aIndex];
         }
@@ -101,7 +101,7 @@ namespace hcorepp {
         template<typename T>
         void
         CompressedTile<T>::Gemm(T &aAlpha, DataHolder<T> const &aTileA, blas::Op aTileAOp, DataHolder<T> const &aTileB,
-                                blas::Op aTileBOp, T &aBeta, int64_t ldau, int64_t Ark, const SvdHelpers &aHelpers) {
+                                blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank, const SvdHelpers &aHelpers) {
 
             using blas::conj;
 
@@ -122,7 +122,7 @@ namespace hcorepp {
             blas::real_type<T> accuracy = this->GetAccuracy();
 
             int64_t Um = m;
-            int64_t Un = Ark + Crk;
+            int64_t Un = aARank + Crk;
 
             int64_t ldcu = CU_leading_dim;
 
@@ -133,7 +133,7 @@ namespace hcorepp {
             lapack::lacpy(
                     lapack::MatrixType::General, m, Crk, CU, ldcu, U, Um);
             lapack::lacpy(
-                    lapack::MatrixType::General, m, Ark, aTileA.GetData(), ldau, &U[m * Crk], Um);
+                    lapack::MatrixType::General, m, aARank, aTileA.GetData(), aLdAu, &U[m * Crk], Um);
 
             int64_t min_Um_Un = std::min(Um, Un);
 
@@ -151,7 +151,7 @@ namespace hcorepp {
                           min_Um_Un, Un, U, Um, RU, min_Um_Un);
 
             int64_t Vm = n;
-            int64_t Vn = Ark + Crk;
+            int64_t Vn = aARank + Crk;
 
             int64_t ldcv = CV_leading_dim;
 
@@ -174,11 +174,11 @@ namespace hcorepp {
 
             for (int64_t j = 0; j < n; ++j) {
                 T *Vptr = &V[n * Crk];
-                for (int64_t i = 0; i < Ark; ++i) {
+                for (int64_t i = 0; i < aARank; ++i) {
                     if (aHelpers.GetUngqr()) {
-                        Vptr[j + i * Vm] = conj(aTileB.GetData()[i + j * Ark]);
+                        Vptr[j + i * Vm] = conj(aTileB.GetData()[i + j * aARank]);
                     } else {
-                        Vptr[j + i * Vm] = aTileB.GetData()[i + j * Ark];
+                        Vptr[j + i * Vm] = aTileB.GetData()[i + j * aARank];
                     }
                 }
             }
@@ -195,7 +195,7 @@ namespace hcorepp {
             if (aHelpers.GetTrmm()) {
                 sizeS = min_Um_Un;
             } else {
-                sizeS = std::min({m, n, (Ark + Crk)});
+                sizeS = std::min({m, n, (aARank + Crk)});
             }
 
             size_t max_rows;
@@ -258,13 +258,13 @@ namespace hcorepp {
 
                 if (aHelpers.GetUngqr()) {
                     blas::gemm(blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::ConjTrans, min_Um_Un, min_Vm_Vn,
-                               (Ark + Crk), one, RU, min_Um_Un, RV, min_Vm_Vn, zero, RURV, min_Um_Un);
+                               (aARank + Crk), one, RU, min_Um_Un, RV, min_Vm_Vn, zero, RURV, min_Um_Un);
 
                     lapack::gesvd(lapack::Job::SomeVec, lapack::Job::SomeVec, min_Um_Un, min_Vm_Vn, RURV, min_Um_Un,
                                   Sigma, Unew, min_Um_Un, VTnew, sizeS);
                 } else {
                     blas::gemm(blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::Trans, min_Um_Un, min_Vm_Vn,
-                               (Ark + Crk), one, RU, min_Um_Un, RV, min_Vm_Vn, zero, RURV, min_Um_Un);
+                               (aARank + Crk), one, RU, min_Um_Un, RV, min_Vm_Vn, zero, RURV, min_Um_Un);
 
                     lapack::gesvd(lapack::Job::SomeVec, lapack::Job::SomeVec, min_Um_Un, min_Vm_Vn, RURV, min_Um_Un,
                                   Sigma, Unew, Um, VTnew, sizeS);
@@ -277,8 +277,8 @@ namespace hcorepp {
             int64_t rk_new;
             if (aHelpers.GetFixedRank()) { // truncate according to fixed_rk
                 rk_new = aHelpers.GetFixedRank();
-                if (aHelpers.GetFixedRank() > (Ark + Crk)) {
-                    rk_new = (Ark + Crk);
+                if (aHelpers.GetFixedRank() > (aARank + Crk)) {
+                    rk_new = (aARank + Crk);
                 }
             } else { // truncate according to accuracy
 #ifdef USE_CUDA
