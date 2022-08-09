@@ -51,17 +51,10 @@ void TEST_DENSE() {
                                      dense_tile_A.GetTileSubMatrix(0).get().GetNumOfRows(),
                                      (float *) a_input);
 
-        std::cout << "CDATA \n";
-        int index = 0;
-        for (int i = 0; i < a_m; i++) {
-            std::cout << "{ ";
-            for (int j = 0; j < a_n; j++) {
-                REQUIRE(a_input[index] == Approx(matrix_A[i][j]).epsilon(1e-2));
-                std::cout << a_input[index] << ",";
-                index++;
-            }
-            std::cout << "} \n";
-        }
+//        std::cout << "CDATA \n";
+        validateOutput(a_input, a_m, a_n, (float*) matrix_A);
+//        printMatrix(a_input, a_m, a_n);
+
 
         delete[] a_input;
     }
@@ -137,17 +130,9 @@ void TEST_DENSE() {
         columnMajorToRowMajor<float>(c_output, c_n, c_m, (float *) matrix_C_Row_Major);
 
         auto c_pointer = (float *) matrix_C_Row_Major;
-        std::cout << "CDATA \n";
-        int index = 0;
-        for (int i = 0; i < c_m; i++) {
-            std::cout << "{ ";
-            for (int j = 0; j < c_n; j++) {
-                REQUIRE(c_pointer[index] == Approx(matrix_C[i][j]).epsilon(1e-2));
-                std::cout << c_pointer[index] << ",";
-                index++;
-            }
-            std::cout << "} \n";
-        }
+//        std::cout << "CDATA \n";
+        validateOutput(c_pointer, c_m, c_n, (float*) matrix_C);
+//        printMatrix(c_pointer, c_m, c_n);
 
         delete[] a_input;
         delete[] b_input;

@@ -33,33 +33,27 @@ namespace hcorepp {
             this->mNumOfRows = aNumOfRows;
             this->mNumOfCols = aNumOfCols;
 
-            ///     The m-by-n matrix compressed tile (A=UV): A is m-by-n, U is
-            ///     m-by-rk, and V is rk-by-n.
+            ///     The m-by-n matrix compressed tile (A=UV): A is m-by-n, U is m-by-rk, and V is rk-by-n.
             if (this->mLayout == blas::Layout::ColMajor) {
-                ///     If layout = blas::Layout::ColMajor,
-                ///     the data array of A is stored in an ld-by-n array buffer; the
-                ///     data array of U is stored in an ld-by-rk array buffer; and
-                ///     data array of V is stored in an rk-by-n array buffer.
-
+                /**     If layout = blas::Layout::ColMajor,
+                 * the data array of A is stored in an ld-by-n array buffer; the
+                 * data array of U is stored in an ld-by-rk array buffer; and
+                 * data array of V is stored in an rk-by-n array buffer.
+                 */
                 this->mDataArrays.push_back(
                         new DataHolder<T>(this->mNumOfRows, this->mMatrixRank, this->mNumOfRows, aPdata));
                 this->mDataArrays.push_back(new DataHolder<T>(this->mMatrixRank, this->mNumOfCols, this->mMatrixRank,
                                                               aPdata + aNumOfRows * this->mMatrixRank));
 
             } else {
-                ///     layout = blas::Layout::RowMajor: the data array of A is stored in an
-                ///     m-by-ld array buffer, the data array of U is stored in an
-                ///     m-by-rk array buffer, and data array of V is stored in an
-                ///     rk-by-ld array buffer.
-
+                /** layout = blas::Layout::RowMajor: the data array of A is stored in an
+                 * m-by-ld array buffer, the data array of U is stored in an
+                 * m-by-rk array buffer, and data array of V is stored in an
+                 * rk-by-ld array buffer.
+                 */
                 this->mDataArrays.push_back(new DataHolder<T>(aNumOfRows, this->mMatrixRank, aLeadingDim, aPdata));
                 this->mDataArrays.push_back(new DataHolder<T>(this->mMatrixRank, this->mLeadingDim, aLeadingDim,
                                                               aPdata + aNumOfRows * this->mMatrixRank));
-
-//                this->mDataArrays.emplace_back(DataHolder<T>(aNumOfRows, this->mMatrixRank, aLeadingDim, aPdata));
-//                this->mDataArrays.emplace_back(DataHolder<T>(this->mMatrixRank, this->mLeadingDim, aLeadingDim,
-//                                                             aPdata + aNumOfRows * this->mMatrixRank));
-
             }
         }
 
@@ -101,7 +95,8 @@ namespace hcorepp {
         template<typename T>
         void
         CompressedTile<T>::Gemm(T &aAlpha, DataHolder<T> const &aTileA, blas::Op aTileAOp, DataHolder<T> const &aTileB,
-                                blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank, const SvdHelpers &aHelpers) {
+                                blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank,
+                                const SvdHelpers &aHelpers) {
 
             using blas::conj;
 
@@ -208,9 +203,9 @@ namespace hcorepp {
                 max_cols = Vm;
             }
 
-            // allocate max rows (m) because we truncate columns not rows, after unmqr
+            /// allocate max rows (m) because we truncate columns not rows, after unmqr
             auto Unew_dataHolder = new DataHolder<T>(max_rows, sizeS, max_rows);
-            // allocate max colums (n) because we truncate rows not columns, after unmqr
+            /// allocate max colums (n) because we truncate rows not columns, after unmqr
             auto VTnew_dataHolder = new DataHolder<T>(sizeS, max_cols, sizeS);
 
             T *Unew = Unew_dataHolder->GetData();
@@ -229,8 +224,6 @@ namespace hcorepp {
                     blas::trmm(blas::Layout::ColMajor, blas::Side::Right, blas::Uplo::Upper,
                                blas::Op::ConjTrans, blas::Diag::NonUnit, min_Um_Un, Un, one, V, Vm, RU, min_Um_Un);
 
-                    // orthogonal QU and QV
-                    // [Unew, Sigma, VTnew] = svd(RU * RV.');
                     lapack::gesvd(lapack::Job::SomeVec, lapack::Job::SomeVec, min_Um_Un, Un, RU, min_Um_Un, Sigma,
                                   Unew, min_Um_Un, VTnew, sizeS);
 
@@ -238,8 +231,6 @@ namespace hcorepp {
                     blas::trmm(blas::Layout::ColMajor, blas::Side::Right, blas::Uplo::Upper, blas::Op::Trans,
                                blas::Diag::NonUnit, min_Um_Un, Un, one, V, Vm, RU, min_Um_Un);
 
-                    // orthogonal QU and QV
-                    // [Unew, Sigma, VTnew] = svd(RU * RV.');
                     lapack::gesvd(lapack::Job::SomeVec, lapack::Job::SomeVec, min_Um_Un, Un, RU, min_Um_Un, Sigma,
                                   Unew, Um, VTnew, sizeS);
                 }
@@ -248,9 +239,7 @@ namespace hcorepp {
                 auto rv_dataHolder = new DataHolder<T>(min_Vm_Vn, Vn, min_Vm_Vn);
                 auto rurv_dataHolder = new DataHolder<T>(min_Um_Un, min_Vm_Vn, min_Um_Un);
 
-                // RV: uppertriangular part of QR(V)
                 T *RV = rv_dataHolder->GetData();
-                // RU * RV.'
                 T *RURV = rurv_dataHolder->GetData();
 
                 lapack::laset(lapack::MatrixType::Lower, min_Vm_Vn, Vn, zero, zero, RV, min_Vm_Vn);
@@ -275,7 +264,8 @@ namespace hcorepp {
             delete ru_dataholder;
 
             int64_t rk_new;
-            if (aHelpers.GetFixedRank()) { // truncate according to fixed_rk
+            if (aHelpers.GetFixedRank()) {
+                /// truncate according to fixed_rk
                 rk_new = aHelpers.GetFixedRank();
                 if (aHelpers.GetFixedRank() > (aARank + Crk)) {
                     rk_new = (aARank + Crk);
@@ -319,9 +309,9 @@ namespace hcorepp {
             }
 
 
-            // VTnew eats Sigma.
-            // todo: we may need to have uplo parameter:
-            //       scale VT, if Lower, or scale U otherwise.
+            /// VTnew eats Sigma.
+            /// todo: we may need to have uplo parameter:
+            ///       scale VT, if Lower, or scale U otherwise.
             for (int64_t i = 0; i < rk_new; ++i) {
                 if (aHelpers.GetUngqr()) {
                     blas::scal(min_Vm_Vn, Sigma[i], &VTnew[i], sizeS);

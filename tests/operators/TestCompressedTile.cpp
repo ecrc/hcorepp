@@ -90,29 +90,14 @@ void TEST_Compressed() {
                                      compressed_tile_A.GetTileSubMatrix(1).get().GetNumOfRows(),
                                      (float *) av_output);
 
-        std::cout << "AUDATA \n";
-        int index = 0;
-        for (int i = 0; i < au_m; i++) {
-            std::cout << "{ ";
-            for (int j = 0; j < au_n; j++) {
-                REQUIRE(au_output[index] == Approx(matrix_AU[i][j]).epsilon(1e-2));
-                std::cout << au_output[index] << ", ";
-                index++;
-            }
-            std::cout << "} \n";
-        }
+        //        std::cout << "AU Output \n";
+        validateOutput(au_output, au_m, au_n, (float *) matrix_AU);
+//        printMatrix(au_output, au_m, au_n);
 
-        std::cout << "AVDATA \n";
-        index = 0;
-        for (int i = 0; i < av_m; i++) {
-            std::cout << "{ ";
-            for (int j = 0; j < av_n; j++) {
-                REQUIRE(av_output[index] == Approx(matrix_AV[i][j]).epsilon(1e-2));
-                std::cout << av_output[index] << ", ";
-                index++;
-            }
-            std::cout << "} \n";
-        }
+
+        //        std::cout << "AV Output \n";
+        validateOutput(av_output, av_m, av_n, (float *) matrix_AV);
+//        printMatrix(av_output, av_m, av_n);
 
         delete[] a_input;
     }
@@ -139,6 +124,10 @@ void TEST_Compressed() {
 
         float matrix_CV[2][2] = {{125.847, 283.781},
                                  {1.55803, -0.690935}};
+
+        float output_matrix[3][2] = {{60, 132},
+                                     {72, 162},
+                                     {84, 192}};
 
         float matrix_C_Input[3][2] = {{0, 0},
                                       {0, 0},
@@ -218,35 +207,30 @@ void TEST_Compressed() {
         columnMajorToRowMajor<float>(cu_output, cu_n, cu_m, (float *) cu_output_row);
         columnMajorToRowMajor<float>(cv_output, cv_n, cv_m, (float *) cv_output_row);
 
-        std::cout << "CUDATA \n";
-        int index = 0;
-        for (int i = 0; i < cu_m; i++) {
-            std::cout << "{ ";
-            for (int j = 0; j < cu_n; j++) {
-                REQUIRE(cu_output_row[index] == Approx(matrix_CU[i][j]).epsilon(1e-2));
-                std::cout << cu_output_row[index] << ", ";
-                index++;
-            }
-            std::cout << "} \n";
-        }
+        //        std::cout << "CU Output \n";
+        validateOutput(cu_output_row, cu_m, cu_n, (float *) matrix_CU);
+//        printMatrix(cu_output_row, cu_m, cu_n);
 
-        std::cout << "CVDATA \n";
-        index = 0;
-        for (int i = 0; i < cv_m; i++) {
-            std::cout << "{ ";
-            for (int j = 0; j < cv_n; j++) {
-                REQUIRE(cv_output_row[index] == Approx(matrix_CV[i][j]).epsilon(1e-2));
-                std::cout << cv_output_row[index] << ", ";
-                index++;
-            }
-            std::cout << "} \n";
-        }
+//        std::cout << "CV Output \n";
+        validateOutput(cv_output_row, cv_m, cv_n, (float *) matrix_CV);
+//        printMatrix(cv_output_row, cv_m, cv_n);
+
+        float *cu_cv = new float[c_m * c_n];
+
+        blas::gemm(blas::Layout::RowMajor, blas::Op::NoTrans, blas::Op::NoTrans,
+                   c_m, c_n, cu_n, alpha, cu_output_row, cu_n, cv_output_row, cv_n,
+                   0, cu_cv, c_n);
+
+//        std::cout << " C Output ==== \n";
+        validateOutput(cu_cv, c_m, c_n, (float *) output_matrix);
+//        printMatrix(cu_cv, c_m, c_n);
 
         delete[] a_input;
         delete[] b_input;
         delete[] c_input;
         delete[] cu_output_row;
         delete[] cv_output_row;
+        delete[] cu_cv;
     }
 
 }
