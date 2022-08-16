@@ -74,14 +74,16 @@ pipeline {
 
                             rm -rf ${top}/install
                             echo "========================================"
+                            ./config.sh -t
+                            ./clean_build.sh
 
-                            rm -rf build && mkdir build && cd build
-                            cmake -Dcolor=no -DCMAKE_CXX_FLAGS="-Werror" -DCMAKE_INSTALL_PREFIX=${top}/install ..
+//                             rm -rf build && mkdir build && cd build
+//                             cmake -Dcolor=no -DCMAKE_CXX_FLAGS="-Werror" -DCMAKE_INSTALL_PREFIX=${top}/install ..
 
                             echo "========================================"
-                            make -j8
-                            make install
-                            ls -R ${top}/install
+//                             make -j8
+//                             make install
+//                             ls -R ${top}/install
 
                             echo "========================================"
                             ldd tests

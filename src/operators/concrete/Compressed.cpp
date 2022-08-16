@@ -90,6 +90,7 @@ namespace hcorepp {
                     return this->mLeadingDim;
                 }
             }
+            return 0;
         }
 
         template<typename T>
