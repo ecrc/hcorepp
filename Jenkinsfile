@@ -84,33 +84,33 @@ pipeline {
                             ls -R ${top}/install
 
                             echo "========================================"
-                            ldd test/tester
+                            ldd tests
 
                             ####################################################
                             # Run tester
                             ####################################################
 
                             echo "========================================"
-                            cd test
-                            ./run_tests.py --quick --xml ${top}/report.xml
+                            cd tests
+                            ./hcorepp-tests
 
-                            ####################################################
-                            # Smoke test
-                            ####################################################
+//                             ####################################################
+//                             # Smoke test
+//                             ####################################################
+//
+//                             echo "========================================"
+//                             echo "smoke test"
+//                             cd ${top}/example
 
-                            echo "========================================"
-                            echo "smoke test"
-                            cd ${top}/example
-
-                            rm -rf build && mkdir build && cd build
-                            if [ "${host}" = "Condor" ] || [ "${host}" = "Albatross" ]; then
-                                cmake -DCMAKE_PREFIX_PATH="${top}/install/lib64/blaspp;${top}/install/lib64/lapackpp;${top}/install/lib64/hcore" ..
-                            else
-                                cmake -DCMAKE_PREFIX_PATH="${top}/install/lib/blaspp;${top}/install/lib/lapackpp;${top}/install/lib/hcore" ..
-                            fi
-
-                            make
-                            ./example_gemm_ccc || exit 1
+//                             rm -rf build && mkdir build && cd build
+//                             if [ "${host}" = "Condor" ] || [ "${host}" = "Albatross" ]; then
+//                                 cmake -DCMAKE_PREFIX_PATH="${top}/install/lib64/blaspp;${top}/install/lib64/lapackpp;${top}/install/lib64/hcore" ..
+//                             else
+//                                 cmake -DCMAKE_PREFIX_PATH="${top}/install/lib/blaspp;${top}/install/lib/lapackpp;${top}/install/lib/hcore" ..
+//                             fi
+//
+//                             make
+//                             ./example_gemm_ccc || exit 1
                             '''
                         } // steps
                         post {
