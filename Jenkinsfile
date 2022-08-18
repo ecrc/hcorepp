@@ -35,7 +35,9 @@ pipeline {
                             ./hcorepp-tests
                 '''
     }
+                }
     }
+        
     // Post build actions
     post {
         //always {
@@ -53,5 +55,4 @@ pipeline {
                 emailext body: "${env.JOB_NAME} - Please go to ${env.BUILD_URL}", subject: "Jenkins Pipeline build FAILED", recipientProviders: [[$class: 'CulpritsRecipientProvider'], [$class: 'RequesterRecipientProvider']]
         }
     }
-}
 }
