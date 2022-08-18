@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'jenkinsfile' }
+    agent { label 'Vulture' }
     triggers {
         pollSCM('H/10 * * * *')
     }
