@@ -1,4 +1,3 @@
-export HCORECPPDEVDIR=$PWD
 pipeline {
     agent { label 'Jenkinsfile' }
     triggers {
@@ -12,6 +11,7 @@ pipeline {
     }
 
     stages {
+        export HCORECPPDEVDIR=$PWD
         stage ('build') {
             steps {
                 sh '''#!/bin/bash -le
