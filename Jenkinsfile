@@ -10,7 +10,7 @@ pipeline {
         timestamps()
     }
     environment {
-        export HCORECPPDEVDIR=$PWD
+        HCORECPPDEVDIR=$PWD
     }
 
     stages {
