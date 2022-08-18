@@ -17,9 +17,8 @@ pipeline {
                              ####################################################
                             # Configure and build
                             ####################################################
-                            rm -rf ${top}/install
                             echo "========================================"
-                            // load cmake module for the build
+                            # load cmake module for the build
                             module load cmake-3.22.1-gcc-7.5.0-4se4k5d
                             mkdir -p build
                             cd build && rm -rf ./*
