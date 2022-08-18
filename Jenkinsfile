@@ -19,6 +19,8 @@ pipeline {
                             ####################################################
                             rm -rf ${top}/install
                             echo "========================================"
+                            // load cmake module for the build
+                            module load cmake-3.22.1-gcc-7.5.0-4se4k5d
                             ./config.sh -t
                             ./clean_build.sh
                 '''
