@@ -1,5 +1,6 @@
+export HCORECPPDEVDIR=$PWD
 pipeline {
-    agent { label 'Vulture' }
+    agent { label 'Jenkinsfile' }
     triggers {
         pollSCM('H/10 * * * *')
     }
@@ -17,10 +18,9 @@ pipeline {
                              ####################################################
                             # Configure and build
                             ####################################################
-                            echo "========================================"
                             # load cmake module for the build
                             module load cmake-3.22.1-gcc-7.5.0-4se4k5d
-                            pwd
+                            cd $HCORECPPDEVDIR
                             ./config.sh -t
                             ./clean_build.sh
                 '''
@@ -33,6 +33,7 @@ pipeline {
                             # Run tester
                             ####################################################
                             echo "========================================"
+                            cd $HCORECPPDEVDIR
                             cd tests
                             ./hcorepp-tests
                 '''
