@@ -9,9 +9,11 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '50'))
         timestamps()
     }
+    environment {
+        export HCORECPPDEVDIR=$PWD
+    }
 
     stages {
-        export HCORECPPDEVDIR=$PWD
         stage ('build') {
             steps {
                 sh '''#!/bin/bash -le
