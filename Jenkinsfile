@@ -37,9 +37,9 @@ pipeline {
                             echo "========================================"
                             module load cmake/3.21.2
                          #   cd $HCORECPPDEVDIR
-                            cd tests
-                            ./hcorepp-tests
-                '''
+                            cd bin/tests
+                            ./hcorepp-tests                
+                            '''
     }
                 }
     }
