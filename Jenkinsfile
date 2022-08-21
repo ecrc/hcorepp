@@ -21,7 +21,7 @@ pipeline {
                             # Configure and build
                             ####################################################
                             # load cmake module for the build
-                            module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+                            module load cmake/3.21.2
                             cd $HCORECPPDEVDIR
                             ./config.sh -t
                             ./clean_build.sh
@@ -35,6 +35,7 @@ pipeline {
                             # Run tester
                             ####################################################
                             echo "========================================"
+                            module load cmake/3.21.2
                             cd $HCORECPPDEVDIR
                             cd tests
                             ./hcorepp-tests
