@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'Jenkinsfile' }
+    agent { label 'jenkinsfile' }
     triggers {
         pollSCM('H/10 * * * *')
     }
