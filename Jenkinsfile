@@ -35,7 +35,7 @@ pipeline {
                             # Run tester
                             ####################################################
                             echo "========================================"
-                            module load cmake/3.21.2
+                            module load cmake-3.22.1-gcc-7.5.0-4se4k5d
                          #   cd $HCORECPPDEVDIR
                             cd bin/tests
                             ./hcorepp-tests                
