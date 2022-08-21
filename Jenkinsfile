@@ -9,9 +9,9 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '50'))
         timestamps()
     }
-    environment {
-        HCORECPPDEVDIR= "{$PWD}"
-    }
+   // environment {
+     //   HCORECPPDEVDIR= "{$PWD}"
+    //}
 
     stages {
         stage ('build') {
@@ -22,7 +22,7 @@ pipeline {
                             ####################################################
                             # load cmake module for the build
                             module load cmake/3.21.2
-                            cd $HCORECPPDEVDIR
+                         #   cd $HCORECPPDEVDIR
                             ./config.sh -t
                             ./clean_build.sh
                 '''
@@ -36,7 +36,7 @@ pipeline {
                             ####################################################
                             echo "========================================"
                             module load cmake/3.21.2
-                            cd $HCORECPPDEVDIR
+                         #   cd $HCORECPPDEVDIR
                             cd tests
                             ./hcorepp-tests
                 '''
