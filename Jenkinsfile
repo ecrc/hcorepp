@@ -20,8 +20,17 @@ pipeline {
                              ####################################################
                             # Configure and build
                             ####################################################
-                            # load cmake module for the build
-                            module load cmake/3.21.2
+                            if [ "${host}" = "Vulture" ]; then
+                                module load gcc/7.2.0
+                                module load cmake/3.17.3
+                            else
+                                module load gcc/10.2.0
+                                module load cmake/3.19.2
+                            fi
+                            ####################################################
+                            # BLAS/LAPACK
+                            ####################################################
+                            module load mkl/2020.0.166
                          #   cd $HCORECPPDEVDIR
                             ./config.sh -t
                             ./clean_build.sh
@@ -35,7 +44,17 @@ pipeline {
                             # Run tester
                             ####################################################
                             echo "========================================"
-                            module load cmake/3.21.2
+                            if [ "${host}" = "Vulture" ]; then
+                                module load gcc/7.2.0
+                                module load cmake/3.17.3
+                            else
+                                module load gcc/10.2.0
+                                module load cmake/3.19.2
+                            fi
+                            ####################################################
+                            # BLAS/LAPACK
+                            ####################################################
+                            module load mkl/2020.0.166
                          #   cd $HCORECPPDEVDIR
                             cd tests
                             ./hcorepp-tests

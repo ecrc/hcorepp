@@ -103,8 +103,8 @@ void TEST_Compressed() {
     }
 
 
-    SECTION("Dense Tile Gemm") {
-        std::cout << "Dense tile Gemm functionality-\n =========================== \n";
+    SECTION("Compressed Tile Gemm") {
+        std::cout << "Compressed tile Gemm functionality-\n =========================== \n";
 
         float matrix_A[3][3] = {{1, 4, 7},
                                 {2, 5, 8},
