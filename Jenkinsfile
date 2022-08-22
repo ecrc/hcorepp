@@ -56,9 +56,9 @@ pipeline {
                             ####################################################
                             module load mkl/2020.0.166
                          #   cd $HCORECPPDEVDIR
-                            cd tests
-                            ./hcorepp-tests
-                '''
+                            cd bin/tests
+                            ./hcorepp-tests                
+                            '''
     }
                 }
     }
