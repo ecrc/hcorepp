@@ -6,18 +6,19 @@
 using namespace std;
 using namespace hcorepp::dataunits;
 
+template<typename T>
 void TEST_DATA_HOLDER() {
     SECTION("Data Holder creation test") {
         int n_rows = 5;
         int n_cols = 5;
 
-        int *data_array = new int[n_rows * n_cols];
+        T *data_array = new T[n_rows * n_cols];
 
         for (int i = 0; i < n_rows * n_cols; i++) {
             data_array[i] = i;
         }
 
-        DataHolder<int> data_holder = DataHolder<int>(n_rows, n_cols, n_rows, data_array);
+        DataHolder<T> data_holder = DataHolder<T>(n_rows, n_cols, n_rows, data_array);
 
         REQUIRE(data_holder.GetNumOfRows() == n_rows);
         REQUIRE(data_holder.GetNumOfCols() == n_cols);
@@ -33,19 +34,19 @@ void TEST_DATA_HOLDER() {
         int n_rows = 5;
         int n_cols = 5;
 
-        int *data_array = new int[n_rows * n_cols];
+        T *data_array = new T[n_rows * n_cols];
 
         for (int i = 0; i < n_rows * n_cols; i++) {
             data_array[i] = i;
         }
 
-        DataHolder<int> data_holder = DataHolder<int>(n_rows, n_cols, n_rows, data_array);
+        DataHolder<T> data_holder = DataHolder<T>(n_rows, n_cols, n_rows, data_array);
 
         int new_rows = 6;
         int new_cols = 6;
         data_holder.Resize(new_rows, new_cols, n_rows);
 
-        int *new_data_array = new int[new_rows * new_cols];
+        T *new_data_array = new T[new_rows * new_cols];
 
         for (int i = 0; i < new_rows * new_cols; i++) {
             new_data_array[i] = i * 2;
@@ -67,6 +68,6 @@ void TEST_DATA_HOLDER() {
     }
 }
 
-TEST_CASE("DataHolderTest", "[DATAHOLDER]") {
-    TEST_DATA_HOLDER();
+TEMPLATE_TEST_CASE("DataHolderTest", "[DATAHOLDER]", float, double) {
+    TEST_DATA_HOLDER<TestType>();
 }

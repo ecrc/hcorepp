@@ -7,6 +7,10 @@
 namespace hcorepp {
     namespace helpers {
 
+        enum operationType{
+            LAPACK_GESVD,
+            LAPACK_GESDD
+        };
         class SvdHelpers {
         public:
 
@@ -24,7 +28,7 @@ namespace hcorepp {
              * Truncation to fixed rank. fixed_rk >= 0.
              */
             SvdHelpers(bool aUseTrmm = false, bool aUseUngqr = true, bool aTruncatedSvd = false,
-                       int64_t aFixedRank = 0);
+                       int64_t aFixedRank = 0, operationType aOpType = LAPACK_GESVD);
 
             /**
              * @brief
@@ -72,11 +76,14 @@ namespace hcorepp {
             int64_t
             GetFixedRank() const;
 
+            operationType
+            GetOperationType() const;
         private:
             bool mUseTrmm = false;
             bool mUseUngqr = true;
             bool mTruncatedSvd = false;
             int64_t mFixedRank = 0;
+            operationType mOpType = LAPACK_GESVD;
         };
     }
 }

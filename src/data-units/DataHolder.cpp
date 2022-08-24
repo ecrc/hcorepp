@@ -13,12 +13,12 @@ namespace hcorepp {
             mNumOfCols = aCols;
             mLeadingDimension = aLeadingDim;
 #ifdef USE_CUDA
-            cuda_malloc(&mDataArray, mNumofRows*mNumOfCols*sizeof(T));
-            if(apData!= nullptr) {
-                cuda_memcpy(mDataArray, apData, mNumOfRows * mNumOfCols * sizeof(T), cudaMemcpyHostToDevice);
-            } else {
-                // add cudamemset.
-            }
+//            cuda_malloc(&mDataArray, mNumofRows*mNumOfCols*sizeof(T));
+//            if(apData!= nullptr) {
+//                cuda_memcpy(mDataArray, apData, mNumOfRows * mNumOfCols * sizeof(T), cudaMemcpyHostToDevice);
+//            } else {
+//                // add cudamemset.
+//            }
 #else
             mDataArray = (T *) malloc(mNumOfRows * mNumOfCols * sizeof(T));
             if (apData != nullptr) {
@@ -70,7 +70,7 @@ namespace hcorepp {
                 return;
             }
 #ifdef USE_CUDA
-            cuda_memcpy(&mDataArray[aStIdx], aSrcDataArray, aNumOfElements * sizeof(T), cudaMemcpyHostToDevice);
+//            cuda_memcpy(&mDataArray[aStIdx], aSrcDataArray, aNumOfElements * sizeof(T), cudaMemcpyHostToDevice);
 #else
             memcpy(&mDataArray[aStIdx], aSrcDataArray, aNumOfElements * sizeof(T));
 #endif

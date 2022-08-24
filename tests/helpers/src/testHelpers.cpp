@@ -27,6 +27,10 @@ namespace hcorepp {
         void
         rowMajorToColumnMajor(float *pInputArray, int64_t aNumOfCols, int64_t aNumOfRows, float *pOutputArray);
 
+        template
+        void
+        rowMajorToColumnMajor(double *pInputArray, int64_t aNumOfCols, int64_t aNumOfRows, double *pOutputArray);
+
         template<typename T>
         void
         columnMajorToRowMajor(T *pInputArray, int64_t aNumOfCols, int64_t aNumOfRows, T *pOutputArray) {
@@ -44,6 +48,10 @@ namespace hcorepp {
         template
         void
         columnMajorToRowMajor(float *pInputArray, int64_t aNumOfCols, int64_t aNumOfRows, float *pOutputArray);
+
+        template
+        void
+        columnMajorToRowMajor(double *pInputArray, int64_t aNumOfCols, int64_t aNumOfRows, double *pOutputArray);
 
         template<typename T>
         void
@@ -65,6 +73,10 @@ namespace hcorepp {
         void
         printMatrix(float *pInput, int64_t aNumOfRows, int64_t aNumOfCols);
 
+        template
+        void
+        printMatrix(double *pInput, int64_t aNumOfRows, int64_t aNumOfCols);
+
         template<typename T>
         void
         validateOutput(T *pInput, int64_t aNumOfRows, int64_t aNumOfCols, T *pExpectedOutput) {
@@ -80,6 +92,10 @@ namespace hcorepp {
         template
         void
         validateOutput(float *pInput, int64_t aNumOfRows, int64_t aNumOfCols, float *pExpectedOutput);
+
+        template
+        void
+        validateOutput(double *pInput, int64_t aNumOfRows, int64_t aNumOfCols, double *pExpectedOutput);
 
     }
 }

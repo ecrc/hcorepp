@@ -66,17 +66,33 @@ namespace hcorepp {
 
         template<typename T>
         std::reference_wrapper<dataunits::DataHolder<T>> CompressedTile<T>::GetTileSubMatrix(size_t aIndex) {
+            if(aIndex > 1 || aIndex < 0 ) {
+//                std::cout << " INdex passed : "  << aIndex << "\n";
+                throw std::invalid_argument("CompressedTile::GetTileSubMatrix:: Index out of range, should be 0 or 1 in case of compressed tile.\n");
+
+//                std::cerr << "Index out of range, should be 0 or 1 in case of compressed tile.\n " ;
+            }
             return *mDataArrays[aIndex];
         }
 
         template<typename T>
         const std::reference_wrapper<dataunits::DataHolder<T>>
         CompressedTile<T>::GetTileSubMatrix(size_t aIndex) const {
+            if(aIndex > 1 || aIndex < 0 ) {
+                throw std::invalid_argument("CompressedTile::GetTileSubMatrix:: Index out of range, should be 0 or 1 in case of compressed tile.\n");
+
+//                std::cerr << "Index out of range, should be 0 or 1 in case of compressed tile.\n " ;
+            }
             return *mDataArrays[aIndex];
         }
 
         template<typename T>
         int64_t CompressedTile<T>::GetTileStride(size_t aIndex) const {
+            if(aIndex > 1 || aIndex < 0) {
+                throw std::invalid_argument("CompressedTile::GetTileStride::Index out of range, should be 0 or 1 in case of compressed tile.\n");
+//                std::cerr << "Index out of range, should be 0 or 1 in case of compressed tile.\n " ;
+            }
+
             if (aIndex == 0) {
                 if (this->mLayout == blas::Layout::ColMajor) {
                     return this->mLeadingDim;
@@ -324,7 +340,12 @@ namespace hcorepp {
                 }
             }
 
+#ifdef USE_CUDA
+
+#else
             delete[] Sigma;
+#endif
+
 
             T *UVptr = UV + ldcu * rk_new;
 
@@ -378,7 +399,6 @@ namespace hcorepp {
             this->GetTileSubMatrix(1).get().CopyDataArray(0, &UV[u_size], v_size);
 
             delete U_dataholder;
-
             delete uv_dataHolder;
             delete VTnew_dataHolder;
             delete Unew_dataHolder;

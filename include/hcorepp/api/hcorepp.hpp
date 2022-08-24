@@ -25,11 +25,15 @@ namespace hcorepp {
          * The scalar beta
          * @param[out] aC
          * Output tile.
+         * @param[in] aSvdHelpers
+         * SVD Helpers class reference.
          *
          */
         template<typename T>
         void
-        gemm(T aAlpha, operators::Tile<T> const &aA, operators::Tile<T> const &aB, T aBeta, operators::Tile<T> &aC);
+        gemm(T aAlpha, operators::Tile<T> const &aA, blas::Op const &aAOp, operators::Tile<T> const &aB,
+             blas::Op const &aBOp, T aBeta, operators::Tile<T> &aC, blas::Op const &aCOp,
+             helpers::SvdHelpers &aSvdHelpers);
 
     }
 
