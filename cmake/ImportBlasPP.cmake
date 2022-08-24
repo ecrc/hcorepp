@@ -9,7 +9,7 @@ if (NOT TARGET blaspp)
     elseif (EXISTS "${CMAKE_SOURCE_DIR}/blaspp/CMakeLists.txt")
         set(build_tests_save "${build_tests}")
         set(build_tests "false")
-
+        include(ImportBlas)
         add_subdirectory("blaspp")
 
         set(build_tests "${build_tests_save}")
@@ -22,7 +22,7 @@ if (NOT TARGET blaspp)
         # )
         set(build_tests_save "${build_tests}")
         set(build_tests "false")
-
+        include(ImportBlas)
         set(url "https://bitbucket.org/icl/blaspp")
         set(tag "2021.04.01")
         message(STATUS "Fetching BLAS++ ${tag} from ${url}")

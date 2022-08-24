@@ -9,7 +9,7 @@ if (NOT TARGET lapackpp)
     elseif (EXISTS "${CMAKE_SOURCE_DIR}/lapackpp/CMakeLists.txt")
         set(build_tests_save "${build_tests}")
         set(build_tests "false")
-
+        include(ImportLapack)
         add_subdirectory("lapackpp")
 
         set(build_tests "${build_tests_save}")
@@ -22,7 +22,7 @@ if (NOT TARGET lapackpp)
         # )
         set(build_tests_save "${build_tests}")
         set(build_tests "false")
-
+        include(ImportLapack)
         set(url "https://bitbucket.org/icl/lapackpp")
         set(tag "2021.04.00")
         message(STATUS "Fetching LAPACK++ ${tag} from ${url}")

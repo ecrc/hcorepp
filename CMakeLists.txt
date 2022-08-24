@@ -17,6 +17,7 @@ else ()
 endif ()
 
 # Add all dependencies for HCorePP
+include(ImportGFortran)
 include(ImportOpenMP)
 include(ImportBlasPP)
 include(ImportLapackPP)
