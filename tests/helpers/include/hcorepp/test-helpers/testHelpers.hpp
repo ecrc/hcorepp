@@ -24,6 +24,10 @@ namespace hcorepp {
         void
         validateOutput(T *pInput, int64_t aNumOfRows, int64_t aNumOfCols, T *pExpectedOutput);
 
+        template<typename T>
+        void
+        validateCompressedOutput(T *pInputA, int64_t aNumOfRowsA, int64_t aNumOfColsA, T *pExpectedOutputA,
+                                 T *pInputB, int64_t aNumOfRowsB, int64_t aNumOfColsB, T *pExpectedOutputB);
     }
 }
 #endif //HCOREPP_TEST_HELPERS_HPP

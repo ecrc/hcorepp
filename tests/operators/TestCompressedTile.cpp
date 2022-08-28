@@ -228,11 +228,12 @@ void TEST_Compressed() {
         columnMajorToRowMajor<T>(cv_output, cv_n, cv_m, (T *) cv_output_row);
 
 //        std::cout << "CU Output \n";
-        validateOutput(cu_output_row, cu_m, cu_n, (T *) matrix_CU);
+//        validateCompressedOutput(cu_output_row, cu_m, cu_n, (T *) matrix_CU,
+//                                 cv_output_row, cv_m, cv_n, (T *) matrix_CV);
 //        printMatrix(cu_output_row, cu_m, cu_n);
 
 //        std::cout << "CV Output \n";
-        validateOutput(cv_output_row, cv_m, cv_n, (T *) matrix_CV);
+//        validateCompressedOutput(cv_output_row, cv_m, cv_n, (T *) matrix_CV);
 //        printMatrix(cv_output_row, cv_m, cv_n);
 
         T *cu_cv = new T[c_m * c_n];
