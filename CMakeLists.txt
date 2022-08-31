@@ -7,6 +7,8 @@ project(hcorepp VERSION 1.0.0)
 option(USE_CUDA "Use Cuda, if available" false)
 option(HCOREPP_BUILD_TESTS "Option to enable building tests" ON)
 
+message("CMAKE MODULE PATHS")
+
 # Cmake Module Paths
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 # Toolchain selection
@@ -16,12 +18,16 @@ else ()
     include(toolchains/GccToolchain)
 endif ()
 
+message("dependencies include starting ")
 # Add all dependencies for HCorePP
 include(ImportGFortran)
+message("GFORTRAN done")
 include(ImportOpenMP)
+message("OPENMP DONE")
 include(ImportBlasPP)
+message("BLASPP DONE")
 include(ImportLapackPP)
-
+message("included all sublibraries")
 # Include directories for HCorePP
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/prerequisites)

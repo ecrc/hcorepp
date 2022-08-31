@@ -23,6 +23,9 @@ pipeline {
                             if [ "${host}" = "Vulture" ]; then
                                 module load gcc/7.2.0
                                 module load cmake/3.17.3
+			    else if ["${host} = "Stork"]; then 
+				module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+				module load gcc/10.2.0
                             else
                                 module load gcc/10.2.0
                                 module load cmake/3.19.2
@@ -30,7 +33,7 @@ pipeline {
                             ####################################################
                             # BLAS/LAPACK
                             ####################################################
-                            module load mkl/2020.0.166
+                            module load mkl/2020.0.166	
                          #   cd $HCORECPPDEVDIR
                             ./config.sh -t
                             ./clean_build.sh
