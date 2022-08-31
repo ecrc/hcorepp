@@ -146,6 +146,9 @@ namespace hcorepp {
                     lapack::MatrixType::General, m, Crk, CU, ldcu, U, Um);
             lapack::lacpy(
                     lapack::MatrixType::General, m, aARank, aTileA.GetData(), aLdAu, &U[m * Crk], Um);
+            for (int i = 0; i < aTileA.GetNumOfRows() * aTileA.GetNumOfCols(); i++) {
+                U[m * Crk + i] *= aAlpha;
+            }
 
             int64_t min_Um_Un = std::min(Um, Un);
 

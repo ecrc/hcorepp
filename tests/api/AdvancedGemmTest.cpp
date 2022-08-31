@@ -20,9 +20,8 @@ enum TILE_COMBINATION {
     CCC
 };
 static const char *tile_combination_strings[] =
-        {"DenseDenseDense", "DenseDenseCompressed", "DenseCompressedDense", "DenseCompressedCompressed",
-         "CompressedDenseDense", "CompressedDenseCompressed", "CompressedCompressedDense",
-         "CompressedCompressedCompressed"};
+        {"DDD", "DDC", "DCD", "DCC",
+         "CDD", "CDC", "CCD", "CCC"};
 
 using namespace std::chrono;
 using namespace hcorepp::operators;
@@ -45,7 +44,7 @@ void generate_dense_matrix(int64_t m, int64_t n, T *A, int64_t lda, int64_t *ise
 }
 
 template<typename T>
-void compress_dense_matrix(int64_t m, int64_t n, T *A, int64_t lda, T **UV, int64_t &rk,
+void compress_dense_matrix(int64_t m, int64_t n, const T *A, int64_t lda, T **UV, int64_t &rk,
                            blas::real_type<T> accuracy) {
     int16_t min_m_n = std::min(m, n);
 
@@ -53,11 +52,19 @@ void compress_dense_matrix(int64_t m, int64_t n, T *A, int64_t lda, T **UV, int6
     T *U = (T *) malloc(lda * min_m_n * sizeof(T));
     T *VT = (T *) malloc(min_m_n * n * sizeof(T));
 
-    lapack::gesvd(lapack::Job::SomeVec, lapack::Job::SomeVec, m, n, A, lda, Sigma, U, lda, VT, min_m_n);
+    T *a_temp = (T *) malloc(m * n * sizeof(T));
+    memcpy((void *) a_temp, (void *) A, m * n * sizeof(T));
+    lapack::gesvd(lapack::Job::SomeVec, lapack::Job::SomeVec, m, n, a_temp, lda, Sigma, U, lda, VT, min_m_n);
 
     rk = 0;
     while (Sigma[rk] >= accuracy && rk < min_m_n) {
         rk++;
+        if (rk < min_m_n) {
+            continue;
+        } else {
+            break;
+        }
+
     }
 
     // todo: more conservative max rank assumption, e.g., min_m_n / 3.
@@ -73,32 +80,45 @@ void compress_dense_matrix(int64_t m, int64_t n, T *A, int64_t lda, T **UV, int6
         blas::scal(n, Sigma[i], &VT[i], min_m_n);
     }
 
+//    std::cout << " lda = " << lda << " n = " << n << " rk = " << rk << " min_m_n = " << min_m_n << "\n";
     *UV = (T *) malloc((lda + n) * rk * sizeof(T));
 
-    memcpy((void *) (*UV), (void *) U, (lda + rk) * sizeof(T));
+    memcpy((void *) (*UV), (void *) U, (lda * rk) * sizeof(T));
 
     // copy first rk rows of VT; UV = VT(1:rk,:)
     // todo: assume column-major, what about row-major?
     lapack::lacpy(
             lapack::MatrixType::General, rk, n, VT, min_m_n, &(*UV)[lda * rk], rk);
 
+//    std::cout << "Inside compress dense matrix \n";
+//    for (int i = 0; i < (lda + n) * rk; i++) {
+//        std::cout << i << " = " << (*UV)[i] << "\n";
+//    }
     free(U);
     free(VT);
     free(Sigma);
-
+    free(a_temp);
 }
 
 template<typename T>
-void diff(T *Aref, int64_t lda_ref, T const *A, int64_t m, int64_t n) {
+void diff(T *Aref, int64_t lda_ref, T const *A, int64_t m, int64_t n, int64_t lda) {
     for (int64_t j = 0; j < n; ++j) {
         for (int64_t i = 0; i < m; ++i) {
-            Aref[i + j * lda_ref] -= A[i + j * lda_ref];
+//            std::cout << " A == " << A[i + j * lda] << "\n";
+//            std::cout << " AREF_BEFORE == " << Aref[i + j * lda_ref] << "\n";
+            Aref[i + j * lda_ref] -= A[i + j * lda];
+//            std::cout << " AREF_AFTER == " << Aref[i + j * lda_ref]
+//                      << " \t A == " << A[i + j * lda] << "\n";
+
         }
     }
 }
 
 template<typename T>
 void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
+
+
+//    std::cout << " ADVANCED_GEMM TEST starting \n \n \n \n ";
     using real_t = blas::real_type<T>;
 
     blas::Op transA = blas::Op::NoTrans;
@@ -112,12 +132,10 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
     int64_t k = n_elements;
     int64_t mode = 0;
     int64_t align = 1;
-    int64_t verbose = 0;
-    int64_t truncate_with_fixed_rk = 0;
 
     real_t tol = 3;
     real_t cond = 1;
-    real_t accuracy = 2.22045e-16;
+    real_t accuracy = 0.0001;
 
     int64_t Am = transA == blas::Op::NoTrans ? m : k;
     int64_t An = transA == blas::Op::NoTrans ? k : m;
@@ -142,27 +160,27 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
     generate_dense_matrix(Cm, Cn, Cdata, ldc, iseed, mode, cond);
 
 
-    std::cout << " INITIAL A DATA \n";
-    for (int i = 0; i < An; i++) {
-        for (int j = 0; j < Am; j++) {
-            int index = i * An + j;
-            printf(" A[%d][%d] = %lf \n", i, j, Adata[index]);
-        }
-    }
-    std::cout << " INITIAL B DATA \n";
-    for (int i = 0; i < Bn; i++) {
-        for (int j = 0; j < Bm; j++) {
-            int index = i * Bn + j;
-            printf(" B[%d][%d] = %lf \n", i, j, Bdata[index]);
-        }
-    }
-    std::cout << " INITIAL C DATA \n";
-    for (int i = 0; i < Cn; i++) {
-        for (int j = 0; j < Cm; j++) {
-            int index = i * Cn + j;
-            printf(" C[%d][%d] = %lf \n", i, j, Cdata[index]);
-        }
-    }
+//    std::cout << " INITIAL A DATA \n";
+//    for (int i = 0; i < An; i++) {
+//        for (int j = 0; j < Am; j++) {
+//            int index = i * An + j;
+//            printf(" A[%d][%d] = %lf \n", i, j, Adata[index]);
+//        }
+//    }
+//    std::cout << " INITIAL B DATA \n";
+//    for (int i = 0; i < Bn; i++) {
+//        for (int j = 0; j < Bm; j++) {
+//            int index = i * Bn + j;
+//            printf(" B[%d][%d] = %lf \n", i, j, Bdata[index]);
+//        }
+//    }
+//    std::cout << " INITIAL C DATA \n";
+//    for (int i = 0; i < Cn; i++) {
+//        for (int j = 0; j < Cm; j++) {
+//            int index = i * Cn + j;
+//            printf(" C[%d][%d] = %lf \n", i, j, Cdata[index]);
+//        }
+//    }
 
     lapack::Norm norm = lapack::Norm::Inf; // todo: variable norm type
     real_t Anorm = lapack::lange(norm, Am, An, Adata, lda);
@@ -195,14 +213,57 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
     }
     if (Combination == DCD || Combination == DCC || Combination == CCD || Combination == CCC) {
         compress_dense_matrix(Bm, Bn, Bdata, ldb, &BUVdata, Brk, accuracy);
+
         BUV = new CompressedTile<T>(Bm, Bn, BUVdata, ldb, Brk, accuracy, blas::Layout::ColMajor, transB,
                                     blas::Uplo::General);
+//        std::cout << " BUV DATA ==== \n";
+//        for (int i = 0; i < (Bm * Brk + Brk * Bn); i++) {
+//            std::cout << " element " << i << " == " << BUVdata[i] << "\n";
+//        }
+//
+//        std::cout << " BU DATA before gemm \n";
+//        for (int i = 0; i < Bm * BUV->GetTileRank(); i++) {
+//            std::cout << " BU[ " << i << "] = " << BUV->GetTileSubMatrix(0).get().GetData()[i] << "\n";
+//        }
+//        std::cout << " BU DATA before gemm \n";
+
         free(BUVdata);
     }
     if (Combination == DDC || Combination == DCC || Combination == CDC || Combination == CCC) {
+//        std::cout << " Before calling C Compress Dense Matrix \n";
+//        std::cout << "Cm = " << Cm << " Cn = " << Cn << " Ldc = " << ldc << " Crk = " << Crk << " Accuracy = "
+//                  << accuracy << "\n";
+//        std::cout << " C DATA ==== \n";
+//        for (int i = 0; i < Cm * Cn; i++) {
+//            std::cout << " element " << i << " == " << Cdata[i] << "\n";
+//        }
+
         compress_dense_matrix(Cm, Cn, Cdata, ldc, &CUVdata, Crk, accuracy);
+
+//        std::cout << " After calling C Compress Dense Matrix \n";
+//        std::cout << "Cm = " << Cm << " Cn = " << Cn << " Ldc = " << ldc << " Crk = " << Crk << " Accuracy = "
+//                  << accuracy << "\n";
+//
+//        std::cout << " CUV DATA ==== \n";
+//        for (int i = 0; i < (Cm * Crk + Crk * Cn); i++) {
+//            std::cout << " element " << i << " == " << CUVdata[i] << "\n";
+//        }
         CUV = new CompressedTile<T>(Cm, Cn, CUVdata, ldc, Crk, accuracy, blas::Layout::ColMajor, transC,
                                     blas::Uplo::General);
+//        std::cout << " Before Gemm: Cm : " << Cm << " Cn : " << Cn << " CUV>RK() : " << CUV->GetTileRank()
+//                  << " CUV>LDU() : " << CUV->GetTileSubMatrix(0).get().GetLeadingDim()
+//                  << " CUV>LDV() : " << CUV->GetTileSubMatrix(1).get().GetLeadingDim() << " LDC : " << ldc << " \n";
+//
+//        std::cout << " CU DATA before gemm \n";
+//        for (int i = 0; i < Cm * CUV->GetTileRank(); i++) {
+//            std::cout << " CU[ " << i << "] = " << CUV->GetTileSubMatrix(0).get().GetData()[i] << "\n";
+//        }
+//
+//        std::cout << " CV DATA before gemm \n";
+//        for (int i = 0; i < Cn * CUV->GetTileRank(); i++) {
+//            std::cout << " CV[ " << i << "] = " << CUV->GetTileSubMatrix(1).get().GetData()[i] << "\n";
+//        }
+//
         free(CUVdata);
     }
 
@@ -289,8 +350,30 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
     {
         std::chrono::time_point<std::chrono::system_clock> ref_time_start = std::chrono::system_clock::now();
         {
+
+//            for (int i = 0; i < m * n; i++) {
+//                std::cout << " before blas " << i << " =  " << Cref[i] << "\n";
+//            }
+//
+//            std::cout << " m = " << m << "  n = " << n << "  k = " << k << "  alpha = " << alpha << "  lda = " << lda
+//                      << " ldb = " << ldb << " beta = " << beta << " ldcref = " << ldcref << "\n";
+//
+//            for (int i = 0; i < ldb * Bn; i++) {
+//                std::cout << " B element " << i << " = " << B.GetTileSubMatrix(0).get().GetData()[i] << "\n";
+//
+//            }
+//
+//            for (int i = 0; i < lda * An; i++) {
+//                std::cout << " A element " << i << " = " << A.GetTileSubMatrix(0).get().GetData()[i] << "\n";
+//
+//            }
+
             blas::gemm(blas::Layout::ColMajor, transA, transB, m, n, k, alpha, Adata, lda, Bdata, ldb, beta, Cref,
                        ldcref);
+
+//            for (int i = 0; i < m * n; i++) {
+//                std::cout << " after blas " << i << " =  " << Cref[i] << "\n";
+//            }
         }
         std::chrono::time_point<std::chrono::system_clock> ref_time_end = std::chrono::system_clock::now();
 
@@ -298,71 +381,74 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
         ref_elapsed_time = ref_elapsed_seconds.count();
         double ref_gflops = blas::Gflop<T>::gemm(m, n, k);
 
+//        std::cout << " ref_gflops = " << ref_gflops << " ref_elapsed_time = " << ref_elapsed_time << "\n";
         ref_flops = ref_gflops / ref_elapsed_time;
 
         if (Combination == DCC || Combination == CDC || Combination == CCC) {
-            // C = CU * CV.'
+
             blas::gemm(blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
                        Cm, Cn, CUV->GetTileRank(), 1.0, CUV->GetTileSubMatrix(0).get().GetData(),
                        CUV->GetTileSubMatrix(0).get().GetLeadingDim(), CUV->GetTileSubMatrix(1).get().GetData(),
                        CUV->GetTileSubMatrix(1).get().GetLeadingDim(), 0.0, Cdata, ldc);
-        }
 
-        if (Combination == DDC || Combination == DCC || Combination == CDC || Combination == CCC) {
-            C_output = (T *) malloc(
-                    CUV->GetTileSubMatrix(0).get().GetNumOfRows() * CUV->GetTileSubMatrix(1).get().GetNumOfCols() *
-                    sizeof(T));
-            std::cout << "SIZEOF C_OUTPUT == "
-                      << CUV->GetTileSubMatrix(0).get().GetNumOfRows() * CUV->GetTileSubMatrix(1).get().GetNumOfCols()
-                      << "\n";
+            C_output = (T *) malloc(Cm * Cn * sizeof(T));
 
-            std::cout << "SIZEOF CREF == " << ldcref * n << "\n";
+            memcpy((void *) C_output, (void *) Cdata, Cm * Cn * sizeof(T));
+            diff(Cref, ldcref, C_output, Cm, Cn, ldc);
 
+        } else if (Combination == DDC) {
+            auto cu_m_new = CUV->GetTileSubMatrix(0).get().GetNumOfRows();
+            auto cu_n_new = CUV->GetTileSubMatrix(0).get().GetNumOfCols();
+            auto cv_m_new = CUV->GetTileSubMatrix(1).get().GetNumOfRows();
+            auto cv_n_new = CUV->GetTileSubMatrix(1).get().GetNumOfCols();
+
+            C_output = (T *) malloc((cu_m_new * cu_n_new + cv_m_new * cv_n_new) * sizeof(T));
             memcpy((void *) C_output, (void *) CUV->GetTileSubMatrix(0).get().GetData(),
-                   CUV->GetTileSubMatrix(0).get().GetNumOfRows() * CUV->GetTileSubMatrix(0).get().GetNumOfCols() *
-                   sizeof(T));
-            memcpy((void *) &C_output[CUV->GetTileSubMatrix(0).get().GetNumOfRows() *
-                                      CUV->GetTileSubMatrix(0).get().GetNumOfCols()],
-                   (void *) CUV->GetTileSubMatrix(1).get().GetData(),
-                   CUV->GetTileSubMatrix(1).get().GetNumOfRows() * CUV->GetTileSubMatrix(1).get().GetNumOfCols() *
-                   sizeof(T));
-            diff(Cref, ldcref, C_output, CUV->GetTileSubMatrix(0).get().GetNumOfRows(),
-                 CUV->GetTileSubMatrix(1).get().GetNumOfCols());
+                   cu_m_new * cu_n_new * sizeof(T));
+
+            memcpy((void *) &C_output[cu_m_new * cu_n_new], (void *) CUV->GetTileSubMatrix(1).get().GetData(),
+                   cv_m_new * cv_n_new * sizeof(T));
+
+            diff(Cref, ldcref, C_output, Cm, Cn, ldc);
 
         } else {
-            C_output = (T *) malloc(
-                    C.GetTileSubMatrix(0).get().GetNumOfRows() * C.GetTileSubMatrix(0).get().GetNumOfCols() *
-                    sizeof(T));
+            C_output = (T *) malloc(Cm * Cn * sizeof(T));
             memcpy((void *) C_output, (void *) C.GetTileSubMatrix(0).get().GetData(),
-                   C.GetTileSubMatrix(0).get().GetNumOfRows() * C.GetTileSubMatrix(0).get().GetNumOfCols() *
-                   sizeof(T));
-            diff(Cref, ldcref, C_output, C.GetTileSubMatrix(0).get().GetNumOfRows(),
-                 C.GetTileSubMatrix(0).get().GetNumOfCols());
+                   Cm * Cn * sizeof(T));
+            diff(Cref, ldcref, C_output, Cm, Cn, ldc);
 
         }
 
+//        for (int i = 0; i < m * n; i++) {
+//            std::cout << i << "  = " << Cref[i] << "\n";
+//        }
         error = lapack::lange(norm, m, n, Cref, ldcref)
                 / (sqrt(real_t(k) + 2) * std::abs(alpha) *
                    Anorm * Bnorm + 2 * std::abs(beta) * Cnorm);
+
+//        std::cout << " Lange : " << lapack::lange(norm, m, n, Cref, ldcref) << " den : "
+//                  << sqrt(real_t(k) + 2) * std::abs(alpha) *
+//                     Anorm * Bnorm + 2 * std::abs(beta) * Cnorm << "\n";
+//        std::cout << " errorrr ===   " << error << "\n";
 
         if (blas::is_complex<T>::value) {
             error /= 2 * sqrt(2);
         }
         pass = (error < tol * accuracy);
-//        std::cout << " OKAYYYY ????? " << okay << "\n";
 
+//        std::cout << " pass  " << pass << "   error : " << error << " Tolerance  :   " << tol << "   Accuracy :  "
+//                  << accuracy << "\n";
     }
 
-    std::cout << " OUTPUT CDATA \n";
-    for (int i = 0; i < Cn; i++) {
-        for (int j = 0; j < Cm; j++) {
-            int index = i * Cn + j;
-            printf(" C[%d][%d] = %lf \n", i, j, C_output[index]);
-        }
-    }
+//    std::cout << " OUTPUT CDATA \n";
+//    for (int i = 0; i < Cn; i++) {
+//        for (int j = 0; j < Cm; j++) {
+//            int index = i * Cn + j;
+//            printf(" C[%d][%d] = %lf \n", i, j, C_output[index]);
+//        }
+//    }
 
     delete[]Cref;
-    std::cout << "HELLO WORLD \n";
     delete[]Adata;
     delete[]Bdata;
     delete[]Cdata;
@@ -377,10 +463,6 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
     }
     free(C_output);
 
-
-    std::cout
-            << "GemmType \t DataType \t transA \t transB \t transC \t m \t n \t k \t alpha \t beta \t time(s) \t gflops \t ref_time(s) \t ref_gflops \t error \t status \n";
-
     std::cout << tile_combination_strings[Combination] << " \t " << typeid(T).name() << " \t " << op2str(transA)
               << " \t " << op2str(transB) << " \t " << op2str(transC) << "\t" << n_elements << " \t " << n_elements
               << " \t " << n_elements << " \t " << alpha << " \t " << beta << " \t " << elapsed_time << " \t " << gflops
@@ -391,12 +473,14 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
 }
 
 
-TEMPLATE_TEST_CASE("AdvancedGemmTest", "[ADVANCEDGEMMTESTING]", double) {
-    std::vector<TILE_COMBINATION> combinations = {CDC};//, DDC, DCD, DCC, CDD, CDC, CCD, CCC};
+TEMPLATE_TEST_CASE("AdvancedGemmTest", "[ADVANCEDGEMMTESTING]", float, double) {
+    std::vector<blas::Op> blas_ops = {blas::Op::NoTrans};
+    std::cout
+            << "Gemm \t DataType \t opA \t opB \t opC \t m \t n \t k \t alpha \t beta \t time(s) \t gflops \t ref_time(s) \t ref_gflops \t error \t status \n";
 
-    //    std::vector<blas::Op> blas_ops = {blas::Op::NoTrans};
+    std::vector<TILE_COMBINATION> combinations = {DDD, DDC, DCD, DCC, CDD, CDC, CCD, CCC};
 
-    std::vector<int64_t> n_elements = {3};//, 200, 300, 400, 500};
+    std::vector<int64_t> n_elements = {100, 200, 300, 400, 500};
 
     for (auto C: combinations) {
         for (auto N: n_elements) {
