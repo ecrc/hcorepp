@@ -8,6 +8,7 @@
 namespace hcorepp {
     namespace test_helpers {
 
+
         template<typename T>
         void
         rowMajorToColumnMajor(T *pInputArray, int64_t aNumOfCols, int64_t aNumOfRows, T *pOutputArray);
@@ -28,6 +29,7 @@ namespace hcorepp {
         void
         validateCompressedOutput(T *pInputA, int64_t aNumOfRowsA, int64_t aNumOfColsA, T *pExpectedOutputA,
                                  T *pInputB, int64_t aNumOfRowsB, int64_t aNumOfColsB, T *pExpectedOutputB);
+
     }
 }
 #endif //HCOREPP_TEST_HELPERS_HPP

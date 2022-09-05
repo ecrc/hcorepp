@@ -1,38 +1,34 @@
-#include <libraries/catch/catch.hpp>
-#include <iostream>
-#include "hcorepp/helpers/lapack_wrappers.hpp"
+#include <cstring>
+#include <chrono>
+#include "blas/flops.hh"
 #include "lapack.hh"
 #include <hcorepp/api/hcorepp.hpp>
 #include <hcorepp/operators/concrete/Dense.hpp>
-#include <cstdlib>
-#include <cstring>
-#include "blas/flops.hh"
 #include <hcorepp/helpers/MatrixHelpers.hpp>
+#include <iostream>
 
 using namespace std::chrono;
 using namespace hcorepp::operators;
 using namespace hcorepp::helpers::matrixhelpers;
 
 template<typename T>
-void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
+void run(blas::Op aTransA, blas::Op aTransB, blas::Op aTransC, T aAlpha, T aBeta, int64_t aM, int64_t aN, int64_t aK,
+         T aTol, T aAcc, int64_t aMode, int64_t aAlignment, TILE_COMBINATION aCombination) {
+    blas::Op transA = aTransA;
+    blas::Op transB = aTransB;
+    blas::Op transC = aTransC;
+    T alpha = aAlpha;
+    T beta = aBeta;
 
-    using real_t = blas::real_type<T>;
+    int64_t m = aM;
+    int64_t n = aN;
+    int64_t k = aK;
 
-    blas::Op transA = blas::Op::NoTrans;
-    blas::Op transB = blas::Op::NoTrans;
-    blas::Op transC = blas::Op::NoTrans;
-    T alpha = 3.5;
-    T beta = 2.5;
-
-    int64_t m = n_elements;
-    int64_t n = n_elements;
-    int64_t k = n_elements;
-    int64_t mode = 0;
-    int64_t align = 1;
-
-    real_t tol = 3;
-    real_t cond = 1;
-    real_t accuracy = 0.0001;
+    blas::real_type<T> tol = 3;
+    blas::real_type<T> cond = 1;
+    blas::real_type<T> accuracy = 0.0001;
+    int64_t mode = aMode;
+    int64_t align = aAlignment;
 
     int64_t Am = transA == blas::Op::NoTrans ? m : k;
     int64_t An = transA == blas::Op::NoTrans ? k : m;
@@ -57,9 +53,9 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
     generate_dense_matrix(Cm, Cn, Cdata, ldc, iseed, mode, cond);
 
     lapack::Norm norm = lapack::Norm::Inf; // todo: variable norm type
-    real_t Anorm = lapack::lange(norm, Am, An, Adata, lda);
-    real_t Bnorm = lapack::lange(norm, Bm, Bn, Bdata, ldb);
-    real_t Cnorm = lapack::lange(norm, Cm, Cn, Cdata, ldc);
+    blas::real_type<T> Anorm = lapack::lange(norm, Am, An, Adata, lda);
+    blas::real_type<T> Bnorm = lapack::lange(norm, Bm, Bn, Bdata, ldb);
+    blas::real_type<T> Cnorm = lapack::lange(norm, Cm, Cn, Cdata, ldc);
 
     DenseTile<T> A(Am, An, Adata, lda, blas::Layout::ColMajor, transA, blas::Uplo::General);
     DenseTile<T> B(Bm, Bn, Bdata, ldb, blas::Layout::ColMajor, transB, blas::Uplo::General);
@@ -72,9 +68,6 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
     memcpy((void *) Cref, (void *) C.GetTileSubMatrix(0).get().GetData(), Cm * Cn * sizeof(T));
 
     int64_t Ark, Brk, Crk;
-    Ark = 0;
-    Brk = 0;
-    Crk = 0;
     T *AUVdata;
     T *BUVdata;
     T *CUVdata;
@@ -82,27 +75,22 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
     CompressedTile<T> *AUV;
     CompressedTile<T> *BUV;
     CompressedTile<T> *CUV;
-    if (Combination == CDD || Combination == CDC || Combination == CCD || Combination == CCC) {
+    if (aCombination == CDD || aCombination == CDC || aCombination == CCD || aCombination == CCC) {
         compress_dense_matrix(Am, An, Adata, lda, &AUVdata, Ark, accuracy);
         AUV = new CompressedTile<T>(Am, An, AUVdata, lda, Ark, accuracy, blas::Layout::ColMajor, transA,
                                     blas::Uplo::General);
         free(AUVdata);
     }
-    if (Combination == DCD || Combination == DCC || Combination == CCD || Combination == CCC) {
+    if (aCombination == DCD || aCombination == DCC || aCombination == CCD || aCombination == CCC) {
         compress_dense_matrix(Bm, Bn, Bdata, ldb, &BUVdata, Brk, accuracy);
-
         BUV = new CompressedTile<T>(Bm, Bn, BUVdata, ldb, Brk, accuracy, blas::Layout::ColMajor, transB,
                                     blas::Uplo::General);
-
         free(BUVdata);
     }
-    if (Combination == DDC || Combination == DCC || Combination == CDC || Combination == CCC) {
-
+    if (aCombination == DDC || aCombination == DCC || aCombination == CDC || aCombination == CCC) {
         compress_dense_matrix(Cm, Cn, Cdata, ldc, &CUVdata, Crk, accuracy);
-
         CUV = new CompressedTile<T>(Cm, Cn, CUVdata, ldc, Crk, accuracy, blas::Layout::ColMajor, transC,
                                     blas::Uplo::General);
-
         free(CUVdata);
     }
 
@@ -112,7 +100,7 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
     start = std::chrono::system_clock::now();
 
     hcorepp::helpers::SvdHelpers helpers;
-    switch (Combination) {
+    switch (aCombination) {
         case DDD:
             hcorepp::api::gemm(alpha, A, transA, B, transB, beta, C, transC, helpers);
             gflops = blas::Gflop<T>::gemm(m, n, k);
@@ -195,7 +183,7 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
 
         ref_flops = ref_gflops / ref_elapsed_time;
 
-        if (Combination == DCC || Combination == CDC || Combination == CCC) {
+        if (aCombination == DCC || aCombination == CDC || aCombination == CCC) {
 
             blas::gemm(blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
                        Cm, Cn, CUV->GetTileRank(), 1.0, CUV->GetTileSubMatrix(0).get().GetData(),
@@ -207,7 +195,7 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
             memcpy((void *) C_output, (void *) Cdata, Cm * Cn * sizeof(T));
             diff(Cref, ldcref, C_output, Cm, Cn, ldc);
 
-        } else if (Combination == DDC) {
+        } else if (aCombination == DDC) {
             auto cu_m_new = CUV->GetTileSubMatrix(0).get().GetNumOfRows();
             auto cu_n_new = CUV->GetTileSubMatrix(0).get().GetNumOfCols();
             auto cv_m_new = CUV->GetTileSubMatrix(1).get().GetNumOfRows();
@@ -231,7 +219,7 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
         }
 
         error = lapack::lange(norm, m, n, Cref, ldcref)
-                / (sqrt(real_t(k) + 2) * std::abs(alpha) *
+                / (sqrt(blas::real_type<T>(k) + 2) * std::abs(alpha) *
                    Anorm * Bnorm + 2 * std::abs(beta) * Cnorm);
 
         if (blas::is_complex<T>::value) {
@@ -245,40 +233,46 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
     delete[]Adata;
     delete[]Bdata;
     delete[]Cdata;
-    if (Combination == CDD || Combination == CDC || Combination == CCD || Combination == CCC) {
+    if (aCombination == CDD || aCombination == CDC || aCombination == CCD || aCombination == CCC) {
         delete AUV;
     }
-    if (Combination == DCD || Combination == DCC || Combination == CCD || Combination == CCC) {
+    if (aCombination == DCD || aCombination == DCC || aCombination == CCD || aCombination == CCC) {
         delete BUV;
     }
-    if (Combination == DDC || Combination == DCC || Combination == CDC || Combination == CCC) {
+    if (aCombination == DDC || aCombination == DCC || aCombination == CDC || aCombination == CCC) {
         delete CUV;
     }
     free(C_output);
 
-    printf("|%-5s|%-10s|%-10s|%-10s|%-10s|%-5ld|%-5ld|%-5ld|%-8.3f|%-8.3f|%-15f|%-15f|%-15f|%-15f|%-15e|%-5ld|%-5ld|%-5ld|%-10s|\n",
-           tile_combination_strings[Combination], typeid(T).name(),
-           op2str(transA), op2str(transB), op2str(transC), m, n, k, alpha,
-           beta, elapsed_time, gflops, ref_elapsed_time, ref_flops, error, Ark, Brk, Crk, ((pass) ? "Pass" : "Fail"));
-
-
-}
-
-TEMPLATE_TEST_CASE("AdvancedGemmTest", "[ADVANCEDGEMMTESTING]", float, double) {
-    std::vector<blas::Op> blas_ops = {blas::Op::NoTrans};
-    printf("%s\n",std::string(196,'=').c_str());
+    printf("%s\n", std::string(196, '=').c_str());
     printf("|%-5s|%-10s|%-10s|%-10s|%-10s|%-5s|%-5s|%-5s|%-8s|%-8s|%-15s|%-15s|%-15s|%-15s|%-15s|%-5s|%-5s|%-5s|%-10s|\n",
            "Gemm", "Datatype", "opA", "opB", "opC", "m", "n", "k", "alpha",
            "beta", "time(s)", "gflops", "ref_time(s)", "ref_gflops", "error", "Ark", "Brk", "Crk", "status");
-    printf("%s\n",std::string(196,'=').c_str());
-    std::vector<TILE_COMBINATION> combinations = {DDD, DDC, DCD, DCC, CDD, CDC, CCD, CCC};
+    printf("%s\n", std::string(196, '=').c_str());
+    printf("|%-5s|%-10s|%-10s|%-10s|%-10s|%-5ld|%-5ld|%-5ld|%-8.3f|%-8.3f|%-15f|%-15f|%-15f|%-15f|%-15e|%-5ld|%-5ld|%-5ld|%-10s|\n",
+           tile_combination_strings[aCombination], typeid(T).name(),
+           op2str(transA), op2str(transB), op2str(transC), m, n, k, alpha,
+           beta, elapsed_time, gflops, ref_elapsed_time, ref_flops, error, Ark, Brk, Crk, ((pass) ? "Pass" : "Fail"));
 
-    std::vector<int64_t> n_elements = {100, 200, 300, 400, 500};
+}
 
-    for (auto C: combinations) {
-        for (auto N: n_elements) {
-            TEST_GEMM_ADVANCED<TestType>(C, N);
-        }
-    }
-    printf("%s\n",std::string(196,'=').c_str());
+int main(int argc, char *argv[]) {
+    int64_t m = 500;
+    int64_t n = 500;
+    int64_t k = 500;
+    double alpha = 3.5;
+    double beta = 2.5;
+    blas::real_type<double> accuracy = 0.0001;
+    blas::Op transA = blas::Op::NoTrans;
+    blas::Op transB = blas::Op::NoTrans;
+    blas::Op transC = blas::Op::NoTrans;
+    int64_t mode = 0;
+    int64_t align = 1;
+    blas::real_type<double> cond = 1;
+    blas::real_type<double> tol = 3;
+
+    TILE_COMBINATION combination = CCC;
+
+    run(transA, transB, transC, alpha, beta, m, n, k, tol,
+        accuracy, mode, align, combination);
 }

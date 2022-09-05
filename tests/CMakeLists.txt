@@ -1,4 +1,4 @@
-set(HCOREPP_TESTFILES ${CMAKE_CURRENT_SOURCE_DIR}/test_main.cpp helpers/include/hcorepp/test-helpers/lapack_wrappers.hpp)
+set(HCOREPP_TESTFILES ${CMAKE_CURRENT_SOURCE_DIR}/test_main.cpp)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/helpers/include)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/helpers/src)

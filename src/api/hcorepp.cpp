@@ -66,16 +66,6 @@ namespace hcorepp {
                 auto b_data = b_data_holders[b_idx];
                 auto b_op = b_operation;
 
-//                std::cout << " INSIDE WHILW LOOP \n \n ";
-//
-//                std::cout << " input to temporary Gemm \n";
-//                for (int i = 0; i < a_data.get().GetNumOfRows() * a_data.get().GetNumOfCols(); i++) {
-//                    std::cout << " A TEMPTILE[ " << i << "] = " << a_data.get().GetData()[i] << "\n";
-//                }
-//                for (int i = 0; i < b_data.get().GetNumOfRows() * b_data.get().GetNumOfCols(); i++) {
-//                    std::cout << " B TEMPTILE[ " << i << "] = " << b_data.get().GetData()[i] << "\n";
-//                }
-
                 temp_tiles.emplace_back(new DenseTile<T>(a_data.get().GetNumOfRows(), b_data.get().GetNumOfCols(),
                                                          nullptr, a_data.get().GetLeadingDim()));
 
@@ -83,11 +73,6 @@ namespace hcorepp {
 
                 tile->Gemm(alpha_local, a_data, a_op, b_data, b_op, beta_local, a_data.get().GetLeadingDim(),
                            std::min(b_data.get().GetNumOfRows(), b_data.get().GetNumOfCols()), aSvdHelpers);
-
-//                std::cout << " output of temporary Gemm \n";
-//                for (int i = 0; i < a_data.get().GetNumOfRows() * b_data.get().GetNumOfCols(); i++) {
-//                    std::cout << " TEMPTILE[ " << i << "] = " << tile->GetTileSubMatrix(0).get().GetData()[i] << "\n";
-//                }
 
                 if (number_of_temporary_dense_gemms == 2) {
                     auto a_data_holder = (tile->GetTileSubMatrix(0));
@@ -146,27 +131,6 @@ namespace hcorepp {
                     auto b_data = b_data_holders[b_idx];
 
                     int64_t c_rank = a_data.get().GetNumOfCols();
-
-
-//                    for (int i = 0; i < a_data.get().GetNumOfRows() * a_data.get().GetNumOfCols(); i++) {
-//                        std::cout << " A[ " << i << "] = " << a_data.get().GetData()[i] << "\n";
-//                    }
-
-//                    for (int i = 0; i < a_data.get().GetNumOfRows() * a_data.get().GetNumOfCols(); i++) {
-//                        a_data.get().GetData()[i] *= aAlpha;
-//                    }
-
-//                    std::cout << " Before Last Gemm call \n \n ";
-//
-//                    std::cout << " A DATA Before Last Gemm call \n";
-//                    for (int i = 0; i < a_data.get().GetNumOfRows() * a_data.get().GetNumOfCols(); i++) {
-//                        std::cout << " A[ " << i << "] = " << a_data.get().GetData()[i] << "\n";
-//                    }
-//
-//                    std::cout << " B DATA Before Last Gemm call \n";
-//                    for (int i = 0; i < b_data.get().GetNumOfRows() * b_data.get().GetNumOfCols(); i++) {
-//                        std::cout << " B[ " << i << "] = " << b_data.get().GetData()[i] << "\n";
-//                    }
 
                     aC.Gemm(aAlpha, a_data, a_operation, b_data, b_operation, aBeta, a_data.get().GetLeadingDim(),
                             c_rank, aSvdHelpers);

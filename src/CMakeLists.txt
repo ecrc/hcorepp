@@ -1,6 +1,7 @@
 add_subdirectory(api)
 add_subdirectory(data-units)
 add_subdirectory(operators)
+add_subdirectory(helpers)
 
 set(LIB_NAME ${PROJECT_NAME})
 

@@ -44,3 +44,5 @@ if (${HCOREPP_BUILD_TESTS})
             COMMAND hcorepp-tests
             )
 endif ()
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/examples)

@@ -1,10 +1,6 @@
 #include <iostream>
-//#include <blas/util.hh>
-//#include <vector>
-#include <lapack/wrappers.hh>
-#include <hcorepp/test-helpers/testHelpers.hpp>
-#include <hcorepp/test-helpers/lapack_wrappers.hpp>
 #include <libraries/catch/catch.hpp>
+#include <cstring>
 
 namespace hcorepp {
     namespace test_helpers {
@@ -102,22 +98,12 @@ namespace hcorepp {
             bool sign_reversed = false;
 
             if (pInputA[0] == Approx(pExpectedOutputA[0]).epsilon(1e-2)) {
-//                if (pInputB[0] == Approx(pExpectedOutputB[0]).epsilon(1e-2)) {
-                    sign_reversed = false;
-//                }
+                sign_reversed = false;
             } else if (pInputA[0] == Approx(-pExpectedOutputA[0]).epsilon(1e-2)) {
-//                if (pInputB[0] == Approx(-pExpectedOutputB[0]).epsilon(1e-2)) {
-                    sign_reversed = true;
-//                }
-//            } else {
-//                REQUIRE((pInputA[0] == Approx(pExpectedOutputA[0]).epsilon(1e-2)));
+                sign_reversed = true;
             }
-//
-//            std::cout << " INPUTA : " << pInputA[0] << " OUTPUTA : " << pExpectedOutputA[0] << "\n";
-//            std::cout << " INPUTB : " << pInputB[0] << " OUTPUTB : " << pExpectedOutputB[0] << "\n";
+
             for (int i = 0; i < aNumOfRowsA * aNumOfColsA; i++) {
-                std::cout << " INPUTA : " << pInputA[i] << " OUTPUTA : " << pExpectedOutputA[i] << "\n";
-                std::cout << " INPUTB : " << pInputB[i] << " OUTPUTB : " << pExpectedOutputB[i] << "\n";
                 if (sign_reversed) {
                     REQUIRE(pInputA[i] == Approx(-pExpectedOutputA[i]).epsilon(1e-2));
                 } else {
@@ -126,7 +112,6 @@ namespace hcorepp {
             }
 
             for (int i = 0; i < aNumOfRowsB * aNumOfColsB; i++) {
-                std::cout << " INPUTB : " << pInputB[i] << " OUTPUTB : " << pExpectedOutputB[i] << "\n";
                 if (sign_reversed) {
                     REQUIRE(pInputB[i] == Approx(-pExpectedOutputB[i]).epsilon(1e-2));
                 } else {
@@ -144,6 +129,5 @@ namespace hcorepp {
         void
         validateCompressedOutput(double *pInputA, int64_t aNumOfRowsA, int64_t aNumOfColsA, double *pExpectedOutputA,
                                  double *pInputB, int64_t aNumOfRowsB, int64_t aNumOfColsB, double *pExpectedOutputB);
-
     }
 }
