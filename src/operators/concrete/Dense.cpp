@@ -1,7 +1,7 @@
-
-#include <hcorepp/operators/concrete/Dense.hpp>
 #include <functional>
 #include <iostream>
+#include <hcorepp/operators/concrete/Dense.hpp>
+#include <hcorepp/kernels/kernels.hpp>
 
 using namespace hcorepp::dataunits;
 using namespace hcorepp::helpers;
@@ -63,12 +63,12 @@ namespace hcorepp {
              * And C Layout is Column major.
              */
 
-            blas::gemm(this->layout(), aTileAOp, aTileBOp,
-                       this->mNumOfRows, this->mNumOfCols, aTileA.GetNumOfCols(),
-                       aAlpha, (const T *) aTileA.GetData(), aTileA.GetLeadingDim(),
-                       (const T *) aTileB.GetData(), aTileB.GetLeadingDim(),
-                       aBeta, this->GetTileSubMatrix(0).get().GetData(),
-                       this->GetTileSubMatrix(0).get().GetLeadingDim());
+            hcorepp::kernels::Gemm<T>(this->layout(), aTileAOp, aTileBOp,
+                          this->mNumOfRows, this->mNumOfCols, aTileA.GetNumOfCols(),
+                          aAlpha, (const T *) aTileA.GetData(), aTileA.GetLeadingDim(),
+                          (const T *) aTileB.GetData(), aTileB.GetLeadingDim(),
+                          aBeta, this->GetTileSubMatrix(0).get().GetData(),
+                          this->GetTileSubMatrix(0).get().GetLeadingDim());
 
         }
 

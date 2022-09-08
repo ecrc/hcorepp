@@ -68,6 +68,10 @@ void run(blas::Op aTransA, blas::Op aTransB, blas::Op aTransC, T aAlpha, T aBeta
     memcpy((void *) Cref, (void *) C.GetTileSubMatrix(0).get().GetData(), Cm * Cn * sizeof(T));
 
     int64_t Ark, Brk, Crk;
+    Ark = 0;
+    Brk = 0;
+    Crk = 0;
+
     T *AUVdata;
     T *BUVdata;
     T *CUVdata;

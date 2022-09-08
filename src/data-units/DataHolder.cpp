@@ -1,8 +1,9 @@
 
-#include <hcorepp/data-units/DataHolder.hpp>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <hcorepp/data-units/DataHolder.hpp>
+#include <hcorepp/kernels/kernels.hpp>
 
 namespace hcorepp {
     namespace dataunits {
@@ -13,20 +14,16 @@ namespace hcorepp {
             mNumOfCols = aCols;
             mLeadingDimension = aLeadingDim;
 #ifdef USE_CUDA
-//            cuda_malloc(&mDataArray, mNumofRows*mNumOfCols*sizeof(T));
-//            if(apData!= nullptr) {
-//                cuda_memcpy(mDataArray, apData, mNumOfRows * mNumOfCols * sizeof(T), cudaMemcpyHostToDevice);
-//            } else {
-//                // add cudamemset.
-//            }
+            //            cuda_malloc(&mDataArray, mNumofRows*mNumOfCols*sizeof(T));
+            //            if(apData!= nullptr) {
+            //                cuda_memcpy(mDataArray, apData, mNumOfRows * mNumOfCols * sizeof(T), cudaMemcpyHostToDevice);
+            //            } else {
+            //                // add cudamemset.
+            //            }
 #else
-            mDataArray = (T *) malloc(mNumOfRows * mNumOfCols * sizeof(T));
-            if (apData != nullptr) {
-                memcpy(mDataArray, apData, mNumOfRows * mNumOfCols * sizeof(T));
-            } else {
-                memset((void *) mDataArray, 0, mNumOfRows * mNumOfCols * sizeof(T));
-            }
+
 #endif
+            hcorepp::kernels::AllocateArray<T>(&mDataArray, mNumOfRows, mNumOfCols, apData);
         }
 
         template<typename T>
@@ -34,8 +31,8 @@ namespace hcorepp {
 #ifdef USE_CUDA
             cuda_free(mDataArray);
 #else
-            free(mDataArray);
 #endif
+            hcorepp::kernels::DestroyArray<T>(mDataArray);
         }
 
         template<typename T>
@@ -70,10 +67,11 @@ namespace hcorepp {
                 return;
             }
 #ifdef USE_CUDA
-//            cuda_memcpy(&mDataArray[aStIdx], aSrcDataArray, aNumOfElements * sizeof(T), cudaMemcpyHostToDevice);
+            //            cuda_memcpy(&mDataArray[aStIdx], aSrcDataArray, aNumOfElements * sizeof(T), cudaMemcpyHostToDevice);
 #else
-            memcpy(&mDataArray[aStIdx], aSrcDataArray, aNumOfElements * sizeof(T));
+
 #endif
+            hcorepp::kernels::Memcpy<T>(&mDataArray[aStIdx], aSrcDataArray, aNumOfElements);
 
         }
 
@@ -83,20 +81,18 @@ namespace hcorepp {
             mNumOfCols = aCols;
             mLeadingDimension = aLeadingDim;
 #ifdef USE_CUDA
-            cuda_malloc(&mDataArray, mNumofRows*mNumOfCols*sizeof(T));
-            if(apData!= nullptr) {
-                cuda_memcpy(mDataArray, apData, mNumOfRows * mNumOfCols * sizeof(T), cudaMemcpyHostToDevice);
-            } else {
-                // add cudamemset.
-            }
+            //            cuda_malloc(&mDataArray, mNumofRows*mNumOfCols*sizeof(T));
+            //            if(apData!= nullptr) {
+            //                cuda_memcpy(mDataArray, apData, mNumOfRows * mNumOfCols * sizeof(T), cudaMemcpyHostToDevice);
+            //            } else {
+            //                // add cudamemset.
+            //            }
 #else
-            if(mDataArray != nullptr ) {
-                free(mDataArray);
-            }
 
-            mDataArray = (T *) malloc(mNumOfRows * mNumOfCols * sizeof(T));
-            memset((void *) mDataArray, 0, mNumOfRows * mNumOfCols * sizeof(T));
 #endif
+            hcorepp::kernels::DestroyArray(mDataArray);
+
+            hcorepp::kernels::AllocateArray(&mDataArray, mNumOfRows, mNumOfCols);
         }
 
 

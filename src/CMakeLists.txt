@@ -1,3 +1,4 @@
+add_subdirectory(kernels)
 add_subdirectory(api)
 add_subdirectory(data-units)
 add_subdirectory(operators)
