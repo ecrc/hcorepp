@@ -2,10 +2,19 @@
 message("")
 message("---------------------------------------- BLAS++")
 message(STATUS "Checking for BLAS++")
+
 if (NOT TARGET blaspp)
+    if (USE_CUDA)
+        set(BLA_VENDOR NVHPC)
+    endif ()
+
+    include(ImportBlas)
+
     find_package(blaspp QUIET)
+
+    message(${blaspp_FOUND})
     if (blaspp_FOUND)
-        message("   Found BLAS++: ${blaspp_DIR}")
+        message("Found BLAS++: ${blaspp_DIR}")
     elseif (EXISTS "${CMAKE_SOURCE_DIR}/blaspp/CMakeLists.txt")
         set(build_tests_save "${build_tests}")
         set(build_tests "false")
@@ -14,12 +23,7 @@ if (NOT TARGET blaspp)
 
         set(build_tests "${build_tests_save}")
         set(blaspp_DIR "${CMAKE_BINARY_DIR}/blaspp")
-    else()
-        # message(
-        #     FATAL_ERROR
-        #     "BLAS++ not found.
-        #       HCORE requires BLAS++ to be installed first."
-        # )
+    else ()
         set(build_tests_save "${build_tests}")
         set(build_tests "false")
         include(ImportBlas)
@@ -31,10 +35,11 @@ if (NOT TARGET blaspp)
                 blaspp GIT_REPOSITORY "${url}" GIT_TAG "${tag}")
         FetchContent_MakeAvailable(blaspp)
         set(build_tests "${build_tests_save}")
-    endif()
-else()
+    endif ()
+else ()
     message("   BLAS++ already included")
-endif()
+endif ()
+
 set(LIBS
         blaspp
         ${LIBS}

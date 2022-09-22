@@ -217,6 +217,7 @@ function(CHECK_LAPACK_LIBRARIES LIBRARIES _prefix _name _flags _list _deps _addl
         if(CMAKE_Fortran_COMPILER_LOADED)
             check_fortran_function_exists("${_name}" ${_prefix}${_combined_name}_WORKS)
         else()
+            message("${_name}_ HELLOO?????????????????????????????????????????? ${_prefix}${_combined_name}_WORKS")
             check_function_exists("${_name}_" ${_prefix}${_combined_name}_WORKS)
         endif()
         set(CMAKE_REQUIRED_LIBRARIES)
@@ -707,6 +708,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
                     ""
                     "${BLAS_LIBRARIES}"
             )
+
         endif()
 
         unset(_lapack_nvhpc_lib)

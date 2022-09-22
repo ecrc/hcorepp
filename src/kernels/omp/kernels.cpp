@@ -282,27 +282,21 @@ namespace hcorepp {
         void DestroySigma<double>(blas::real_type<double> *);
 
         template<typename T>
-        void AllocateArray(T **apArray, int64_t aRows, int64_t aCols, T *apSrc) {
-            *apArray = (T *) malloc(aRows * aCols * sizeof(T));
+        T *AllocateArray(int64_t aRows, int64_t aCols, T *apSrc) {
+            T *apArray = (T *) malloc(aRows * aCols * sizeof(T));
             if (apSrc != nullptr) {
-                memcpy(*apArray, apSrc, aRows * aCols * sizeof(T));
+                memcpy(apArray, apSrc, aRows * aCols * sizeof(T));
             } else {
-                memset((void *) *apArray, 0, aRows * aCols * sizeof(T));
+                memset((void *) apArray, 0, aRows * aCols * sizeof(T));
             }
+            return apArray;
         }
 
         template
-        void AllocateArray(float **, int64_t, int64_t, float *);
+        float *AllocateArray(int64_t, int64_t, float *);
 
         template
-        void AllocateArray(double **, int64_t, int64_t, double *);
-
-        template
-        void AllocateArray(int **, int64_t, int64_t, int *);
-
-        template
-        void AllocateArray(long **, int64_t, int64_t, long *);
-
+        double *AllocateArray(int64_t, int64_t, double *);
 
         template<typename T>
         void DestroyArray(T *apArray) {
@@ -333,12 +327,6 @@ namespace hcorepp {
 
         template
         void Memcpy(double *, double *, int64_t);
-
-        template
-        void Memcpy(int *, int *, int64_t);
-
-        template
-        void Memcpy(long *, long *, int64_t);
 
     }
 }

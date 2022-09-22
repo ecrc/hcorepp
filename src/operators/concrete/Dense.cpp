@@ -64,11 +64,12 @@ namespace hcorepp {
              */
 
             hcorepp::kernels::Gemm<T>(this->layout(), aTileAOp, aTileBOp,
-                          this->mNumOfRows, this->mNumOfCols, aTileA.GetNumOfCols(),
-                          aAlpha, (const T *) aTileA.GetData(), aTileA.GetLeadingDim(),
-                          (const T *) aTileB.GetData(), aTileB.GetLeadingDim(),
-                          aBeta, this->GetTileSubMatrix(0).get().GetData(),
-                          this->GetTileSubMatrix(0).get().GetLeadingDim());
+                                      this->mNumOfRows, this->mNumOfCols, aTileA.GetNumOfCols(),
+                                      aAlpha, (const T *) aTileA.GetData(), aTileA.GetLeadingDim(),
+                                      (const T *) aTileB.GetData(), aTileB.GetLeadingDim(),
+                                      aBeta, this->GetTileSubMatrix(0).get().GetData(),
+                                      this->GetTileSubMatrix(0).get().GetLeadingDim());
+
 
         }
 

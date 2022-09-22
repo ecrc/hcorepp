@@ -110,6 +110,8 @@ namespace hcorepp {
                     auto b_op = aCOp;
                     alpha_local = 1;
 
+                    // W += beta * Cu*Cv;
+
                     target->Gemm(aBeta, a_data, a_op, b_data, b_op, alpha_local, a_data.get().GetLeadingDim(),
                                  std::min(b_data.get().GetNumOfRows(), b_data.get().GetNumOfCols()), aSvdHelpers);
 
@@ -123,6 +125,7 @@ namespace hcorepp {
                         c_rank = -1;
                     }
 
+                    // todo :: Revisit the Handling of DDC case.
                     aC.ReadjustTile(num_of_rows, num_of_cols, target->GetTileSubMatrix(0).get().GetData(), num_of_rows,
                                     c_rank);
 

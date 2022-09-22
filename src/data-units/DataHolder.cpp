@@ -13,25 +13,11 @@ namespace hcorepp {
             mNumOfRows = aRows;
             mNumOfCols = aCols;
             mLeadingDimension = aLeadingDim;
-#ifdef USE_CUDA
-            //            cuda_malloc(&mDataArray, mNumofRows*mNumOfCols*sizeof(T));
-            //            if(apData!= nullptr) {
-            //                cuda_memcpy(mDataArray, apData, mNumOfRows * mNumOfCols * sizeof(T), cudaMemcpyHostToDevice);
-            //            } else {
-            //                // add cudamemset.
-            //            }
-#else
-
-#endif
-            hcorepp::kernels::AllocateArray<T>(&mDataArray, mNumOfRows, mNumOfCols, apData);
+            mDataArray = hcorepp::kernels::AllocateArray<T>(mNumOfRows, mNumOfCols, apData);
         }
 
         template<typename T>
         DataHolder<T>::~DataHolder() {
-#ifdef USE_CUDA
-            cuda_free(mDataArray);
-#else
-#endif
             hcorepp::kernels::DestroyArray<T>(mDataArray);
         }
 
@@ -66,13 +52,7 @@ namespace hcorepp {
             if (aNumOfElements > mNumOfRows * mNumOfCols || aSrcDataArray == nullptr) {
                 return;
             }
-#ifdef USE_CUDA
-            //            cuda_memcpy(&mDataArray[aStIdx], aSrcDataArray, aNumOfElements * sizeof(T), cudaMemcpyHostToDevice);
-#else
-
-#endif
             hcorepp::kernels::Memcpy<T>(&mDataArray[aStIdx], aSrcDataArray, aNumOfElements);
-
         }
 
         template<typename T>
@@ -80,19 +60,8 @@ namespace hcorepp {
             mNumOfRows = aRows;
             mNumOfCols = aCols;
             mLeadingDimension = aLeadingDim;
-#ifdef USE_CUDA
-            //            cuda_malloc(&mDataArray, mNumofRows*mNumOfCols*sizeof(T));
-            //            if(apData!= nullptr) {
-            //                cuda_memcpy(mDataArray, apData, mNumOfRows * mNumOfCols * sizeof(T), cudaMemcpyHostToDevice);
-            //            } else {
-            //                // add cudamemset.
-            //            }
-#else
-
-#endif
             hcorepp::kernels::DestroyArray(mDataArray);
-
-            hcorepp::kernels::AllocateArray(&mDataArray, mNumOfRows, mNumOfCols);
+            mDataArray = hcorepp::kernels::AllocateArray<T>(mNumOfRows, mNumOfCols);
         }
 
 

@@ -6,7 +6,7 @@
 #include <hcorepp/operators/concrete/Dense.hpp>
 #include <hcorepp/helpers/MatrixHelpers.hpp>
 #include <iostream>
-
+#include "mkl.h"
 
 using namespace std::chrono;
 using namespace hcorepp::operators;
@@ -56,71 +56,35 @@ void CalculateApprox(Tile<T> &A, blas::Op aTransA, Tile<T> &B, blas::Op aTransB,
 
 template<typename T>
 void
-CalculateApproxAndExactTilesGemm(blas::Op aTransA, blas::Op aTransB, blas::Op aTransC, T aAlpha, T aBeta, int64_t aM,
-                                 int64_t aN, int64_t aK, T aTol,
-                                 T aAcc, DenseTile<T> &dense_tileA, DenseTile<T> &dense_tileB,
-                                 DenseTile<T> &dense_tileC,
+CalculateApproxAndExactTilesGemm(blas::Op aTransA, blas::Op aTransB, blas::Op aTransC, T aAlpha, T aBeta,
+                                 DenseTile<T> &dense_tileA, DenseTile<T> &dense_tileB, DenseTile<T> &dense_tileC,
                                  CompressedTile<T> &comp_tileA, CompressedTile<T> &comp_tileB,
                                  CompressedTile<T> &comp_tileC, T **Approx_C_output,
                                  T **Exact_C_Output) {
 
-    int64_t lda = dense_tileA.GetTileSubMatrix(0).get().GetLeadingDim();
-    int64_t ldb = dense_tileB.GetTileSubMatrix(0).get().GetLeadingDim();
-    int64_t ldc = dense_tileC.GetTileSubMatrix(0).get().GetLeadingDim();
+    *Exact_C_Output = (T *) malloc(dense_tileC.GetTileSubMatrix(0).get().GetNumOfRows() *
+                                   dense_tileC.GetTileSubMatrix(0).get().GetNumOfCols() * sizeof(T));
+    memcpy((void *) *Exact_C_Output, dense_tileC.GetTileSubMatrix(0).get().GetData(),
+           dense_tileC.GetTileSubMatrix(0).get().GetNumOfRows() * dense_tileC.GetTileSubMatrix(0).get().GetNumOfCols() *
+           sizeof(T));
 
-    T *Adata = dense_tileA.GetTileSubMatrix(0).get().GetData();
-    T *Bdata = dense_tileB.GetTileSubMatrix(0).get().GetData();
-    T *Cdata = dense_tileC.GetTileSubMatrix(0).get().GetData();
-
-    int64_t m = aM;
-    int64_t n = aN;
-    int64_t k = aK;
-
-    int64_t Am = dense_tileA.GetTileSubMatrix(0).get().GetNumOfRows();
-    int64_t An = dense_tileA.GetTileSubMatrix(0).get().GetNumOfCols();
-    int64_t Bm = dense_tileB.GetTileSubMatrix(0).get().GetNumOfRows();
-    int64_t Bn = dense_tileB.GetTileSubMatrix(0).get().GetNumOfCols();
-    int64_t Cm = dense_tileC.GetTileSubMatrix(0).get().GetNumOfRows();
-    int64_t Cn = dense_tileC.GetTileSubMatrix(0).get().GetNumOfCols();
-
-    lapack::Norm norm = lapack::Norm::Inf; // todo: variable norm type
-    blas::real_type<T> Anorm = lapack::lange(norm, Am, An, Adata, lda);
-    blas::real_type<T> Bnorm = lapack::lange(norm, Bm, Bn, Bdata, ldb);
-    blas::real_type<T> Cnorm = lapack::lange(norm, Cm, Cn, Cdata, ldc);
-
-    int64_t align = 1;
-
-    int64_t ldcref = ((m + align - 1) / align) * align;
-
-    std::cout << " ldc :    " << ldc << "\n";
-    std::cout << " ldcref :    " << ldcref << "\n";
-    *Exact_C_Output = (T *) malloc(ldcref * Cn * sizeof(T));
-    memcpy((void *) *Exact_C_Output, Cdata, Cm * Cn * sizeof(T));
-
-    CalculateExact(blas::Layout::ColMajor, aTransA, aTransB, lda, ldb, ldcref, Adata,
-                   Bdata, *Exact_C_Output, m, n, k, aAlpha, aBeta);
-    memcpy(Cdata, (void *) *Exact_C_Output, Cm * Cn * sizeof(T));
+    CalculateExact(blas::Layout::ColMajor, aTransA, aTransB, dense_tileA.GetTileSubMatrix(0).get().GetLeadingDim(),
+                   dense_tileB.GetTileSubMatrix(0).get().GetLeadingDim(),
+                   dense_tileC.GetTileSubMatrix(0).get().GetNumOfRows(),
+                   dense_tileA.GetTileSubMatrix(0).get().GetData(), dense_tileB.GetTileSubMatrix(0).get().GetData(),
+                   *Exact_C_Output,
+                   dense_tileC.GetTileSubMatrix(0).get().GetNumOfRows(),
+                   dense_tileC.GetTileSubMatrix(0).get().GetNumOfCols(),
+                   dense_tileA.GetTileSubMatrix(0).get().GetNumOfCols(),
+                   aAlpha, aBeta);
+    memcpy(dense_tileC.GetTileSubMatrix(0).get().GetData(), (void *) *Exact_C_Output,
+           dense_tileC.GetTileSubMatrix(0).get().GetNumOfRows() * dense_tileC.GetTileSubMatrix(0).get().GetNumOfCols() *
+           sizeof(T));
 
     hcorepp::helpers::SvdHelpers helpers;
-    CalculateApprox(comp_tileA, aTransA, comp_tileB, aTransB, comp_tileC, aTransC, ldc, aAlpha, aBeta,
+    CalculateApprox(comp_tileA, aTransA, comp_tileB, aTransB, comp_tileC, aTransC,
+                    dense_tileC.GetTileSubMatrix(0).get().GetLeadingDim(), aAlpha, aBeta,
                     Approx_C_output, helpers, CCC);
-
-    diff(*Exact_C_Output, ldcref, *Approx_C_output, Cm, Cn, ldc);
-
-    double error = lapack::lange(norm, m, n, *Exact_C_Output, ldcref)
-                   / (sqrt(blas::real_type<T>(k) + 2) * std::abs(aAlpha) *
-                      Anorm * Bnorm + 2 * std::abs(aBeta) * Cnorm);
-
-    if (blas::is_complex<T>::value) {
-        error /= 2 * sqrt(2);
-    }
-
-    std::cout << " ERROR VALUE : " << error << "\n";
-    bool pass = (error < aTol * aAcc);
-    std::cout << " PASS : " << pass << "\n";
-
-    std::cout << "A NORM: " << Anorm << " B NORM : " << Bnorm << " CNORM : " << Cnorm << " ldc:  " << ldc
-              << " ldcref:  " << ldcref << "  k: " << k << "\n";
 
 }
 
@@ -129,8 +93,6 @@ void
 GenerateTiles(blas::Op aTransA, int64_t aM, int64_t aN, int64_t aK, int64_t aMode, blas::real_type<T> aCond, T aAcc,
               int64_t aAlignment, int64_t *iseed, DenseTile<T> **aDenseTile, CompressedTile<T> **aCompressedTile) {
 
-//    blas::real_type<T> cond = 1;// to be passed with function parameters.cond = precision .
-    //lamch >> Gets machine precision.
     int64_t align = aAlignment;
 
     int64_t Am = aTransA == blas::Op::NoTrans ? aM : aK;
@@ -192,6 +154,42 @@ void MergeMatrixTilesIntoArray(int64_t aM, int64_t aN, int64_t aRows, int64_t aC
             apOutArray[full_array_index] = (apTiles[tile_index_r][tile_index_c])[index_in_tile];
         }
     }
+}
+
+/**
+ * Merge tiles in single array
+ *
+ * @tparam T
+ * @param aTileSize number of elements in a tile, total_tile_size = aTileSize*aTileSize.
+ * @param aMatrixSize number of tiles in a matrix, total_matrix_size = (aMatrixSize*aTileSize)*(aMatrixSize*aTileSize).
+ * @param apTiles vector of vector of tile pointers. (2d matrix of tiles)
+ * @param apOutArray Pointer to output array to hold the tile pointers,
+ */
+template<typename T>
+void MergeTilesInSingleArray(int64_t aTileSize, int64_t aMatrixRows, int64_t aMatrixCols,
+                             std::vector<std::vector<T *>> &apTiles, T *&apOutArray) {
+
+    size_t full_array_index = 0;
+    size_t tile_index_r = 0;
+    size_t tile_index_c = 0;
+    size_t index_in_tile = 0;
+
+    for (int64_t cols = 0; cols < aMatrixCols; cols += aTileSize) {
+        for (int64_t rows = 0; rows < aMatrixRows; rows += aTileSize) {
+            int64_t tile_rows = std::min(aTileSize, aMatrixRows - rows);
+            int64_t tile_cols = std::min(aTileSize, aMatrixCols - cols);
+
+            for (int i = 0; i < tile_cols; i++) {
+                for (int j = 0; j < tile_rows; j++) {
+                    full_array_index = (cols + i) * aMatrixRows + (rows + j);
+                    tile_index_r = rows / aTileSize;
+                    tile_index_c = cols / aTileSize;
+                    index_in_tile = i * tile_rows + j;
+                    apOutArray[full_array_index] = (apTiles[tile_index_r][tile_index_c])[index_in_tile];
+                }
+            }
+        }
+    }
 
 }
 
@@ -207,9 +205,11 @@ void DeleteDenseAndCompressedTiles(int64_t aRows, int64_t aCols, std::vector<std
 }
 
 int main() {
+    /// single tile dimensions.
     int64_t m = 500;
     int64_t n = 500;
     int64_t k = 500;
+
     double alpha = 1;
     double beta = 1;
     blas::real_type<double> accuracy = 0.0001;
@@ -218,9 +218,9 @@ int main() {
     blas::Op transC = blas::Op::NoTrans;
     int64_t mode = 0;
     int64_t align = 1;
-    blas::real_type<double> cond = 1;
-    blas::real_type<double> tol = 3;
+    blas::real_type<double> cond = LAPACKE_dlamch('E');
 
+    /// matrix dimensions (number of tiles)
     int a_rows = 2;
     int a_cols = 2;
     int b_rows = 2;
@@ -257,12 +257,12 @@ int main() {
     Exact_b.resize(b_rows);
     Exact_c.resize(c_rows);
     Approx_c.resize(c_rows);
-    for (int i = 0; i < a_rows; i++) {
+    for (int i = 0; i < c_rows; i++) {
         Exact_a[i].resize(a_cols);
         Exact_b[i].resize(b_cols);
         Exact_c[i].resize(c_cols);
         Approx_c[i].resize(c_cols);
-        for (int j = 0; j < b_cols; j++) {
+        for (int j = 0; j < c_cols; j++) {
 
             Approx_c[i][j] = (double *) malloc(m * n * sizeof(double));
 
@@ -274,15 +274,14 @@ int main() {
             auto denseC = CDense[i][j];
             auto compC = CComp[i][j];
 
-            for (int q = 0; q < a_cols; q++) {
-                auto denseA = ADense[i][q];
-                auto denseB = BDense[q][j];
-                auto compA = AComp[i][q];
-                auto compB = BComp[q][j];
+            for (int k = 0; k < a_cols; k++) {
+                auto denseA = ADense[i][k];
+                auto denseB = BDense[k][j];
+                auto compA = AComp[i][k];
+                auto compB = BComp[k][j];
 
-                CalculateApproxAndExactTilesGemm(transA, transB, transC, alpha, beta, m, n, k, tol, accuracy,
-                                                 *denseA, *denseB, *denseC, *compA, *compB, *compC, &Approx_c[i][j],
-                                                 &Exact_c[i][j]);
+                CalculateApproxAndExactTilesGemm(transA, transB, transC, alpha, beta, *denseA, *denseB, *denseC, *compA,
+                                                 *compB, *compC, &Approx_c[i][j], &Exact_c[i][j]);
             }
         }
     }
@@ -295,33 +294,22 @@ int main() {
     int64_t new_m = m * a_rows;
     int64_t new_n = n * b_cols;
 
-    MergeMatrixTilesIntoArray(m, n, c_rows, c_cols, Approx_c, full_approx_c);
-    MergeMatrixTilesIntoArray(m, n, c_rows, c_cols, Exact_c, full_exact_c);
-    MergeMatrixTilesIntoArray(m, n, a_rows, a_cols, Exact_a, full_exact_a);
-    MergeMatrixTilesIntoArray(m, n, b_rows, b_cols, Exact_b, full_exact_b);
+    MergeTilesInSingleArray(m, c_rows * m, c_cols * n, Approx_c, full_approx_c);
+    MergeTilesInSingleArray(m, c_rows * m, c_cols * n, Exact_c, full_exact_c);
+    MergeTilesInSingleArray(m, a_rows * m, a_cols * n, Exact_a, full_exact_a);
+    MergeTilesInSingleArray(m, a_rows * m, a_cols * n, Exact_b, full_exact_b);
 
-    int64_t lda = m * a_rows;
-    int64_t ldb = m * b_rows;
     int64_t ldc = m * a_rows;
 
-    int64_t ldcref = (((m * a_rows) + align - 1) / align) * align;
+    lapack::Norm norm = lapack::Norm::Inf;
 
-    k = n * a_cols;
-    lapack::Norm norm = lapack::Norm::Inf; // todo: variable norm type
-    blas::real_type<double> Anorm = lapack::lange(norm, new_m, new_n, full_exact_a, lda);
-    blas::real_type<double> Bnorm = lapack::lange(norm, new_m, new_n, full_exact_b, ldb);
-    blas::real_type<double> Cnorm = lapack::lange(norm, new_m, new_n, full_exact_c, ldc);
+    diff(full_exact_c, ldc, full_approx_c, new_m, new_n, ldc);
 
-    diff(full_exact_c, ldcref, full_approx_c, new_m, new_n, ldc);
+    double error = lapack::lange(norm, new_m, new_n, full_exact_c, ldc);
 
-    double error = lapack::lange(norm, new_m, new_n, full_exact_c, ldcref)
-                   / (sqrt(blas::real_type<double>(k) + 2) * std::abs(alpha) *
-                      Anorm * Bnorm + 2 * std::abs(beta) * Cnorm);
-
-    std::cout << "FINAL ERROR VALUE : " << error << " expected tolerance:  " << tol * accuracy << "\n";
-    bool pass = (error < tol * accuracy);
+    std::cout << "FINAL ERROR VALUE : " << error << " expected accuracy:  " << accuracy << "\n";
+    bool pass = (error < accuracy);
     std::cout << " FINAL RESULT : " << pass << "\n";
-
 
     for (int i = 0; i < a_rows; i++) {
         for (int j = 0; j < b_cols; j++) {
@@ -329,6 +317,7 @@ int main() {
             free(Approx_c[i][j]);
         }
     }
+
     ///Delete Matrix A Dense and compressed tiles.
     DeleteDenseAndCompressedTiles(a_rows, a_cols, ADense, AComp);
     ///Delete Matrix B Dense and compressed tiles.

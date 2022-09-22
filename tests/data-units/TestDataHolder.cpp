@@ -1,7 +1,13 @@
+#ifdef USE_CUDA
+
+#include <cuda_runtime.h>
+
+#endif
 
 #include <libraries/catch/catch.hpp>
-
+#include <iostream>
 #include <hcorepp/data-units/DataHolder.hpp>
+#include <cstring>
 
 using namespace std;
 using namespace hcorepp::dataunits;
@@ -23,11 +29,19 @@ void TEST_DATA_HOLDER() {
         REQUIRE(data_holder.GetNumOfRows() == n_rows);
         REQUIRE(data_holder.GetNumOfCols() == n_cols);
         auto data = data_holder.GetData();
+        T *host_data_array = new T[n_rows * n_cols];
+#ifdef USE_CUDA
+        cudaMemcpy((void *) host_data_array, (void *) data, n_rows * n_cols * sizeof(T), cudaMemcpyDeviceToHost);
+#else
+        memcpy(host_data_array, data,n_rows * n_cols * sizeof(T));
+#endif
+
         for (int i = 0; i < n_rows * n_cols; i++) {
-            REQUIRE(data[i] == i);
+            REQUIRE(host_data_array[i] == i);
         }
 
         delete[] data_array;
+        delete[] host_data_array;
     }
 
     SECTION("Data Holder Resize test") {
@@ -46,6 +60,17 @@ void TEST_DATA_HOLDER() {
         int new_cols = 6;
         data_holder.Resize(new_rows, new_cols, n_rows);
 
+        T *host_data_array = new T[new_rows * new_cols];
+#ifdef USE_CUDA
+        cudaMemcpy((void *) host_data_array, (void *) data_holder.GetData(), new_rows * new_cols * sizeof(T),
+                   cudaMemcpyDeviceToHost);
+#else
+        memcpy((void*)host_data_array, (void*)data_holder.GetData(),new_rows * new_cols * sizeof(T));
+#endif
+        for (int i = 0; i < new_rows * new_cols; i++) {
+            REQUIRE(host_data_array[i] == 0);
+        }
+
         T *new_data_array = new T[new_rows * new_cols];
 
         for (int i = 0; i < new_rows * new_cols; i++) {
@@ -57,15 +82,22 @@ void TEST_DATA_HOLDER() {
         REQUIRE(data_holder.GetNumOfRows() == new_rows);
         REQUIRE(data_holder.GetNumOfCols() == new_cols);
 
-        auto data = data_holder.GetData();
+#ifdef USE_CUDA
+        cudaMemcpy((void *) host_data_array, (void *) data_holder.GetData(), new_rows * new_cols * sizeof(T),
+                   cudaMemcpyDeviceToHost);
+#else
+        memcpy(host_data_array, data_holder.GetData(),new_rows * new_cols * sizeof(T));
+#endif
         for (int i = 0; i < new_rows * new_cols; i++) {
-            REQUIRE(data[i] == i * 2);
+            REQUIRE(host_data_array[i] == i * 2);
         }
 
         delete[] data_array;
         delete[] new_data_array;
+        delete[] host_data_array;
 
     }
+
 }
 
 TEMPLATE_TEST_CASE("DataHolderTest", "[DATAHOLDER]", float, double) {

@@ -128,8 +128,6 @@ namespace hcorepp {
             size_t mLeadingDimension;
         };
 
-        template class DataHolder<int>;
-        template class DataHolder<long>;
         template class DataHolder<float>;
         template class DataHolder<double>;
 
