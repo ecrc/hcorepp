@@ -1,6 +1,7 @@
 #include <cstring>
 #include <lapack/wrappers.hh>
 #include <hcorepp/helpers/MatrixHelpers.hpp>
+#include <iostream>
 #include "hcorepp/helpers/lapack_wrappers.hpp"
 
 namespace hcorepp {
@@ -13,11 +14,12 @@ namespace hcorepp {
 
                 blas::real_type<T> *D = (blas::real_type<T> *) malloc(min_m_n * sizeof(blas::real_type<T>));
 
-                for (int64_t i = 0; i < min_m_n; ++i)
+                for (int64_t i = 0; i < min_m_n; ++i){
                     D[i] = std::pow(10, -1 * i);
-
+                }
+                T dmax = -1.0;
                 lapack_latms(
-                        m, n, 'U', iseed, 'N', D, mode, cond, -1.0, m - 1, n - 1, 'N', A, lda);
+                        m, n, 'U', iseed, 'N', D, mode, cond, dmax, m - 1, n - 1, 'N', A, lda);
 
                 free(D);
             }
@@ -43,7 +45,8 @@ namespace hcorepp {
 
                 T *a_temp = (T *) malloc(m * n * sizeof(T));
                 memcpy((void *) a_temp, (void *) A, m * n * sizeof(T));
-                lapack::gesvd(lapack::Job::SomeVec, lapack::Job::SomeVec, m, n, a_temp, lda, Sigma, U, lda, VT, min_m_n);
+                lapack::gesvd(lapack::Job::SomeVec, lapack::Job::SomeVec, m, n, a_temp, lda, Sigma, U, lda, VT,
+                              min_m_n);
 
                 rk = 0;
                 while (Sigma[rk] >= accuracy && rk < min_m_n) {
@@ -96,8 +99,10 @@ namespace hcorepp {
             void diff(T *Aref, int64_t lda_ref, T const *A, int64_t m, int64_t n, int64_t lda) {
                 for (int64_t j = 0; j < n; ++j) {
                     for (int64_t i = 0; i < m; ++i) {
+//                        auto temp = Aref[i + j * lda_ref];
                         Aref[i + j * lda_ref] -= A[i + j * lda];
 
+//                        std::cout << " New Aref " << (Aref[i + j * lda_ref] / temp) * 100 << std::endl;
                     }
                 }
             }

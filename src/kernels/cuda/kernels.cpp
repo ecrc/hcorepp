@@ -3,6 +3,7 @@
 #include <hcorepp/kernels/kernels.hpp>
 #include <cstring>
 #include <cublas_v2.h>
+#include "lapack/device.hh"
 
 namespace hcorepp {
     namespace kernels {
@@ -212,21 +213,30 @@ namespace hcorepp {
 //        template
 //        void
 //        FillIdentityMatrix(int64_t aNumOfElements, double *apMatrix);
-//
-//        template<typename T>
-//        void
-//        LaCpy(lapack::MatrixType aType, int64_t aM, int64_t aRank, T *apCU, int64_t aLD, T *apU, int64_t aUm) {
-//            lapack::lacpy(aType, aM, aRank, apCU, aLD, apU, aUm);
-//        }
-//
-//        template
-//        void
-//        LaCpy(lapack::MatrixType, int64_t, int64_t, float *, int64_t, float *, int64_t);
-//
-//        template
-//        void
-//        LaCpy(lapack::MatrixType, int64_t, int64_t, double *, int64_t, double *, int64_t);
-//
+
+        template<typename T>
+        void
+        LaCpy(lapack::MatrixType aType, int64_t aM, int64_t aRank, T *apCU, int64_t aLD, T *apU, int64_t aUm) {
+            int device = 0;
+
+            int batch_size = 1000;  // todo: use default batch_size
+
+            lapack::Queue queue(device, batch_size);
+
+            lapack::lacpy(aType, aM, aRank, apCU, aLD, apU, aUm);
+
+            queue.sync();
+
+        }
+
+        template
+        void
+        LaCpy(lapack::MatrixType, int64_t, int64_t, float *, int64_t, float *, int64_t);
+
+        template
+        void
+        LaCpy(lapack::MatrixType, int64_t, int64_t, double *, int64_t, double *, int64_t);
+
 //        template<typename T>
 //        void Geqrf(int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apTau) {
 //            lapack::geqrf(aM, aN, apA, aLdA, apTau);

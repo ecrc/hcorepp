@@ -1,6 +1,5 @@
 #include <libraries/catch/catch.hpp>
 #include <iostream>
-#include "hcorepp/helpers/lapack_wrappers.hpp"
 #include "lapack.hh"
 #include <hcorepp/api/hcorepp.hpp>
 #include <hcorepp/operators/concrete/Dense.hpp>
@@ -230,10 +229,14 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
 
         }
 
-        error = lapack::lange(norm, m, n, Cref, ldcref)
-                / (sqrt(real_t(k) + 2) * std::abs(alpha) *
-                   Anorm * Bnorm + 2 * std::abs(beta) * Cnorm);
+        auto temp = (sqrt(real_t(k) + 2) * std::abs(alpha) *
+                     Anorm * Bnorm + 2 * std::abs(beta) * Cnorm);
 
+        auto lange = lapack::lange(norm, m, n, Cref, ldcref);
+
+        error = lange / temp;
+
+//        std::cout << " error = " << error << " Temp = " << temp << " Lange = " << lange << std::endl;
         if (blas::is_complex<T>::value) {
             error /= 2 * sqrt(2);
         }
@@ -266,11 +269,11 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
 
 TEMPLATE_TEST_CASE("AdvancedGemmTest", "[ADVANCEDGEMMTESTING]", float, double) {
     std::vector<blas::Op> blas_ops = {blas::Op::NoTrans};
-    printf("%s\n",std::string(196,'=').c_str());
+    printf("%s\n", std::string(196, '=').c_str());
     printf("|%-5s|%-10s|%-10s|%-10s|%-10s|%-5s|%-5s|%-5s|%-8s|%-8s|%-15s|%-15s|%-15s|%-15s|%-15s|%-5s|%-5s|%-5s|%-10s|\n",
            "Gemm", "Datatype", "opA", "opB", "opC", "m", "n", "k", "alpha",
            "beta", "time(s)", "gflops", "ref_time(s)", "ref_gflops", "error", "Ark", "Brk", "Crk", "status");
-    printf("%s\n",std::string(196,'=').c_str());
+    printf("%s\n", std::string(196, '=').c_str());
     std::vector<TILE_COMBINATION> combinations = {DDD, DDC, DCD, DCC, CDD, CDC, CCD, CCC};
 
     std::vector<int64_t> n_elements = {100, 200, 300, 400, 500};
@@ -280,5 +283,5 @@ TEMPLATE_TEST_CASE("AdvancedGemmTest", "[ADVANCEDGEMMTESTING]", float, double) {
             TEST_GEMM_ADVANCED<TestType>(C, N);
         }
     }
-    printf("%s\n",std::string(196,'=').c_str());
+    printf("%s\n", std::string(196, '=').c_str());
 }

@@ -3,32 +3,28 @@ message("")
 message("---------------------------------------- LAPACK++")
 message(STATUS "Checking for LAPACK++")
 if (NOT TARGET lapackpp)
+    if (USE_CUDA)
+        set(BLA_VENDOR NVHPC)
+    endif ()
+    include(ImportLapack)
+
     find_package(lapackpp QUIET)
     if (lapackpp_FOUND)
         message("   Found LAPACK++: ${lapackpp_DIR}")
     elseif (EXISTS "${CMAKE_SOURCE_DIR}/lapackpp/CMakeLists.txt")
         set(build_tests_save "${build_tests}")
         set(build_tests "false")
-        include(ImportLapack)
+
         add_subdirectory("lapackpp")
 
         set(build_tests "${build_tests_save}")
         set(lapackpp_DIR "${CMAKE_BINARY_DIR}/lapackpp")
     else()
-        # message(
-        #     FATAL_ERROR
-        #     "LAPACK++ not found.
-        #       HCORE requires LAPACK++ to be installed first."
-        # )
         set(build_tests_save "${build_tests}")
         set(build_tests "false")
-        include(ImportLapack)
-#        set(BLA_VENDOR NVHPC)
-#        set(LAPACK_LIBRARIES='-lopenblas')
-#        find_package(LAPACK QUIET)
 
         set(url "https://bitbucket.org/icl/lapackpp")
-        set(tag "2021.04.00")
+        set(tag "master")
         message(STATUS "Fetching LAPACK++ ${tag} from ${url}")
         include(FetchContent)
         FetchContent_Declare(

@@ -4,7 +4,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/helpers/include)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/helpers/src)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/helpers)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/data-units)
-#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/api)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/api)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/operators)
 
 enable_testing()
