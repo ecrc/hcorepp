@@ -7,24 +7,7 @@ FindBLAS
 
 Find Basic Linear Algebra Subprograms (BLAS) library
 
-This module finds include(macros/BuildDependency)
-
-if (NOT TARGET BLAS)
-    if (USE_CUDA)
-        set(BLA_VENDOR NVHPC)
-    endif ()
-
-    find_package(BLAS QUIET)
-
-    if (BLAS_FOUND)
-        message("   Found BLAS: ${BLAS_LIBRARIES}")
-    else ()
-        set(build_tests_save "${build_tests}")
-        set(build_tests "false")
-        BuildDependency(blas "https://github.com/xianyi/OpenBLAS" "v0.3.21")
-        set(build_tests "${build_tests_save}")
-    endif ()
-an installed Fortran library that implements the
+This module finds an installed Fortran library that implements the
 `BLAS linear-algebra interface`_.
 
 At least one of the ``C``, ``CXX``, or ``Fortran`` languages must be enabled.
@@ -405,7 +388,7 @@ if (BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
                 ""
                 ""
@@ -466,7 +449,7 @@ if (BLA_VENDOR MATCHES "Intel" OR BLA_VENDOR STREQUAL "All")
             set(BLAS_SEARCH_LIBS "")
 
             if (BLA_F95)
-                set(BLAS_mkl_SEARCH_SYMBOL "sgemm_f95")
+                set(BLAS_mkl_SEARCH_SYMBOL "clatms_f95")
                 set(_LIBRARIES BLAS95_LIBRARIES)
                 if (WIN32)
                     # Find the main file (32-bit or 64-bit)
@@ -528,7 +511,7 @@ if (BLA_VENDOR MATCHES "Intel" OR BLA_VENDOR STREQUAL "All")
                     endif ()
                 endif ()
             else ()
-                set(BLAS_mkl_SEARCH_SYMBOL sgemm)
+                set(BLAS_mkl_SEARCH_SYMBOL clatms)
                 set(_LIBRARIES BLAS_LIBRARIES)
                 if (WIN32)
                     # Find the main file (32-bit or 64-bit)
@@ -687,7 +670,7 @@ if (BLA_VENDOR STREQUAL "Goto" OR BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
                 "goto2"
                 ""
@@ -703,7 +686,7 @@ if (BLA_VENDOR STREQUAL "FlexiBLAS" OR BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
                 "flexiblas"
                 ""
@@ -719,7 +702,7 @@ if (BLA_VENDOR STREQUAL "OpenBLAS" OR BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
                 "openblas"
                 ""
@@ -746,7 +729,7 @@ if (BLA_VENDOR STREQUAL "OpenBLAS" OR BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
                 "openblas"
                 "${_threadlibs}"
@@ -775,7 +758,7 @@ if (BLA_VENDOR MATCHES "Arm" OR BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
                 "${BLAS_armpl_LIB}"
                 ""
@@ -792,7 +775,7 @@ if (BLA_VENDOR STREQUAL "FLAME" OR BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
                 "blis"
                 ""
@@ -824,9 +807,9 @@ if (BLA_VENDOR STREQUAL "PhiPACK" OR BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
-                "sgemm;dgemm;blas"
+                "clatms;dgemm;blas"
                 ""
                 ""
                 ""
@@ -840,7 +823,7 @@ if (BLA_VENDOR STREQUAL "CXML" OR BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
                 "cxml"
                 ""
@@ -856,7 +839,7 @@ if (BLA_VENDOR STREQUAL "DXML" OR BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
                 "dxml"
                 ""
@@ -872,7 +855,7 @@ if (BLA_VENDOR STREQUAL "SunPerf" OR BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 "-xlic_lib=sunperf"
                 "sunperf;sunmath"
                 ""
@@ -891,7 +874,7 @@ if (BLA_VENDOR STREQUAL "SCSL" OR BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
                 "scsl"
                 ""
@@ -907,7 +890,7 @@ if (BLA_VENDOR STREQUAL "SGIMATH" OR BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
                 "complib.sgimath"
                 ""
@@ -923,7 +906,7 @@ if (BLA_VENDOR STREQUAL "IBMESSL" OR BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
                 "essl;blas"
                 ""
@@ -1007,7 +990,7 @@ if (BLA_VENDOR MATCHES "ACML" OR BLA_VENDOR STREQUAL "All")
             check_blas_libraries(
                     BLAS_LIBRARIES
                     BLAS
-                    sgemm
+                    clatms
                     "" "acml_mp;acml_mv" "" ${BLAS_ACML_MP_LIB_DIRS} ""
             )
             if (BLAS_LIBRARIES)
@@ -1019,7 +1002,7 @@ if (BLA_VENDOR MATCHES "ACML" OR BLA_VENDOR STREQUAL "All")
             check_blas_libraries(
                     BLAS_LIBRARIES
                     BLAS
-                    sgemm
+                    clatms
                     "" "acml;acml_mv;CALBLAS" "" ${BLAS_ACML_GPU_LIB_DIRS} ""
             )
             if (BLAS_LIBRARIES)
@@ -1031,7 +1014,7 @@ if (BLA_VENDOR MATCHES "ACML" OR BLA_VENDOR STREQUAL "All")
             check_blas_libraries(
                     BLAS_LIBRARIES
                     BLAS
-                    sgemm
+                    clatms
                     "" "acml;acml_mv" "" ${BLAS_ACML_LIB_DIRS} ""
             )
             if (BLAS_LIBRARIES)
@@ -1045,7 +1028,7 @@ if (BLA_VENDOR MATCHES "ACML" OR BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
                 "acml;acml_mv"
                 ""
@@ -1057,7 +1040,7 @@ if (BLA_VENDOR MATCHES "ACML" OR BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
                 "acml_mp;acml_mv"
                 ""
@@ -1069,7 +1052,7 @@ if (BLA_VENDOR MATCHES "ACML" OR BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
                 "acml;acml_mv;CALBLAS"
                 ""
@@ -1124,7 +1107,7 @@ if (BLA_VENDOR MATCHES "EML" OR BLA_VENDOR STREQUAL "All")
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
                 "${BLAS_EML_LIB}"
                 ""
@@ -1146,7 +1129,7 @@ if (NOT BLAS_LIBRARIES
     check_blas_libraries(
             BLAS_LIBRARIES
             BLAS
-            sgemm
+            clatms
             "-SSL2${_ssl2_suffix}"
             ""
             ""
@@ -1169,7 +1152,7 @@ if (BLA_VENDOR STREQUAL "Generic" OR
         check_blas_libraries(
                 BLAS_LIBRARIES
                 BLAS
-                sgemm
+                clatms
                 ""
                 "blas"
                 ""

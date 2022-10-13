@@ -337,7 +337,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
         set(LAPACK_SEARCH_LIBS "")
 
         if(BLA_F95)
-            set(LAPACK_mkl_SEARCH_SYMBOL "cheev_f95")
+            set(LAPACK_mkl_SEARCH_SYMBOL "clatms_f95")
             set(_LAPACK_LIBRARIES LAPACK95_LIBRARIES)
             set(_BLAS_LIBRARIES ${BLAS95_LIBRARIES})
 
@@ -350,7 +350,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
             list(APPEND LAPACK_SEARCH_LIBS
                     "mkl_lapack95_${LAPACK_mkl_ILP_MODE}")
         else()
-            set(LAPACK_mkl_SEARCH_SYMBOL "cheev")
+            set(LAPACK_mkl_SEARCH_SYMBOL "clatms")
             set(_LAPACK_LIBRARIES LAPACK_LIBRARIES)
             set(_BLAS_LIBRARIES ${BLAS_LIBRARIES})
 
@@ -445,7 +445,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
         check_lapack_libraries(
                 LAPACK_LIBRARIES
                 LAPACK
-                cheev
+                clatms
                 ""
                 "goto2"
                 ""
@@ -467,7 +467,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
         check_lapack_libraries(
                 LAPACK_LIBRARIES
                 LAPACK
-                cheev
+                clatms
                 ""
                 "${_lapack_flexiblas_lib}"
                 ""
@@ -491,7 +491,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
         check_lapack_libraries(
                 LAPACK_LIBRARIES
                 LAPACK
-                cheev
+                clatms
                 ""
                 "${_lapack_openblas_lib}"
                 ""
@@ -527,7 +527,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
         check_lapack_libraries(
                 LAPACK_LIBRARIES
                 LAPACK
-                cheev
+                clatms
                 ""
                 "${LAPACK_armpl_LIB}"
                 ""
@@ -548,7 +548,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
             check_lapack_libraries(
                     LAPACK_LIBRARIES
                     LAPACK
-                    cheev
+                    clatms
                     ""
                     "flame"
                     ""
@@ -575,7 +575,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
         check_lapack_libraries(
                 LAPACK_LIBRARIES
                 LAPACK
-                cheev
+                clatms
                 ""
                 "${_lapack_scsl_lib}"
                 ""
@@ -604,7 +604,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
             check_lapack_libraries(
                     LAPACK_LIBRARIES
                     LAPACK
-                    cheev
+                    clatms
                     ""
                     "Accelerate"
                     ""
@@ -626,7 +626,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
             check_lapack_libraries(
                     LAPACK_LIBRARIES
                     LAPACK
-                    cheev
+                    clatms
                     ""
                     "vecLib"
                     ""
@@ -681,7 +681,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
         check_lapack_libraries(
                 LAPACK_LIBRARIES
                 LAPACK
-                cheev
+                clatms
                 ""
                 "${_lapack_nvhpc_lib}"
                 "${_lapack_nvhpc_flags}"
@@ -699,7 +699,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
             check_lapack_libraries(
                     LAPACK_LIBRARIES
                     LAPACK
-                    cheev
+                    clatms
                     ""
                     "${_lapack_nvhpc_lib}"
                     "${_lapack_nvhpc_flags}"
@@ -735,7 +735,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
         check_lapack_libraries(
                 LAPACK_LIBRARIES
                 LAPACK
-                cheev
+                clatms
                 ""
                 "${_lapack_generic_lib}"
                 "${_lapack_generic_deps}"
