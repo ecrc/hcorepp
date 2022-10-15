@@ -14,6 +14,7 @@ using namespace hcorepp::helpers::matrixhelpers;
 
 static double total_time = 0;
 
+
 template<typename T>
 void CalculateExact(blas::Layout aLayout, blas::Op aTransA, blas::Op aTransB, int64_t aLdA, int64_t aLdB, int64_t aLdC,
                     T *aAData, T *aBData, T *aCData, int64_t aM, int64_t aN, int64_t aK, T aAlpha, T aBeta) {
@@ -25,6 +26,7 @@ template<typename T>
 void CalculateApprox(Tile<T> &A, blas::Op aTransA, Tile<T> &B, blas::Op aTransB, Tile<T> &C,
                      blas::Op aTransC, int64_t aLdC, T aAlpha, T aBeta, T **aCOutput,
                      hcorepp::helpers::SvdHelpers aHelpers, TILE_COMBINATION aCombination) {
+
     std::chrono::time_point<std::chrono::system_clock> start, end;
 
     start = std::chrono::system_clock::now();
@@ -263,7 +265,7 @@ GenerateDenseAndCompressedTilesFromDense(int64_t aTileSize, int64_t aMatrixRowEl
     }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
 
     std::chrono::time_point<std::chrono::system_clock> start, end;
 
@@ -283,11 +285,16 @@ int main() {
     int64_t align = 1;
     blas::real_type<double> cond = LAPACK_dlamch("E", 1);
 
+    // assuming squared matrices
+    int matrix_tiles = 2;
+    if (argc > 1) {
+        matrix_tiles = atoi(argv[1]);
+    }
     /// matrix dimensions (number of tiles)
-    int a_mt = 2;
-    int a_nt = 2;
+    int a_mt = matrix_tiles;
+    int a_nt = matrix_tiles;
     int b_mt = a_nt;
-    int b_nt = 2;
+    int b_nt = matrix_tiles;
     int c_mt = a_mt;
     int c_nt = b_nt;
 
@@ -411,11 +418,11 @@ int main() {
     double error = lapack::lange(norm, c_mt * m, c_nt * n, full_exact_c, c_mt * m) /
                    ((Anorm + Bnorm + Cnorm) * std::max(c_mt * m, c_nt * n) * accuracy);
 
-    std::cout << "FINAL ERROR VALUE : " << error << "\n";
+    std::cout << "FINAL ERROR VALUE : " << error << " expected accuracy:  " << accuracy << "\n";
     bool pass = (error < 10);
 
     if (pass) {
-        std::cout << "Example passed, error < 10 " << std::endl;
+        std::cout << "Example passed " << std::endl;
     } else {
         std::cout << "Example didn't pass, error > 10 " << std::endl;
     }
@@ -446,7 +453,6 @@ int main() {
 
     std::chrono::duration<double> elapsed_seconds = end - start;
 
-    std::cout << " HCorepp Gemm total execution time = " << total_time << std::endl;
-    std::cout << " Complete Program Total execution time  = " << elapsed_seconds.count() << std::endl;
-
+    std::cout << " Matrix tiles =  " << matrix_tiles << " , HCorepp Gemm total execution time = " << total_time << std::endl;
+    std::cout << " Matrix tiles =  " << matrix_tiles << " , Complete Program Total execution time  = " << elapsed_seconds.count() << std::endl;
 }
