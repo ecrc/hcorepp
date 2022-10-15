@@ -12,6 +12,8 @@ using namespace std::chrono;
 using namespace hcorepp::operators;
 using namespace hcorepp::helpers::matrixhelpers;
 
+static double total_time = 0;
+
 template<typename T>
 void CalculateExact(blas::Layout aLayout, blas::Op aTransA, blas::Op aTransB, int64_t aLdA, int64_t aLdB, int64_t aLdC,
                     T *aAData, T *aBData, T *aCData, int64_t aM, int64_t aN, int64_t aK, T aAlpha, T aBeta) {
@@ -23,7 +25,17 @@ template<typename T>
 void CalculateApprox(Tile<T> &A, blas::Op aTransA, Tile<T> &B, blas::Op aTransB, Tile<T> &C,
                      blas::Op aTransC, int64_t aLdC, T aAlpha, T aBeta, T **aCOutput,
                      hcorepp::helpers::SvdHelpers aHelpers, TILE_COMBINATION aCombination) {
+    std::chrono::time_point<std::chrono::system_clock> start, end;
+
+    start = std::chrono::system_clock::now();
+
     hcorepp::api::gemm(aAlpha, A, aTransA, B, aTransB, aBeta, C, aTransC, aHelpers);
+
+    end = std::chrono::system_clock::now();
+
+    std::chrono::duration<double> elapsed_seconds = end - start;
+
+    total_time += elapsed_seconds.count();
 
     if (aCombination == DCC || aCombination == CDC || aCombination == CCC) {
         auto Cm = C.GetTileSubMatrix(0).get().GetNumOfRows();
@@ -252,6 +264,11 @@ GenerateDenseAndCompressedTilesFromDense(int64_t aTileSize, int64_t aMatrixRowEl
 }
 
 int main() {
+
+    std::chrono::time_point<std::chrono::system_clock> start, end;
+
+    start = std::chrono::system_clock::now();
+
     /// single tile dimensions.
     int64_t m = 500;
     int64_t n = 500;
@@ -394,11 +411,11 @@ int main() {
     double error = lapack::lange(norm, c_mt * m, c_nt * n, full_exact_c, c_mt * m) /
                    ((Anorm + Bnorm + Cnorm) * std::max(c_mt * m, c_nt * n) * accuracy);
 
-    std::cout << "FINAL ERROR VALUE : " << error << " expected accuracy:  " << accuracy << "\n";
+    std::cout << "FINAL ERROR VALUE : " << error << "\n";
     bool pass = (error < 10);
 
     if (pass) {
-        std::cout << "Example passed " << std::endl;
+        std::cout << "Example passed, error < 10 " << std::endl;
     } else {
         std::cout << "Example didn't pass, error > 10 " << std::endl;
     }
@@ -424,4 +441,12 @@ int main() {
     free(full_dense_a);
     free(full_dense_b);
     free(full_dense_c);
+
+    end = std::chrono::system_clock::now();
+
+    std::chrono::duration<double> elapsed_seconds = end - start;
+
+    std::cout << " HCorepp Gemm total execution time = " << total_time << std::endl;
+    std::cout << " Complete Program Total execution time  = " << elapsed_seconds.count() << std::endl;
+
 }
