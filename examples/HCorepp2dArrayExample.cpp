@@ -277,7 +277,8 @@ int main(int argc, char *argv[]) {
 
     double alpha = 1;
     double beta = 1;
-    blas::real_type<double> accuracy = 1e-4;
+    double accuracy = 1e-4;
+//    blas::real_type<double> accuracy = 1e-4;
     blas::Op transA = blas::Op::NoTrans;
     blas::Op transB = blas::Op::NoTrans;
     blas::Op transC = blas::Op::NoTrans;
@@ -289,7 +290,9 @@ int main(int argc, char *argv[]) {
     int matrix_tiles = 2;
     if (argc > 1) {
         matrix_tiles = atoi(argv[1]);
+        accuracy = atof(argv[2]);
     }
+    std::cout << " matrix tiles = " << matrix_tiles << " \t accuracy = " << accuracy << "\n";
     /// matrix dimensions (number of tiles)
     int a_mt = matrix_tiles;
     int a_nt = matrix_tiles;
@@ -367,15 +370,30 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    ///Delete Matrix C Dense and compressed tiles.
+    DeleteDenseAndCompressedTiles(c_mt, c_nt, CDense, CComp);
+
     auto *full_approx_c = (double *) malloc(c_mt * c_nt * (m * n * sizeof(double)));
     auto *full_exact_c = (double *) malloc(c_mt * c_nt * (m * n * sizeof(double)));
-    auto *full_exact_a = (double *) malloc(a_mt * a_nt * (m * n * sizeof(double)));
-    auto *full_exact_b = (double *) malloc(b_mt * b_nt * (m * n * sizeof(double)));
-
     MergeTilesInSingleArray(m, c_mt * m, c_nt * n, Approx_c, full_approx_c);
     MergeTilesInSingleArray(m, c_mt * m, c_nt * n, Exact_c, full_exact_c);
+
+    for (int j = 0; j < b_nt; j++) {
+        for (int i = 0; i < a_mt; i++) {
+            free(Exact_c[j][i]);
+            free(Approx_c[j][i]);
+        }
+    }
+
+    auto *full_exact_a = (double *) malloc(a_mt * a_nt * (m * n * sizeof(double)));
     MergeTilesInSingleArray(m, a_mt * m, a_nt * n, Exact_a, full_exact_a);
+    ///Delete Matrix A Dense and compressed tiles.
+    DeleteDenseAndCompressedTiles(a_mt, a_nt, ADense, AComp);
+
+    auto *full_exact_b = (double *) malloc(b_mt * b_nt * (m * n * sizeof(double)));
     MergeTilesInSingleArray(m, b_mt * m, b_nt * n, Exact_b, full_exact_b);
+    ///Delete Matrix B Dense and compressed tiles.
+    DeleteDenseAndCompressedTiles(b_mt, b_nt, BDense, BComp);
 
 //    for (int jj = 0; jj < c_nt; jj++) {
 //        for (int ii = 0; ii < c_mt; ii++) {
@@ -427,20 +445,6 @@ int main(int argc, char *argv[]) {
         std::cout << "Example didn't pass, error > 10 " << std::endl;
     }
 
-    for (int j = 0; j < b_nt; j++) {
-        for (int i = 0; i < a_mt; i++) {
-            free(Exact_c[j][i]);
-            free(Approx_c[j][i]);
-        }
-    }
-
-    ///Delete Matrix A Dense and compressed tiles.
-    DeleteDenseAndCompressedTiles(a_mt, a_nt, ADense, AComp);
-    ///Delete Matrix B Dense and compressed tiles.
-    DeleteDenseAndCompressedTiles(b_mt, b_nt, BDense, BComp);
-    ///Delete Matrix C Dense and compressed tiles.
-    DeleteDenseAndCompressedTiles(c_mt, c_nt, CDense, CComp);
-
     free(full_exact_c);
     free(full_approx_c);
     free(full_exact_a);
@@ -453,6 +457,9 @@ int main(int argc, char *argv[]) {
 
     std::chrono::duration<double> elapsed_seconds = end - start;
 
-    std::cout << " Matrix tiles =  " << matrix_tiles << " , HCorepp Gemm total execution time = " << total_time << std::endl;
-    std::cout << " Matrix tiles =  " << matrix_tiles << " , Complete Program Total execution time  = " << elapsed_seconds.count() << std::endl;
+    std::cout << " Matrix tiles =  " << matrix_tiles << " , HCorepp Gemm total execution time = " << total_time
+              << std::endl;
+    std::cout << " Matrix tiles =  " << matrix_tiles << " , Complete Program Total execution time  = "
+              << elapsed_seconds.count() << std::endl;
+
 }
