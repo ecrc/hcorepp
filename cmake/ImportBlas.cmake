@@ -6,9 +6,6 @@ message(STATUS "Checking for BLAS")
 include(macros/BuildDependency)
 
 if (NOT TARGET BLAS)
-    if (USE_CUDA)
-        set(BLA_VENDOR NVHPC)
-    endif ()
 
     find_package(BLAS QUIET)
 

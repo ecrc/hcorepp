@@ -4,4 +4,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CUDA_ARCHITECTURES "35;50;72")
 
-find_package(CUDA 11.5 REQUIRED)
+find_package(CUDAToolkit REQUIRED)

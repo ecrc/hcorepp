@@ -4,9 +4,6 @@ message("---------------------------------------- BLAS++")
 message(STATUS "Checking for BLAS++")
 
 if (NOT TARGET blaspp)
-    if (USE_CUDA)
-        set(BLA_VENDOR NVHPC)
-    endif ()
 
     include(ImportBlas)
 

@@ -7,6 +7,7 @@
 #include <hcorepp/data-units/DataHolder.hpp>
 #include <hcorepp/test-helpers/testHelpers.hpp>
 #include <hcorepp/kernels/kernels.hpp>
+#include <hcorepp/kernels/memory.hpp>
 #include <cstring>
 
 using namespace std;
@@ -80,40 +81,17 @@ void TEST_Compressed() {
         REQUIRE(compressed_tile_A.GetTileSubMatrix(1).get().GetLeadingDim() == ldaV);
         REQUIRE(compressed_tile_A.layout() == blas::Layout::ColMajor);
 
-//        T *device_test;
-//        cudaMalloc(&device_test, au_size * sizeof(T));
-//
-//        hcorepp::kernels::LaCpy(lapack::MatrixType::General, au_m, au_n, device_test, au_m,
-//                                compressed_tile_A.GetTileSubMatrix(0).get().GetData(), au_m);
-
-//        T *host_data_array_test = new T[au_size];
-//
-//        cudaMemcpy((void *) host_data_array_test, (void *) device_test,
-//                   au_size * sizeof(T), cudaMemcpyDeviceToHost);
-//
-//
-//        for (int i = 0; i < au_size; i++) {
-//            std::cout << "  using lapack :  " << i << " \t " << host_data_array_test[i] << "\n";
-//        }
-//        delete[] host_data_array_test;
-//        cudaFree(device_test);
-
         T *host_data_array_au = new T[au_size];
         T *host_data_array_av = new T[av_size];
 
-#ifdef USE_CUDA
-        cudaMemcpy((void *) host_data_array_au, (void *) compressed_tile_A.GetTileSubMatrix(0).get().GetData(),
-                   au_size * sizeof(T), cudaMemcpyDeviceToHost);
-        cudaMemcpy((void *) host_data_array_av, (void *) compressed_tile_A.GetTileSubMatrix(1).get().GetData(),
-                   av_size * sizeof(T), cudaMemcpyDeviceToHost);
-#else
-        memcpy(host_data_array_au, compressed_tile_A.GetTileSubMatrix(0).get().GetData(),au_size * sizeof(T));
-        memcpy(host_data_array_av, compressed_tile_A.GetTileSubMatrix(1).get().GetData(),av_size * sizeof(T));
-#endif
-
-//        for (int i = 0; i < au_size; i++) {
-//            std::cout << "  without lapack :  " << i << " \t " << host_data_array_au[i] << "\n";
-//        }
+        hcorepp::memory::Memcpy<T>(host_data_array_au,
+                                   compressed_tile_A.GetTileSubMatrix(0).get().GetData(),
+                                   au_size,
+                                   hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+        hcorepp::memory::Memcpy<T>(host_data_array_av,
+                                   compressed_tile_A.GetTileSubMatrix(1).get().GetData(),
+                                   av_size,
+                                   hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
 
         T *au_output = new T[au_size];
         T *av_output = new T[av_size];
@@ -262,27 +240,27 @@ void TEST_Compressed() {
         T *cu_output_row = new T[cu_n * cu_m];
         T *cv_output_row = new T[cv_n * cv_m];
 
-        columnMajorToRowMajor<T>(cu_output, cu_n, cu_m, (T *) cu_output_row);
-        columnMajorToRowMajor<T>(cv_output, cv_n, cv_m, (T *) cv_output_row);
+        T *host_data_array_cu = new T[cu_n * cu_m];
+        T *host_data_array_cv = new T[cv_n * cv_m];
 
-//        std::cout << "CU Output \n";
-//        validateCompressedOutput(cu_output_row, cu_m, cu_n, (T *) matrix_CU,
-//                                 cv_output_row, cv_m, cv_n, (T *) matrix_CV);
-//        printMatrix(cu_output_row, cu_m, cu_n);
+        hcorepp::memory::Memcpy<T>(host_data_array_cu,
+                                   cu_output,
+                                   cu_n * cu_m,
+                                   hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+        hcorepp::memory::Memcpy<T>(host_data_array_cv,
+                                   cv_output,
+                                   cv_n * cv_m,
+                                   hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
 
-//        std::cout << "CV Output \n";
-//        validateCompressedOutput(cv_output_row, cv_m, cv_n, (T *) matrix_CV);
-//        printMatrix(cv_output_row, cv_m, cv_n);
+        columnMajorToRowMajor<T>(host_data_array_cu, cu_n, cu_m, (T *) cu_output_row);
+        columnMajorToRowMajor<T>(host_data_array_cv, cv_n, cv_m, (T *) cv_output_row);
 
         T *cu_cv = new T[c_m * c_n];
 
         blas::gemm(blas::Layout::RowMajor, blas::Op::NoTrans, blas::Op::NoTrans,
                    c_m, c_n, cu_n, alpha, cu_output_row, cu_n, cv_output_row, cv_n,
                    0, cu_cv, c_n);
-
-//        std::cout << " C Output ==== \n";
         validateOutput(cu_cv, c_m, c_n, (T *) output_matrix);
-//        printMatrix(cu_cv, c_m, c_n);
 
         delete[] a_input;
         delete[] b_input;
@@ -294,6 +272,129 @@ void TEST_Compressed() {
         free(cv_input_R);
         free(cu_input_C);
         free(cv_input_C);
+
+    }
+
+
+    SECTION("COMPRESSED Tile Identity Matrix") {
+        std::cout << "Compressed tile Identity Matrix Check-\n =========================== \n";
+
+        T matrix_AU[5][5] = {{162, 348, 534, 720, 900},
+                             {174, 378, 582, 786, 600},
+                             {186, 408, 630, 852, 605},
+                             {198, 438, 678, 918, 610},
+                             {210, 468, 726, 984, 620}};
+
+        T matrix_AV[5][4] = {{2,  4,  6,  8},
+                             {10, 12, 14, 16},
+                             {18, 20, 22, 24},
+                             {26, 28, 30, 32},
+                             {30, 35, 40, 38}};
+
+        // AU num of rows
+        int64_t au_m = 5;
+        // AU num of cols
+        int64_t au_n = 5;
+        // assuming that AU and AV are COl major.
+        int64_t ldaU = au_m;
+        // AV num of rows
+        int64_t av_m = 5;
+        // AV num of cols
+        int64_t av_n = 4;
+        // assuming that AU and AV are COl major.
+        int64_t ldaV = av_m;
+
+        int64_t a_m = au_m;
+        int64_t a_n = av_n;
+        int64_t lda = a_m;
+        int64_t arank = au_n;
+
+
+        size_t au_size = au_m * au_n;
+        size_t av_size = av_m * av_n;
+
+        T *au_input = new T[au_size];
+        T *av_input = new T[av_size];
+
+        rowMajorToColumnMajor<T>((T *) matrix_AU, au_n, au_m, au_input);
+        rowMajorToColumnMajor<T>((T *) matrix_AV, av_n, av_m, av_input);
+
+        T *a_input = new T[au_size + av_size];
+        memcpy((void *) a_input, au_input, au_size * sizeof(T));
+        memcpy((void *) &a_input[au_size], av_input, av_size * sizeof(T));
+
+        CompressedTile<T> compressed_tile_A(a_m, a_n, (T *) a_input, lda, arank,
+                                            std::numeric_limits<blas::real_type<T>>::epsilon());
+
+        REQUIRE(compressed_tile_A.GetNumberOfMatrices() == 2);
+        REQUIRE(compressed_tile_A.GetTileStride(0) == au_m);
+        REQUIRE(compressed_tile_A.GetTileStride(1) == av_m);
+        REQUIRE(compressed_tile_A.GetTileSubMatrix(0).get().GetNumOfRows() == au_m);
+        REQUIRE(compressed_tile_A.GetTileSubMatrix(0).get().GetNumOfCols() == au_n);
+        REQUIRE(compressed_tile_A.GetTileSubMatrix(0).get().GetLeadingDim() == ldaU);
+        REQUIRE(compressed_tile_A.GetTileSubMatrix(1).get().GetNumOfRows() == av_m);
+        REQUIRE(compressed_tile_A.GetTileSubMatrix(1).get().GetNumOfCols() == av_n);
+        REQUIRE(compressed_tile_A.GetTileSubMatrix(1).get().GetLeadingDim() == ldaV);
+        REQUIRE(compressed_tile_A.layout() == blas::Layout::ColMajor);
+
+        T *host_data_array_au = new T[au_size];
+        T *host_data_array_av = new T[av_size];
+
+        hcorepp::memory::Memcpy<T>(host_data_array_au,
+                                   compressed_tile_A.GetTileSubMatrix(0).get().GetData(),
+                                   au_size,
+                                   hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+        hcorepp::memory::Memcpy<T>(host_data_array_av,
+                                   compressed_tile_A.GetTileSubMatrix(1).get().GetData(),
+                                   av_size,
+                                   hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+
+        hcorepp::kernels::FillIdentityMatrix(compressed_tile_A.GetTileSubMatrix(0).get().GetNumOfCols(),
+                                             compressed_tile_A.GetTileSubMatrix(0).get().GetData());
+
+        T *host_data_array_au_identity_matrix = new T[au_size];
+
+        hcorepp::memory::Memcpy<T>(host_data_array_au_identity_matrix,
+                                compressed_tile_A.GetTileSubMatrix(0).get().GetData(),
+                                au_size,
+                                hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+
+        for (int i = 0; i < compressed_tile_A.GetTileSubMatrix(0).get().GetNumOfCols(); i++) {
+            int index = i * compressed_tile_A.GetTileSubMatrix(0).get().GetNumOfCols() + i;
+
+            REQUIRE(host_data_array_au_identity_matrix[index] == 1);
+        }
+
+
+        T *au_output = new T[au_size];
+        T *av_output = new T[av_size];
+
+        columnMajorToRowMajor<T>(host_data_array_au,
+                                 compressed_tile_A.GetTileSubMatrix(0).get().GetNumOfCols(),
+                                 compressed_tile_A.GetTileSubMatrix(0).get().GetNumOfRows(),
+                                 (T *) au_output);
+        columnMajorToRowMajor<T>(host_data_array_av,
+                                 compressed_tile_A.GetTileSubMatrix(1).get().GetNumOfCols(),
+                                 compressed_tile_A.GetTileSubMatrix(1).get().GetNumOfRows(),
+                                 (T *) av_output);
+
+        //        std::cout << "AU Output \n";
+        validateOutput(au_output, au_m, au_n, (T *) matrix_AU);
+//        printMatrix(au_output, au_m, au_n);
+
+
+        //        std::cout << "AV Output \n";
+        validateOutput(av_output, av_m, av_n, (T *) matrix_AV);
+//        printMatrix(av_output, av_m, av_n);
+
+        delete[] a_input;
+        delete[] au_input;
+        delete[] av_input;
+        delete[] au_output;
+        delete[] av_output;
+        delete[] host_data_array_au;
+        delete[] host_data_array_av;
+//        delete[] host_data_array_au_identity_matrix;
 
     }
 

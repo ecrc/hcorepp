@@ -2,6 +2,7 @@
 #ifndef HCOREPP_DATA_UNITS_DATA_HOLDER_HPP
 #define HCOREPP_DATA_UNITS_DATA_HOLDER_HPP
 
+#include <iostream>
 #include <cstddef>
 
 namespace hcorepp {
@@ -116,6 +117,12 @@ namespace hcorepp {
              */
             void
             Resize(size_t aRows, size_t aCols, size_t aLeadingDim);
+
+            /**
+             * @brief
+             * Prints the data holder to the console in a readable format, useful for debugging purposes.
+             */
+            void Print(std::ostream &aOutStream) const;
 
         private:
             /** pointer to data array */

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <hcorepp/kernels/kernels.hpp>
 #include <cstring>
+#include <lapack.hh>
 
 namespace hcorepp {
     namespace kernels {
@@ -173,17 +174,17 @@ namespace hcorepp {
 
         template<typename T>
         void
-        LaCpy(lapack::MatrixType aType, int64_t aM, int64_t aRank, T *apCU, int64_t aLD, T *apU, int64_t aUm) {
-            lapack::lacpy(aType, aM, aRank, apCU, aLD, apU, aUm);
+        LaCpy(helpers::MatrixType aType, int64_t aM, int64_t aRank, T *apCU, int64_t aLD, T *apU, int64_t aUm) {
+            lapack::lacpy((lapack::MatrixType) aType, aM, aRank, apCU, aLD, apU, aUm);
         }
 
         template
         void
-        LaCpy(lapack::MatrixType, int64_t, int64_t, float *, int64_t, float *, int64_t);
+        LaCpy(helpers::MatrixType, int64_t, int64_t, float *, int64_t, float *, int64_t);
 
         template
         void
-        LaCpy(lapack::MatrixType, int64_t, int64_t, double *, int64_t, double *, int64_t);
+        LaCpy(helpers::MatrixType, int64_t, int64_t, double *, int64_t, double *, int64_t);
 
         template<typename T>
         void Geqrf(int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apTau) {
@@ -197,17 +198,17 @@ namespace hcorepp {
         void Geqrf(int64_t, int64_t, double *, int64_t, double *);
 
         template<typename T>
-        void Laset(lapack::MatrixType aMatrixType, int64_t aM, int64_t aN, T aOffdiag, T aDiag,
+        void Laset(helpers::MatrixType aMatrixType, int64_t aM, int64_t aN, T aOffdiag, T aDiag,
                    T *apA, int64_t aLdA) {
-            lapack::laset(aMatrixType, aM, aN, aOffdiag, aDiag, apA, aLdA);
+            lapack::laset((lapack::MatrixType) aMatrixType, aM, aN, aOffdiag, aDiag, apA, aLdA);
         }
 
         template
-        void Laset(lapack::MatrixType aMatrixType, int64_t aM, int64_t aN, float aOffdiag, float aDiag,
+        void Laset(helpers::MatrixType aMatrixType, int64_t aM, int64_t aN, float aOffdiag, float aDiag,
                    float *apA, int64_t aLdA);
 
         template
-        void Laset(lapack::MatrixType aMatrixType, int64_t aM, int64_t aN, double aOffdiag, double aDiag,
+        void Laset(helpers::MatrixType aMatrixType, int64_t aM, int64_t aN, double aOffdiag, double aDiag,
                    double *apA, int64_t aLdA);
 
         template<typename T>
@@ -226,36 +227,37 @@ namespace hcorepp {
 
         template<typename T>
         void
-        Gesvd(lapack::Job aJobu, lapack::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
+        Gesvd(helpers::Job aJobu, helpers::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
               int64_t aLdU, T *apVT, int64_t aLdVt) {
-            lapack::gesvd(aJobu, aJobvt, aM, aN, apA, aLdA, apS, apU, aLdU, apVT, aLdVt);
+            lapack::gesvd((lapack::Job) aJobu, (lapack::Job) aJobvt, aM, aN, apA, aLdA, apS, apU, aLdU, apVT, aLdVt);
         }
 
         template
         void
-        Gesvd(lapack::Job, lapack::Job, int64_t, int64_t, float *, int64_t, float *, float *, int64_t, float *,
+        Gesvd(helpers::Job, helpers::Job, int64_t, int64_t, float *, int64_t, float *, float *, int64_t, float *,
               int64_t);
 
         template
         void
-        Gesvd(lapack::Job, lapack::Job, int64_t, int64_t, double *, int64_t, double *, double *, int64_t, double *,
+        Gesvd(helpers::Job, helpers::Job, int64_t, int64_t, double *, int64_t, double *, double *, int64_t, double *,
               int64_t);
 
         template<typename T>
         void
-        Unmqr(lapack::Side aSide, lapack::Op aTrans, int64_t aM, int64_t aN, int64_t aK, T const *apA, int64_t aLdA,
+        Unmqr(helpers::SideMode aSide, helpers::BlasOperation aTrans, int64_t aM, int64_t aN, int64_t aK,
+              T const *apA, int64_t aLdA,
               T const *apTau, T *apC, int64_t aLdC) {
-            lapack::unmqr(aSide, aTrans, aM, aN, aK, apA, aLdA, apTau, apC, aLdC);
+            lapack::unmqr((lapack::Side) aSide, (lapack::Op) aTrans, aM, aN, aK, apA, aLdA, apTau, apC, aLdC);
         }
 
         template
-        void Unmqr(lapack::Side, lapack::Op, int64_t, int64_t, int64_t, float const *, int64_t, float const *, float *,
-                   int64_t);
+        void Unmqr(helpers::SideMode, helpers::BlasOperation, int64_t, int64_t, int64_t, float const *, int64_t,
+                   float const *, float *, int64_t);
 
         template
         void
-        Unmqr(lapack::Side, lapack::Op, int64_t, int64_t, int64_t, double const *, int64_t, double const *, double *,
-              int64_t);
+        Unmqr(helpers::SideMode, helpers::BlasOperation, int64_t, int64_t, int64_t, double const *, int64_t,
+              double const *, double *, int64_t);
 
         template<typename T>
         blas::real_type<T> *AllocateSigma(int64_t aSizeS) {
@@ -282,51 +284,19 @@ namespace hcorepp {
         void DestroySigma<double>(blas::real_type<double> *);
 
         template<typename T>
-        T *AllocateArray(int64_t aRows, int64_t aCols, T *apSrc) {
-            T *apArray = (T *) malloc(aRows * aCols * sizeof(T));
-            if (apSrc != nullptr) {
-                memcpy(apArray, apSrc, aRows * aCols * sizeof(T));
-            } else {
-                memset((void *) apArray, 0, aRows * aCols * sizeof(T));
-            }
-            return apArray;
+        void
+        ungqr(int64_t aM, int64_t aN, int64_t aK, T *apA, int64_t aLdA, T *apTau) {
+            lapack::ungqr(aM, aN, aK, apA, aLdA, apTau);
         }
 
         template
-        float *AllocateArray(int64_t, int64_t, float *);
+        void
+        ungqr(int64_t, int64_t, int64_t, float *, int64_t, float *);
 
         template
-        double *AllocateArray(int64_t, int64_t, double *);
+        void
+        ungqr(int64_t, int64_t, int64_t, double *, int64_t, double *);
 
-        template<typename T>
-        void DestroyArray(T *apArray) {
-            if (apArray != nullptr) {
-                free(apArray);
-            }
-        }
-
-        template
-        void DestroyArray(float *);
-
-        template
-        void DestroyArray(double *);
-
-        template
-        void DestroyArray(int *);
-
-        template
-        void DestroyArray(long *);
-
-        template<typename T>
-        void Memcpy(T *apDestination, T *apSrcDataArray, int64_t aNumOfElements) {
-            memcpy(apDestination, apSrcDataArray, aNumOfElements * sizeof(T));
-        }
-
-        template
-        void Memcpy(float *, float *, int64_t);
-
-        template
-        void Memcpy(double *, double *, int64_t);
 
     }
 }

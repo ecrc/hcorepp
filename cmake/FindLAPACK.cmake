@@ -174,11 +174,11 @@ function(CHECK_LAPACK_LIBRARIES LIBRARIES _prefix _name _flags _list _deps _addl
 
     set(_extaddlibdir "${_addlibdir}")
     if(WIN32)
-        list(APPEND _extaddlibdir ENV LIB)
+        list(APPEND _extaddlibdir $ENV{LIB})
     elseif(APPLE)
-        list(APPEND _extaddlibdir ENV DYLD_LIBRARY_PATH)
+        list(APPEND _extaddlibdir $ENV{DYLD_LIBRARY_PATH})
     else()
-        list(APPEND _extaddlibdir ENV LD_LIBRARY_PATH)
+        list(APPEND _extaddlibdir $ENV{LD_LIBRARY_PATH})
     endif()
     list(APPEND _extaddlibdir "${CMAKE_C_IMPLICIT_LINK_DIRECTORIES}")
 
@@ -260,6 +260,7 @@ set(LAPACK_LINKER_FLAGS)
 set(LAPACK_LIBRARIES)
 set(LAPACK95_LIBRARIES)
 set(_lapack_fphsa_req_var LAPACK_LIBRARIES)
+set(TARGET_SEARCH_SYMBOL clatms)
 
 # Check the language being used
 if(NOT (CMAKE_C_COMPILER_LOADED OR CMAKE_CXX_COMPILER_LOADED OR CMAKE_Fortran_COMPILER_LOADED))
@@ -337,7 +338,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
         set(LAPACK_SEARCH_LIBS "")
 
         if(BLA_F95)
-            set(LAPACK_mkl_SEARCH_SYMBOL "clatms_f95")
+            set(LAPACK_mkl_SEARCH_SYMBOL "${TARGET_SEARCH_SYMBOL}_f95")
             set(_LAPACK_LIBRARIES LAPACK95_LIBRARIES)
             set(_BLAS_LIBRARIES ${BLAS95_LIBRARIES})
 
@@ -350,7 +351,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
             list(APPEND LAPACK_SEARCH_LIBS
                     "mkl_lapack95_${LAPACK_mkl_ILP_MODE}")
         else()
-            set(LAPACK_mkl_SEARCH_SYMBOL "clatms")
+            set(LAPACK_mkl_SEARCH_SYMBOL "${TARGET_SEARCH_SYMBOL}")
             set(_LAPACK_LIBRARIES LAPACK_LIBRARIES)
             set(_BLAS_LIBRARIES ${BLAS_LIBRARIES})
 
@@ -445,7 +446,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
         check_lapack_libraries(
                 LAPACK_LIBRARIES
                 LAPACK
-                clatms
+                ${TARGET_SEARCH_SYMBOL}
                 ""
                 "goto2"
                 ""
@@ -467,7 +468,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
         check_lapack_libraries(
                 LAPACK_LIBRARIES
                 LAPACK
-                clatms
+                ${TARGET_SEARCH_SYMBOL}
                 ""
                 "${_lapack_flexiblas_lib}"
                 ""
@@ -487,11 +488,10 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
         if(_lapack_sizeof_integer EQUAL 8)
             string(APPEND _lapack_openblas_lib "64")
         endif()
-
         check_lapack_libraries(
                 LAPACK_LIBRARIES
                 LAPACK
-                clatms
+                ${TARGET_SEARCH_SYMBOL}
                 ""
                 "${_lapack_openblas_lib}"
                 ""
@@ -527,7 +527,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
         check_lapack_libraries(
                 LAPACK_LIBRARIES
                 LAPACK
-                clatms
+                ${TARGET_SEARCH_SYMBOL}
                 ""
                 "${LAPACK_armpl_LIB}"
                 ""
@@ -548,7 +548,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
             check_lapack_libraries(
                     LAPACK_LIBRARIES
                     LAPACK
-                    clatms
+                    ${TARGET_SEARCH_SYMBOL}
                     ""
                     "flame"
                     ""
@@ -575,7 +575,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
         check_lapack_libraries(
                 LAPACK_LIBRARIES
                 LAPACK
-                clatms
+                ${TARGET_SEARCH_SYMBOL}
                 ""
                 "${_lapack_scsl_lib}"
                 ""
@@ -604,7 +604,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
             check_lapack_libraries(
                     LAPACK_LIBRARIES
                     LAPACK
-                    clatms
+                    ${TARGET_SEARCH_SYMBOL}
                     ""
                     "Accelerate"
                     ""
@@ -626,7 +626,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
             check_lapack_libraries(
                     LAPACK_LIBRARIES
                     LAPACK
-                    clatms
+                    ${TARGET_SEARCH_SYMBOL}
                     ""
                     "vecLib"
                     ""
@@ -681,7 +681,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
         check_lapack_libraries(
                 LAPACK_LIBRARIES
                 LAPACK
-                clatms
+                ${TARGET_SEARCH_SYMBOL}
                 ""
                 "${_lapack_nvhpc_lib}"
                 "${_lapack_nvhpc_flags}"
@@ -699,7 +699,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
             check_lapack_libraries(
                     LAPACK_LIBRARIES
                     LAPACK
-                    clatms
+                    ${TARGET_SEARCH_SYMBOL}
                     ""
                     "${_lapack_nvhpc_lib}"
                     "${_lapack_nvhpc_flags}"
@@ -735,7 +735,7 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
         check_lapack_libraries(
                 LAPACK_LIBRARIES
                 LAPACK
-                clatms
+                ${TARGET_SEARCH_SYMBOL}
                 ""
                 "${_lapack_generic_lib}"
                 "${_lapack_generic_deps}"

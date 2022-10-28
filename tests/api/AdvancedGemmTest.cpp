@@ -1,16 +1,18 @@
 #include <libraries/catch/catch.hpp>
 #include <iostream>
-#include "lapack.hh"
 #include <hcorepp/api/hcorepp.hpp>
 #include <hcorepp/operators/concrete/Dense.hpp>
 #include <cstdlib>
 #include <cstring>
 #include "blas/flops.hh"
 #include <hcorepp/helpers/MatrixHelpers.hpp>
+#include <hcorepp/helpers/lapack_wrappers.hpp>
+#include <hcorepp/test-helpers/testHelpers.hpp>
 
 using namespace std::chrono;
 using namespace hcorepp::operators;
 using namespace hcorepp::helpers::matrixhelpers;
+using namespace hcorepp::test_helpers;
 
 template<typename T>
 void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
@@ -55,10 +57,10 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
 
     generate_dense_matrix(Cm, Cn, Cdata, ldc, iseed, mode, cond);
 
-    lapack::Norm norm = lapack::Norm::Inf; // todo: variable norm type
-    real_t Anorm = lapack::lange(norm, Am, An, Adata, lda);
-    real_t Bnorm = lapack::lange(norm, Bm, Bn, Bdata, ldb);
-    real_t Cnorm = lapack::lange(norm, Cm, Cn, Cdata, ldc);
+    hcorepp::helpers::Norm norm = hcorepp::helpers::Norm::INF; // todo: variable norm type
+    real_t Anorm = lapack_lange(norm, Am, An, Adata, lda);
+    real_t Bnorm = lapack_lange(norm, Bm, Bn, Bdata, ldb);
+    real_t Cnorm = lapack_lange(norm, Cm, Cn, Cdata, ldc);
 
     DenseTile<T> A(Am, An, Adata, lda, blas::Layout::ColMajor, transA, blas::Uplo::General);
     DenseTile<T> B(Bm, Bn, Bdata, ldb, blas::Layout::ColMajor, transB, blas::Uplo::General);
@@ -66,9 +68,7 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
 
     int64_t ldcref = ((m + align - 1) / align) * align;
 
-    T *Cref = new T[ldcref * n];
-
-    memcpy((void *) Cref, (void *) C.GetTileSubMatrix(0).get().GetData(), Cm * Cn * sizeof(T));
+    T *Cref = copy_output(C.GetTileSubMatrix(0).get());
 
     int64_t Ark, Brk, Crk;
     Ark = 0;
@@ -196,12 +196,15 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
 
         if (Combination == DCC || Combination == CDC || Combination == CCC) {
 
+            auto cu = copy_output(CUV->GetTileSubMatrix(0).get());
+            auto cv = copy_output(CUV->GetTileSubMatrix(1).get());
             blas::gemm(blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
-                       Cm, Cn, CUV->GetTileRank(), 1.0, CUV->GetTileSubMatrix(0).get().GetData(),
-                       CUV->GetTileSubMatrix(0).get().GetLeadingDim(), CUV->GetTileSubMatrix(1).get().GetData(),
+                       Cm, Cn, CUV->GetTileRank(), 1.0, cu,
+                       CUV->GetTileSubMatrix(0).get().GetLeadingDim(), cv,
                        CUV->GetTileSubMatrix(1).get().GetLeadingDim(), 0.0, Cdata, ldc);
-
-            C_output = (T *) malloc(Cm * Cn * sizeof(T));
+            delete[] cu;
+            delete[] cv;
+            C_output = new T[Cm * Cn];
 
             memcpy((void *) C_output, (void *) Cdata, Cm * Cn * sizeof(T));
             diff(Cref, ldcref, C_output, Cm, Cn, ldc);
@@ -212,19 +215,19 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
             auto cv_m_new = CUV->GetTileSubMatrix(1).get().GetNumOfRows();
             auto cv_n_new = CUV->GetTileSubMatrix(1).get().GetNumOfCols();
 
-            C_output = (T *) malloc((cu_m_new * cu_n_new + cv_m_new * cv_n_new) * sizeof(T));
-            memcpy((void *) C_output, (void *) CUV->GetTileSubMatrix(0).get().GetData(),
+            C_output = new T[cu_m_new * cu_n_new + cv_m_new * cv_n_new];
+            auto cu_raw = copy_output(CUV->GetTileSubMatrix(0).get());
+            memcpy((void *) C_output, (void *) cu_raw,
                    cu_m_new * cu_n_new * sizeof(T));
-
-            memcpy((void *) &C_output[cu_m_new * cu_n_new], (void *) CUV->GetTileSubMatrix(1).get().GetData(),
+            delete[] cu_raw;
+            auto cv_raw = copy_output(CUV->GetTileSubMatrix(1).get());
+            memcpy((void *) &C_output[cu_m_new * cu_n_new], (void *) cv_raw,
                    cv_m_new * cv_n_new * sizeof(T));
-
+            delete[] cv_raw;
             diff(Cref, ldcref, C_output, Cm, Cn, ldc);
 
         } else {
-            C_output = (T *) malloc(Cm * Cn * sizeof(T));
-            memcpy((void *) C_output, (void *) C.GetTileSubMatrix(0).get().GetData(),
-                   Cm * Cn * sizeof(T));
+            C_output = copy_output( C.GetTileSubMatrix(0).get());
             diff(Cref, ldcref, C_output, Cm, Cn, ldc);
 
         }
@@ -232,7 +235,7 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
         auto temp = (sqrt(real_t(k) + 2) * std::abs(alpha) *
                      Anorm * Bnorm + 2 * std::abs(beta) * Cnorm);
 
-        auto lange = lapack::lange(norm, m, n, Cref, ldcref);
+        auto lange = lapack_lange(norm, m, n, Cref, ldcref);
 
         error = lange / temp;
 
@@ -241,13 +244,14 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
             error /= 2 * sqrt(2);
         }
         pass = (error < tol * accuracy);
-
+        REQUIRE(pass);
     }
 
     delete[]Cref;
     delete[]Adata;
     delete[]Bdata;
     delete[]Cdata;
+    delete[] C_output;
     if (Combination == CDD || Combination == CDC || Combination == CCD || Combination == CCC) {
         delete AUV;
     }
@@ -257,8 +261,6 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
     if (Combination == DDC || Combination == DCC || Combination == CDC || Combination == CCC) {
         delete CUV;
     }
-    free(C_output);
-
     printf("|%-5s|%-10s|%-10s|%-10s|%-10s|%-5ld|%-5ld|%-5ld|%-8.3f|%-8.3f|%-15f|%-15f|%-15f|%-15f|%-15e|%-5ld|%-5ld|%-5ld|%-10s|\n",
            tile_combination_strings[Combination], typeid(T).name(),
            op2str(transA), op2str(transB), op2str(transC), m, n, k, alpha,

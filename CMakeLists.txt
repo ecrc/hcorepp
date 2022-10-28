@@ -18,6 +18,7 @@ if (USE_CUDA)
     add_definitions(-DUSE_CUDA=TRUE)
     enable_language(CUDA)
     include(toolchains/CudaToolchain)
+    set(BLA_VENDOR NVHPC)
 else ()
     include(toolchains/GccToolchain)
 endif ()
@@ -26,7 +27,17 @@ endif ()
 include(ImportGFortran)
 include(ImportOpenMP)
 include(ImportBlasPP)
-include(ImportLapackPP)
+if (USE_CUDA)
+    # Do not do anything for now.
+    unset(BLA_VENDOR)
+    include(ImportLapack)
+    set(LIBS
+            LAPACK::LAPACK
+            ${LIBS}
+            )
+else ()
+    include(ImportLapackPP)
+endif ()
 
 # Include directories for HCorePP
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)

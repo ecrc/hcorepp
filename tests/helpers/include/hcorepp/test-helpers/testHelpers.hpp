@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <vector>
 #include <blas/util.hh>
+#include <hcorepp/kernels/memory.hpp>
+#include <hcorepp/data-units/DataHolder.hpp>
 
 namespace hcorepp {
     namespace test_helpers {
@@ -20,6 +22,14 @@ namespace hcorepp {
         template<typename T>
         void
         printMatrix(T *pInput, int64_t aNumOfRows, int64_t aNumOfCols);
+
+        template<typename T>
+        T *copy_output(const dataunits::DataHolder<T>& apData) {
+            size_t num_elements = apData.GetNumOfCols() * apData.GetNumOfRows();
+            T * arr = new T[num_elements];
+            hcorepp::memory::Memcpy<T>(arr, apData.GetData(), num_elements, memory::MemoryTransfer::DEVICE_TO_HOST);
+            return arr;
+        }
 
         template<typename T>
         void

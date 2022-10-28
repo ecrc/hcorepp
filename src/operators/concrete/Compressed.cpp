@@ -4,6 +4,7 @@
 #include <hcorepp/operators/helpers/SvdHelpers.hpp>
 #include <hcorepp/operators/concrete/Compressed.hpp>
 #include <hcorepp/kernels/kernels.hpp>
+#include <hcorepp/kernels/memory.hpp>
 
 using namespace hcorepp::dataunits;
 using namespace hcorepp::helpers;
@@ -116,7 +117,6 @@ namespace hcorepp {
 
             int64_t m = this->GetNumOfRows();
             int64_t n = this->GetNumOfCols();
-
             T *CU = this->GetTileSubMatrix(0).get().GetData();
             size_t CU_leading_dim = this->GetTileSubMatrix(0).get().GetLeadingDim();
 
@@ -136,27 +136,22 @@ namespace hcorepp {
 
             T *U = U_dataholder->GetData();
 
-            hcorepp::kernels::LaCpy(lapack::MatrixType::General, m, Crk, CU, ldcu, U, Um);
+            hcorepp::kernels::LaCpy(MatrixType::General, m, Crk, CU, ldcu, U, Um);
 
-            hcorepp::kernels::LaCpy(lapack::MatrixType::General, m, aARank, (T *) aTileA.GetData(), aLdAu, &U[m * Crk],
+            hcorepp::kernels::LaCpy(MatrixType::General, m, aARank, (T *) aTileA.GetData(), aLdAu, &U[m * Crk],
                                     Um);
-
             hcorepp::kernels::MultiplyByAlpha(U, aTileA.GetNumOfRows(), aTileA.GetNumOfCols(), m, Crk, aAlpha);
-
             int64_t min_Um_Un = std::min(Um, Un);
 
             auto Utau_dataholder = new DataHolder<T>(min_Um_Un, 1, min_Um_Un);
             T *Utau = Utau_dataholder->GetData();
 
             hcorepp::kernels::Geqrf(Um, Un, U, Um, Utau);
-
             auto ru_dataholder = new DataHolder<T>(min_Um_Un, Un, min_Um_Un);
             auto RU = ru_dataholder->GetData();
 
-            hcorepp::kernels::Laset(lapack::MatrixType::Lower, min_Um_Un, Un, zero, zero, RU, min_Um_Un);
-            hcorepp::kernels::LaCpy(lapack::MatrixType::Upper,
-                                    min_Um_Un, Un, U, Um, RU, min_Um_Un);
-
+            hcorepp::kernels::Laset(MatrixType::Lower, min_Um_Un, Un, zero, zero, RU, min_Um_Un);
+            hcorepp::kernels::LaCpy(MatrixType::Upper, min_Um_Un, Un, U, Um, RU, min_Um_Un);
             int64_t Vm = n;
             int64_t Vn = aARank + Crk;
 
@@ -180,7 +175,9 @@ namespace hcorepp {
             if (aHelpers.GetTrmm()) {
                 sizeS = min_Um_Un;
             } else {
-                sizeS = std::min({m, n, (aARank + Crk)});
+                sizeS = std::min(m, n);
+                sizeS = std::min(sizeS, (aARank + Crk));
+//                sizeS =std::min({m, n, (aARank + Crk)});
             }
 
             size_t max_rows;
@@ -211,15 +208,15 @@ namespace hcorepp {
                                            blas::Op::ConjTrans, blas::Diag::NonUnit, min_Um_Un, Un, one, V, Vm, RU,
                                            min_Um_Un);
 
-                    hcorepp::kernels::Gesvd(lapack::Job::SomeVec, lapack::Job::SomeVec, min_Um_Un, Un, RU, min_Um_Un,
-                                            Sigma, Unew, min_Um_Un, VTnew, sizeS);
+                    hcorepp::kernels::Gesvd<T>(Job::SomeVec, Job::SomeVec, min_Um_Un, Un, RU, min_Um_Un,
+                                               Sigma, Unew, min_Um_Un, VTnew, sizeS);
                 } else {
                     hcorepp::kernels::Trmm(blas::Layout::ColMajor, blas::Side::Right, blas::Uplo::Upper,
                                            blas::Op::Trans, blas::Diag::NonUnit, min_Um_Un, Un, one, V, Vm, RU,
                                            min_Um_Un);
 
-                    hcorepp::kernels::Gesvd(lapack::Job::SomeVec, lapack::Job::SomeVec, min_Um_Un, Un, RU, min_Um_Un,
-                                            Sigma, Unew, Um, VTnew, sizeS);
+                    hcorepp::kernels::Gesvd<T>(Job::SomeVec, Job::SomeVec, min_Um_Un, Un, RU, min_Um_Un,
+                                               Sigma, Unew, Um, VTnew, sizeS);
                 }
             } else {
 
@@ -229,22 +226,22 @@ namespace hcorepp {
                 T *RV = rv_dataHolder->GetData();
                 T *RURV = rurv_dataHolder->GetData();
 
-                hcorepp::kernels::Laset(lapack::MatrixType::Lower, min_Vm_Vn, Vn, zero, zero, RV, min_Vm_Vn);
-                hcorepp::kernels::LaCpy(lapack::MatrixType::Upper, min_Vm_Vn, Vn, V, Vm, RV, min_Vm_Vn);
+                hcorepp::kernels::Laset(MatrixType::Lower, min_Vm_Vn, Vn, zero, zero, RV, min_Vm_Vn);
+                hcorepp::kernels::LaCpy(MatrixType::Upper, min_Vm_Vn, Vn, V, Vm, RV, min_Vm_Vn);
 
                 if (aHelpers.GetUngqr()) {
                     hcorepp::kernels::Gemm<T>(blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::ConjTrans,
                                               min_Um_Un, min_Vm_Vn, (aARank + Crk), one, RU, min_Um_Un, RV, min_Vm_Vn,
                                               zero, RURV, min_Um_Un);
 
-                    hcorepp::kernels::Gesvd(lapack::Job::SomeVec, lapack::Job::SomeVec, min_Um_Un, min_Vm_Vn, RURV,
+                    hcorepp::kernels::Gesvd(Job::SomeVec, Job::SomeVec, min_Um_Un, min_Vm_Vn, RURV,
                                             min_Um_Un, Sigma, Unew, min_Um_Un, VTnew, sizeS);
                 } else {
                     hcorepp::kernels::Gemm<T>(blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::Trans, min_Um_Un,
                                               min_Vm_Vn, (aARank + Crk), one, RU, min_Um_Un, RV, min_Vm_Vn, zero, RURV,
                                               min_Um_Un);
 
-                    hcorepp::kernels::Gesvd(lapack::Job::SomeVec, lapack::Job::SomeVec, min_Um_Un, min_Vm_Vn, RURV,
+                    hcorepp::kernels::Gesvd(Job::SomeVec, Job::SomeVec, min_Um_Un, min_Vm_Vn, RURV,
                                             min_Um_Un, Sigma, Unew, Um, VTnew, sizeS);
                 }
                 delete rv_dataHolder;
@@ -267,26 +264,25 @@ namespace hcorepp {
             T *UV = uv_dataHolder->GetData();
 
             if (aHelpers.GetUngqr()) {
-                lapack::ungqr(Um, min_Um_Un, min_Um_Un, U, Um, Utau);
-
+                hcorepp::kernels::ungqr(Um, min_Um_Un, min_Um_Un, U, Um, Utau);
                 hcorepp::kernels::Gemm<T>(blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans, Um, rk_new,
                                           min_Um_Un, one, U, Um, Unew, min_Um_Un, zero, UV, ldcu);
 
             } else {
-                hcorepp::kernels::Unmqr(blas::Side::Left, blas::Op::NoTrans, Um, rk_new, min_Um_Un, U, Um, Utau, Unew,
+                hcorepp::kernels::Unmqr(SideMode::SIDE_LEFT, BlasOperation::OP_NoTRANS, Um, rk_new, min_Um_Un, U, Um,
+                                        Utau,
+                                        Unew,
                                         Um);
-
-                hcorepp::kernels::LaCpy(lapack::MatrixType::General, Um, rk_new, Unew, Um, UV, ldcu);
+                hcorepp::kernels::LaCpy(MatrixType::General, Um, rk_new, Unew, Um, UV, ldcu);
             }
 
             hcorepp::kernels::CalculateVTnew(rk_new, aHelpers.GetUngqr(), min_Vm_Vn, Sigma, VTnew, sizeS, Vm);
-
             hcorepp::kernels::DestroySigma<T>(Sigma);
 
             T *UVptr = UV + ldcu * rk_new;
 
             if (aHelpers.GetUngqr()) {
-                lapack::ungqr(Vm, min_Vm_Vn, min_Vm_Vn, V, Vm, Vtau);
+                hcorepp::kernels::ungqr(Vm, min_Vm_Vn, min_Vm_Vn, V, Vm, Vtau);
 
                 auto vnew_dataHolder = new DataHolder<T>(Vm, rk_new, Vm);
 
@@ -300,10 +296,11 @@ namespace hcorepp {
 
                 delete vnew_dataHolder;
             } else {
-                hcorepp::kernels::Unmqr(blas::Side::Right, blas::Op::ConjTrans, rk_new, Vm, min_Vm_Vn, V, Vm, Vtau,
+                hcorepp::kernels::Unmqr(SideMode::SIDE_RIGHT, BlasOperation::OP_CONJG, rk_new, Vm, min_Vm_Vn, V, Vm,
+                                        Vtau,
                                         VTnew, sizeS);
 
-                hcorepp::kernels::LaCpy(lapack::MatrixType::General, rk_new, Vm, VTnew, sizeS, UVptr, rk_new);
+                hcorepp::kernels::LaCpy(MatrixType::General, rk_new, Vm, VTnew, sizeS, UVptr, rk_new);
                 hcorepp::kernels::CalculateUVptrConj(rk_new, Vm, UVptr);
             }
 

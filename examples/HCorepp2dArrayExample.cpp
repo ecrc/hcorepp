@@ -1,12 +1,13 @@
 #include <cstring>
 #include <chrono>
+#include <limits>
 #include "blas/flops.hh"
-#include "lapack.hh"
 #include <hcorepp/api/hcorepp.hpp>
 #include <hcorepp/operators/concrete/Dense.hpp>
 #include <hcorepp/helpers/MatrixHelpers.hpp>
 #include <iostream>
-#include <lapack/fortran.h>
+#include <hcorepp/kernels/memory.hpp>
+#include <hcorepp/helpers/lapack_wrappers.hpp>
 
 using namespace std::chrono;
 using namespace hcorepp::operators;
@@ -14,6 +15,14 @@ using namespace hcorepp::helpers::matrixhelpers;
 
 static double total_time = 0;
 
+
+template<typename T>
+T *copy_output(const hcorepp::dataunits::DataHolder<T> &apData) {
+    size_t num_elements = apData.GetNumOfCols() * apData.GetNumOfRows();
+    T *arr = new T[num_elements];
+    hcorepp::memory::Memcpy<T>(arr, apData.GetData(), num_elements, hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+    return arr;
+}
 
 template<typename T>
 void CalculateExact(blas::Layout aLayout, blas::Op aTransA, blas::Op aTransB, int64_t aLdA, int64_t aLdB, int64_t aLdC,
@@ -43,30 +52,30 @@ void CalculateApprox(Tile<T> &A, blas::Op aTransA, Tile<T> &B, blas::Op aTransB,
         auto Cm = C.GetTileSubMatrix(0).get().GetNumOfRows();
         auto Cn = C.GetTileSubMatrix(1).get().GetNumOfCols();
         auto rank = C.GetTileSubMatrix(0).get().GetNumOfCols();
-
+        auto cu = copy_output(C.GetTileSubMatrix(0).get());
+        auto cv = copy_output(C.GetTileSubMatrix(1).get());
 //        *aCOutput = (T *) malloc(Cm * Cn * sizeof(T));
         memset(*aCOutput, 0, Cm * Cn * sizeof(T));
 
         blas::gemm(blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
-                   Cm, Cn, rank, 1.0, C.GetTileSubMatrix(0).get().GetData(),
-                   C.GetTileSubMatrix(0).get().GetLeadingDim(), C.GetTileSubMatrix(1).get().GetData(),
+                   Cm, Cn, rank, 1.0, cu,
+                   C.GetTileSubMatrix(0).get().GetLeadingDim(), cv,
                    C.GetTileSubMatrix(1).get().GetLeadingDim(), 0.0, *aCOutput, aLdC);
-
+        delete[] cu;
+        delete[] cv;
     } else if (aCombination == DDC) {
         auto cu_m_new = C.GetTileSubMatrix(0).get().GetNumOfRows();
         auto cu_n_new = C.GetTileSubMatrix(0).get().GetNumOfCols();
 
-//        *aCOutput = (T *) malloc((cu_m_new * cu_n_new) * sizeof(T));
-
-        memcpy((void *) *aCOutput, (void *) C.GetTileSubMatrix(0).get().GetData(), cu_m_new * cu_n_new * sizeof(T));
+        hcorepp::memory::Memcpy<T>(*aCOutput, C.GetTileSubMatrix(0).get().GetData(), cu_m_new * cu_n_new,
+                                   hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
 
     } else {
         auto Cm = C.GetTileSubMatrix(0).get().GetNumOfRows();
         auto Cn = C.GetTileSubMatrix(0).get().GetNumOfCols();
 
-//        *aCOutput = (T *) malloc(Cm * Cn * sizeof(T));
-
-        memcpy((void *) *aCOutput, (void *) C.GetTileSubMatrix(0).get().GetData(), Cm * Cn * sizeof(T));
+        hcorepp::memory::Memcpy<T>(*aCOutput, C.GetTileSubMatrix(0).get().GetData(), Cm * Cn,
+                                   hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
     }
 }
 
@@ -78,24 +87,27 @@ CalculateApproxAndExactTilesGemm(blas::Op aTransA, blas::Op aTransB, blas::Op aT
                                  CompressedTile<T> &comp_tileC, T **Approx_C_output,
                                  T **Exact_C_Output) {
 
-//    *Exact_C_Output = (T *) malloc(dense_tileC.GetTileSubMatrix(0).get().GetNumOfRows() *
-//                                   dense_tileC.GetTileSubMatrix(0).get().GetNumOfCols() * sizeof(T));
-    memcpy((void *) *Exact_C_Output, dense_tileC.GetTileSubMatrix(0).get().GetData(),
-           dense_tileC.GetTileSubMatrix(0).get().GetNumOfRows() * dense_tileC.GetTileSubMatrix(0).get().GetNumOfCols() *
-           sizeof(T));
-
+    hcorepp::memory::Memcpy<T>(*Exact_C_Output, dense_tileC.GetTileSubMatrix(0).get().GetData(),
+                               dense_tileC.GetTileSubMatrix(0).get().GetNumOfRows() *
+                               dense_tileC.GetTileSubMatrix(0).get().GetNumOfCols(),
+                               hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+    auto a = copy_output(dense_tileA.GetTileSubMatrix(0).get());
+    auto b = copy_output(dense_tileB.GetTileSubMatrix(0).get());
     CalculateExact(blas::Layout::ColMajor, aTransA, aTransB, dense_tileA.GetTileSubMatrix(0).get().GetLeadingDim(),
                    dense_tileB.GetTileSubMatrix(0).get().GetLeadingDim(),
                    dense_tileC.GetTileSubMatrix(0).get().GetNumOfRows(),
-                   dense_tileA.GetTileSubMatrix(0).get().GetData(), dense_tileB.GetTileSubMatrix(0).get().GetData(),
+                   a, b,
                    *Exact_C_Output,
                    dense_tileC.GetTileSubMatrix(0).get().GetNumOfRows(),
                    dense_tileC.GetTileSubMatrix(0).get().GetNumOfCols(),
                    dense_tileA.GetTileSubMatrix(0).get().GetNumOfCols(),
                    aAlpha, aBeta);
-    memcpy(dense_tileC.GetTileSubMatrix(0).get().GetData(), (void *) *Exact_C_Output,
-           dense_tileC.GetTileSubMatrix(0).get().GetNumOfRows() * dense_tileC.GetTileSubMatrix(0).get().GetNumOfCols() *
-           sizeof(T));
+    delete[] a;
+    delete[] b;
+    hcorepp::memory::Memcpy<T>(dense_tileC.GetTileSubMatrix(0).get().GetData(), *Exact_C_Output,
+                               dense_tileC.GetTileSubMatrix(0).get().GetNumOfRows() *
+                               dense_tileC.GetTileSubMatrix(0).get().GetNumOfCols(),
+                               hcorepp::memory::MemoryTransfer::HOST_TO_DEVICE);
 
     hcorepp::helpers::SvdHelpers helpers;
     CalculateApprox(comp_tileA, aTransA, comp_tileB, aTransB, comp_tileC, aTransC,
@@ -284,7 +296,7 @@ int main(int argc, char *argv[]) {
     blas::Op transC = blas::Op::NoTrans;
     int64_t mode = 0;
     int64_t align = 1;
-    blas::real_type<double> cond = LAPACK_dlamch("E", 1);
+    blas::real_type<double> cond = std::numeric_limits<double>::epsilon();
 
     // assuming squared matrices
     int matrix_tiles = 2;
@@ -356,8 +368,8 @@ int main(int argc, char *argv[]) {
 
             for (int k = 0; k < b_mt; k++) {
 
-                Exact_a[k][j] = ADense[k][j]->GetTileSubMatrix(0).get().GetData();
-                Exact_b[i][k] = BDense[i][k]->GetTileSubMatrix(0).get().GetData();
+                Exact_a[k][j] = copy_output(ADense[k][j]->GetTileSubMatrix(0).get());
+                Exact_b[i][k] = copy_output(BDense[i][k]->GetTileSubMatrix(0).get());
 
                 auto denseA = ADense[k][j];
                 auto denseB = BDense[i][k];
@@ -395,54 +407,36 @@ int main(int argc, char *argv[]) {
     ///Delete Matrix B Dense and compressed tiles.
     DeleteDenseAndCompressedTiles(b_mt, b_nt, BDense, BComp);
 
-//    for (int jj = 0; jj < c_nt; jj++) {
-//        for (int ii = 0; ii < c_mt; ii++) {
-//            for (int j = 0; j < n; j++) {
-//                for (int i = 0; i < m; i++) {
-//                    std::cout << "OLD R : " << ii << " C: " << jj << " : " << Exact_c[jj][ii][j * m + i] << " ";
-//                }
-//                std::cout << std::endl;
-//            }
-//            std::cout << "============================================" << std::endl;
-//        }
-//    }
-//
-//    std::cout << " ========== FULL EXACT C ========" << std::endl;
-//    for (int ii = 0; ii < new_n; ii++) {
-//        for (int jj = 0; jj < new_m; jj++) {
-//            std::cout << full_exact_c[ii * new_m + jj] << " ";
-//        }
-//        std::cout << std::endl;
-//    }
-//    std::cout << "============================================" << std::endl;
-//
-//    std::cout << " ========== FULL APPROX C ========" << std::endl;
-//    for (int ii = 0; ii < new_n; ii++) {
-//        for (int jj = 0; jj < new_m; jj++) {
-//            std::cout << full_approx_c[ii * new_m + jj] << " ";
-//        }
-//        std::cout << std::endl;
-//    }
-//    std::cout << "============================================" << std::endl;
 
-    lapack::Norm norm = lapack::Norm::Inf;
+    hcorepp::helpers::Norm norm = hcorepp::helpers::Norm::INF;
 
-    blas::real_type<double> Anorm = lapack::lange(norm, a_mt * m, a_nt * n, full_exact_a, a_mt * m);
-    blas::real_type<double> Bnorm = lapack::lange(norm, b_mt * m, b_nt * n, full_exact_b, b_mt * m);
-    blas::real_type<double> Cnorm = lapack::lange(norm, c_mt * m, c_nt * n, full_dense_c, c_mt * m);
+    blas::real_type<double> Anorm = lapack_lange(norm, a_mt * m, a_nt * n, full_exact_a, a_mt * m);
+    blas::real_type<double> Bnorm = lapack_lange(norm, b_mt * m, b_nt * n, full_exact_b, b_mt * m);
+    blas::real_type<double> Cnorm = lapack_lange(norm, c_mt * m, c_nt * n, full_dense_c, c_mt * m);
 
     diff(full_exact_c, c_mt * m, full_approx_c, c_mt * m, c_nt * n, c_mt * m);
 
-    double error = lapack::lange(norm, c_mt * m, c_nt * n, full_exact_c, c_mt * m) /
+    double error = lapack_lange(norm, c_mt * m, c_nt * n, full_exact_c, c_mt * m) /
                    ((Anorm + Bnorm + Cnorm) * std::max(c_mt * m, c_nt * n) * accuracy);
 
-    std::cout << "FINAL ERROR VALUE : " << error << " expected accuracy:  " << accuracy << "\n";
+    std::cout << "FINAL ERROR VALUE : " << error << " expected accuracy:  " << 10 << "\n";
     bool pass = (error < 10);
 
     if (pass) {
         std::cout << "Example passed " << std::endl;
     } else {
         std::cout << "Example didn't pass, error > 10 " << std::endl;
+    }
+
+    for (int i = 0; i < b_mt; i++) {
+        for (int j = 0; j < c_mt; j++) {
+            delete[] Exact_a[i][j];
+        }
+    }
+    for (int i = 0; i < c_nt; i++) {
+        for (int j = 0; j < b_mt; j++) {
+            delete[] Exact_b[i][j];
+        }
     }
 
     free(full_exact_c);

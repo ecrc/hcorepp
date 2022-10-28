@@ -66,7 +66,7 @@ void TEST_GEMM() {
         hcorepp::helpers::SvdHelpers helpers;
         gemm<T>(alpha, dense_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta, dense_tile_C,
                 blas::Op::NoTrans, helpers);
-        T *output = dense_tile_C.GetTileSubMatrix(0).get().GetData();
+        T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
 
         columnMajorToRowMajor<T>(output, n, m, (T *) matrix_D);
 
@@ -76,6 +76,7 @@ void TEST_GEMM() {
 
         delete[] a_input;
         delete[] b_input;
+        delete[] output;
 
     }
 
@@ -125,7 +126,8 @@ void TEST_GEMM() {
         hcorepp::helpers::SvdHelpers helpers;
         gemm<T>(alpha, dense_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta, dense_tile_C,
                 blas::Op::NoTrans, helpers);
-        T *output = dense_tile_C.GetTileSubMatrix(0).get().GetData();
+
+        T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
 
         columnMajorToRowMajor<T>(output, n, m, (T *) matrix_D);
 
@@ -135,6 +137,7 @@ void TEST_GEMM() {
 
         delete[] a_input;
         delete[] b_input;
+        delete[] output;
 
     }
 
@@ -186,7 +189,7 @@ void TEST_GEMM() {
         gemm<T>(alpha, dense_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta, dense_tile_C,
                 blas::Op::NoTrans, helpers);
 
-        T *output = dense_tile_C.GetTileSubMatrix(0).get().GetData();
+        T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
 
         columnMajorToRowMajor<T>(output, n, m, (T *) matrix_D);
 
@@ -196,6 +199,7 @@ void TEST_GEMM() {
 
         delete[] a_input;
         delete[] b_input;
+        delete[] output;
     }
 
     SECTION("Gemm Test 4") {
@@ -265,7 +269,7 @@ void TEST_GEMM() {
         hcorepp::helpers::SvdHelpers helpers;
         gemm<T>(alpha, compressed_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta, dense_tile_C,
                 blas::Op::NoTrans, helpers);
-        T *output = dense_tile_C.GetTileSubMatrix(0).get().GetData();
+        T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
 
         columnMajorToRowMajor<T>(output, c_n, c_m, (T *) matrix_D);
 
@@ -276,6 +280,7 @@ void TEST_GEMM() {
         delete[] au_input;
         delete[] av_input;
         delete[] b_input;
+        delete[] output;
 
         free(compressed_tile_a_data);
     }
@@ -342,7 +347,7 @@ void TEST_GEMM() {
         hcorepp::helpers::SvdHelpers helpers;
         gemm<T>(alpha, dense_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta, dense_tile_C,
                 blas::Op::NoTrans, helpers);
-        T *output = dense_tile_C.GetTileSubMatrix(0).get().GetData();
+        T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
 
         columnMajorToRowMajor<T>(output, c_n, c_m, (T *) matrix_D);
 
@@ -353,6 +358,7 @@ void TEST_GEMM() {
         delete[] a_input;
         delete[] bu_input;
         delete[] bv_input;
+        delete[] output;
         free(compressed_tile_b_data);
     }
 
@@ -432,7 +438,7 @@ void TEST_GEMM() {
         hcorepp::helpers::SvdHelpers helpers;
         gemm<T>(alpha, compressed_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta,
                 dense_tile_C, blas::Op::NoTrans, helpers);
-        T *output = dense_tile_C.GetTileSubMatrix(0).get().GetData();
+        T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
 
         columnMajorToRowMajor<T>(output, c_n, c_m, (T *) matrix_D);
 
@@ -446,6 +452,7 @@ void TEST_GEMM() {
         delete[] av_input;
         delete[] bu_input;
         delete[] bv_input;
+        delete[] output;
         free(compressed_tile_a_data);
         free(compressed_tile_b_data);
     }
@@ -546,8 +553,8 @@ void TEST_GEMM() {
         gemm<T>(alpha, compressed_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta,
                 compressed_tile_C, blas::Op::NoTrans, helpers);
 
-        T *cu_output = compressed_tile_C.GetTileSubMatrix(0).get().GetData();
-        T *cv_output = compressed_tile_C.GetTileSubMatrix(1).get().GetData();
+        T *cu_output = copy_output(compressed_tile_C.GetTileSubMatrix(0).get());
+        T *cv_output = copy_output(compressed_tile_C.GetTileSubMatrix(1).get());
 
         cu_m = compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfRows();
         cu_n = compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfCols();
@@ -586,6 +593,8 @@ void TEST_GEMM() {
         delete[] cv_output_row;
         delete[] cu_output_row;
         delete[] cu_cv;
+        delete[] cu_output;
+        delete[] cv_output;
         free(cu_input_R);
         free(cu_input_C);
         free(cv_input_R);
@@ -694,8 +703,8 @@ void TEST_GEMM() {
         hcorepp::helpers::SvdHelpers helpers;
         gemm<T>(alpha, dense_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta,
                 compressed_tile_C, blas::Op::NoTrans, helpers);
-        T *cu_output = compressed_tile_C.GetTileSubMatrix(0).get().GetData();
-        T *cv_output = compressed_tile_C.GetTileSubMatrix(1).get().GetData();
+        T *cu_output = copy_output(compressed_tile_C.GetTileSubMatrix(0).get());
+        T *cv_output = copy_output(compressed_tile_C.GetTileSubMatrix(1).get());
 
         cu_m = compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfRows();
         cu_n = compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfCols();
@@ -734,6 +743,8 @@ void TEST_GEMM() {
         delete[] cv_output_row;
         delete[] cu_output_row;
         delete[] cu_cv;
+        delete[] cu_output;
+        delete[] cv_output;
 
         free(compressed_tile_b_data);
         free(cu_input_R);
@@ -868,8 +879,8 @@ void TEST_GEMM() {
         hcorepp::helpers::SvdHelpers helpers;
         gemm<T>(alpha, compressed_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta,
                 compressed_tile_C, blas::Op::NoTrans, helpers);
-        T *cu_output = compressed_tile_C.GetTileSubMatrix(0).get().GetData();
-        T *cv_output = compressed_tile_C.GetTileSubMatrix(1).get().GetData();
+        T *cu_output = copy_output(compressed_tile_C.GetTileSubMatrix(0).get());
+        T *cv_output = copy_output(compressed_tile_C.GetTileSubMatrix(1).get());
 
         cu_m = compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfRows();
         cu_n = compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfCols();
@@ -910,6 +921,8 @@ void TEST_GEMM() {
         delete[] cv_output_row;
         delete[] cu_output_row;
         delete[] cu_cv;
+        delete[] cu_output;
+        delete[] cv_output;
 
         free(compressed_tile_a_data);
         free(compressed_tile_b_data);
@@ -1007,8 +1020,8 @@ void TEST_GEMM() {
         hcorepp::helpers::SvdHelpers helpers;
         gemm<T>(alpha, dense_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta, compressed_tile_C,
                 blas::Op::NoTrans, helpers);
-        T *cu_output = compressed_tile_C.GetTileSubMatrix(0).get().GetData();
-        T *cv_output = compressed_tile_C.GetTileSubMatrix(1).get().GetData();
+        T *cu_output = copy_output(compressed_tile_C.GetTileSubMatrix(0).get());
+        T *cv_output = copy_output(compressed_tile_C.GetTileSubMatrix(1).get());
 
         cu_m = compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfRows();
         cu_n = compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfCols();
@@ -1046,6 +1059,8 @@ void TEST_GEMM() {
         delete[] cv_output_row;
         delete[] cu_output_row;
         delete[] cu_cv;
+        delete[] cu_output;
+        delete[] cv_output;
         free(cu_input_R);
         free(cu_input_C);
         free(cv_input_R);

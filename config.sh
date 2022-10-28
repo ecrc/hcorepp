@@ -8,7 +8,7 @@ NC='\033[0m'
 PROJECT_SOURCE_DIR=$(dirname "$0")
 ABSOLUE_PATH=$(dirname $(realpath "$0"))
 
-while getopts ":f:tevhi:" opt; do
+while getopts ":f:tevhic:" opt; do
   case $opt in
   f) ##### Define test file path  #####
     echo -e "${BLUE}Test File path set to $OPTARG${NC}"
@@ -30,6 +30,10 @@ while getopts ":f:tevhi:" opt; do
     echo -e "${YELLOW}printing make with details${NC}"
     VERBOSE=ON
     ;;
+  c)##### Using cuda enabled #####
+    echo -e "${YELLOW}Cuda enabled ${NC}"
+    USE_CUDA=ON
+    ;;
   \?) ##### using default settings #####
     echo -e "${RED}Building tests disabled${NC}"
     echo -e "${RED}Building examples disabled${NC}"
@@ -40,6 +44,7 @@ while getopts ":f:tevhi:" opt; do
     INSTALL_PATH="/usr/local"
     VERBOSE=OFF
     TEST_PATH="${ABSOLUE_PATH}/tests/test-files"
+    USE_CUDA="OFF"
     ;;
   :) ##### Error in an option #####
     echo "Option $OPTARG requires parameter(s)"
@@ -82,6 +87,11 @@ if [ -z "$TEST_PATH" ]; then
   echo -e "${BLUE}Test Files path set to $TEST_PATH${NC}"
 fi
 
+if [ -z "$USE_CUDA" ]; then
+  USE_CUDA="OFF"
+  echo -e "${RED}Using CUDA disabled${NC}"
+fi
+
 rm -rf bin/
 mkdir bin/
 cmake -DCMAKE_BUILD_TYPE=Debug \
@@ -93,4 +103,5 @@ cmake -DCMAKE_BUILD_TYPE=Debug \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=$VERBOSE \
   -H"${PROJECT_SOURCE_DIR}" \
   -B"${PROJECT_SOURCE_DIR}/bin"\
-  -DUSE_CUDA=OFF
+  -DUSE_CUDA="$USE_CUDA"
+

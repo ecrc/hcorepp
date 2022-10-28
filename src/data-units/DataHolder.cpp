@@ -1,9 +1,7 @@
 
 #include <cstdlib>
-#include <cstring>
-#include <iostream>
 #include <hcorepp/data-units/DataHolder.hpp>
-#include <hcorepp/kernels/kernels.hpp>
+#include <hcorepp/kernels/memory.hpp>
 
 namespace hcorepp {
     namespace dataunits {
@@ -13,12 +11,18 @@ namespace hcorepp {
             mNumOfRows = aRows;
             mNumOfCols = aCols;
             mLeadingDimension = aLeadingDim;
-            mDataArray = hcorepp::kernels::AllocateArray<T>(mNumOfRows, mNumOfCols, apData);
+            mDataArray = hcorepp::memory::AllocateArray<T>(mNumOfRows * mNumOfCols);
+            if (apData == nullptr) {
+                hcorepp::memory::Memset<T>(mDataArray, 0, mNumOfRows * mNumOfCols);
+            } else {
+                hcorepp::memory::Memcpy(mDataArray, apData, mNumOfRows * mNumOfCols,
+                                        memory::MemoryTransfer::AUTOMATIC);
+            }
         }
 
         template<typename T>
         DataHolder<T>::~DataHolder() {
-            hcorepp::kernels::DestroyArray<T>(mDataArray);
+            hcorepp::memory::DestroyArray<T>(mDataArray);
         }
 
         template<typename T>
@@ -52,7 +56,8 @@ namespace hcorepp {
             if (aNumOfElements > mNumOfRows * mNumOfCols || aSrcDataArray == nullptr) {
                 return;
             }
-            hcorepp::kernels::Memcpy<T>(&mDataArray[aStIdx], aSrcDataArray, aNumOfElements);
+            hcorepp::memory::Memcpy<T>(&mDataArray[aStIdx], aSrcDataArray, aNumOfElements,
+                                       memory::MemoryTransfer::DEVICE_TO_DEVICE);
         }
 
         template<typename T>
@@ -60,10 +65,24 @@ namespace hcorepp {
             mNumOfRows = aRows;
             mNumOfCols = aCols;
             mLeadingDimension = aLeadingDim;
-            hcorepp::kernels::DestroyArray(mDataArray);
-            mDataArray = hcorepp::kernels::AllocateArray<T>(mNumOfRows, mNumOfCols);
+            hcorepp::memory::DestroyArray(mDataArray);
+            mDataArray = hcorepp::memory::AllocateArray<T>(mNumOfRows * mNumOfCols);
+            hcorepp::memory::Memset<T>(mDataArray, 0, mNumOfRows * mNumOfCols);
         }
 
+        template<typename T>
+        void DataHolder<T>::Print(std::ostream &aOutStream) const {
+            T *temp_array = new T[mNumOfCols * mNumOfRows];
+            hcorepp::memory::Memcpy(temp_array, mDataArray, mNumOfRows * mNumOfCols,
+                                    memory::MemoryTransfer::DEVICE_TO_HOST);
+            aOutStream << "Data : " << std::endl;
+            for (int i = 0; i < mNumOfRows * mNumOfCols; i++) {
+                aOutStream << temp_array[i] << ", ";
+            }
+            std::string limiter(20, '=');
+            aOutStream << std::endl << limiter << std::endl;
+            delete[] temp_array;
+        }
 
     }
 }

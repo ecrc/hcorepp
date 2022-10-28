@@ -2,8 +2,8 @@
 // (KAUST). All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
 
-#ifndef HCORE_TEST_LAPACK_WRAPPERS_HH
-#define HCORE_TEST_LAPACK_WRAPPERS_HH
+#ifndef HCORE_HELPERS_LAPACK_WRAPPERS_HH
+#define HCORE_HELPERS_LAPACK_WRAPPERS_HH
 
 #include <vector>
 
@@ -12,33 +12,17 @@
 #include <cstdint>
 #include <algorithm>
 #include <stdexcept>
+
+#if __has_include("openblas/lapack.h")
+
+#include <openblas/lapack.h>
+
+#else
 #include <lapack/fortran.h>
+#endif
 
-template<typename T>
-struct is_complex_t : public std::false_type {
-};
-
-template<typename T>
-struct is_complex_t<std::complex<T>> : public std::true_type {
-};
-
-template<typename T>
-constexpr bool is_complex() {
-    return is_complex_t<T>::value;
-}
-
-template<typename T>
-struct is_double_t : public std::false_type {
-};
-
-template<>
-struct is_double_t<double> : public std::true_type {
-};
-
-template<typename T>
-constexpr bool is_double() {
-    return is_double_t<T>::value;
-}
+#include "type_check.h"
+#include "hcorepp/operators/helpers/SvdHelpers.hpp"
 
 template<typename T, typename C>
 void lapack_latms_core(int64_t m, int64_t n, char dist, int64_t *iseed, char sym,
@@ -77,19 +61,13 @@ void lapack_latms_core(int64_t m, int64_t n, char dist, int64_t *iseed, char sym
             LAPACK_zlatms(
                     &m_, &n_, &dist, iseed_ptr, &sym, d, &mode_, &cond, &dmax, &kl_, &ku_,
                     &pack, (lapack_complex_double *) A, &lda_,
-                    (lapack_complex_double *) &work[0], &info_
-#ifdef LAPACK_FORTRAN_STRLEN_END
-                    , 1, 1, 1
-#endif
+                    (lapack_complex_double * ) & work[0], &info_
             );
         } else {
             LAPACK_clatms(
                     &m_, &n_, &dist, iseed_ptr, &sym, d, &mode_, &cond, &dmax, &kl_, &ku_,
-                    &pack, (lapack_complex_float*)A, &lda_,
-                    (lapack_complex_float*)&work[0], &info_
-#ifdef LAPACK_FORTRAN_STRLEN_END
-                    , 1, 1, 1
-#endif
+                    &pack, (lapack_complex_float *) A, &lda_,
+                    (lapack_complex_float * ) & work[0], &info_
             );
         }
     } else {
@@ -98,19 +76,12 @@ void lapack_latms_core(int64_t m, int64_t n, char dist, int64_t *iseed, char sym
                     &m_, &n_, &dist, iseed_ptr, &sym, d, &mode_, &cond, &dmax, &kl_, &ku_,
                     &pack, A, &lda_,
                     &work[0], &info_
-#ifdef LAPACK_FORTRAN_STRLEN_END
-                    , 1, 1, 1
-#endif
             );
         } else {
             LAPACK_slatms(
                     &m_, &n_, &dist, iseed_ptr, &sym, d, &mode_, &cond, &dmax, &kl_, &ku_,
                     &pack, A, &lda_,
-                    &work[0], &info_
-#ifdef LAPACK_FORTRAN_STRLEN_END
-                    , 1, 1, 1
-#endif
-            );
+                    &work[0], &info_);
         }
     }
     if (info_ != 0) {
@@ -136,4 +107,138 @@ void lapack_latms(int64_t m, int64_t n, char dist, int64_t *iseed, char sym,
     lapack_latms_core<T, std::complex<T>>(m, n, dist, iseed, sym, d, mode, cond, dmax, kl, ku, pack, A, lda);
 }
 
-#endif // HCORE_TEST_LAPACK_WRAPPERS_HH
+template<typename T, typename C>
+void lapack_lacpy_core(hcorepp::helpers::MatrixType matrixtype, int64_t m, int64_t n,
+                       C const *A, int64_t lda, C *B, int64_t ldb) {
+    char matrix_type = (char)matrixtype;
+    lapack_int m_ = (lapack_int) m;
+    lapack_int n_ = (lapack_int) n;
+    lapack_int lda_ = (lapack_int) lda;
+    lapack_int ldb_ = (lapack_int) ldb;
+    if constexpr(is_complex<C>()) {
+        if constexpr(is_double<T>()) {
+            LAPACK_zlacpy(&matrix_type, &m_, &n_, A, &lda_, B, &ldb_);
+        } else {
+            LAPACK_clacpy(&matrix_type, &m_, &n_, A, &lda_, B, &ldb_);
+        }
+    } else {
+        if constexpr (is_double<T>()) {
+            LAPACK_dlacpy(&matrix_type, &m_, &n_, A, &lda_, B, &ldb_);
+        } else {
+            LAPACK_slacpy(&matrix_type, &m_, &n_, A, &lda_, B, &ldb_);
+        }
+    }
+}
+
+template<typename T>
+void lapack_lacpy(hcorepp::helpers::MatrixType matrixtype, int64_t m, int64_t n,
+                  T const *A, int64_t lda, T *B, int64_t ldb) {
+    lapack_lacpy_core<T, T>(matrixtype, m, n, A, lda, B, ldb);
+}
+
+template<typename T>
+void lapack_lacpy(hcorepp::helpers::MatrixType matrixtype, int64_t m, int64_t n,
+                  std::complex<T> const *A, int64_t lda, std::complex<T> *B, int64_t ldb) {
+    lapack_lacpy_core<T, std::complex<T>>(matrixtype, m, n, A, lda, B, ldb);
+}
+
+template<typename T, typename C>
+void lapack_gesvd_core(hcorepp::helpers::Job jobu, hcorepp::helpers::Job jobvt,
+                       int64_t m, int64_t n, C *A, int64_t lda, T *S,
+                       C *U, int64_t ldu, C *VT, int64_t ldvt) {
+    char job_u = (char)jobu;
+    char job_vt = (char)jobvt;
+    lapack_int m_ = (lapack_int) m;
+    lapack_int n_ = (lapack_int) n;
+    lapack_int lda_ = (lapack_int) lda;
+    lapack_int ldu_ = (lapack_int) ldu;
+    lapack_int ldvt_ = (lapack_int) ldvt;
+    lapack_int info_ = 0;
+
+    // query for workspace size
+    C qry_work[1];
+    lapack_int ineg_one = -1;
+    if constexpr(is_complex<C>()) {
+        if constexpr(is_double<T>()) {
+            LAPACK_zgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, qry_work, &ineg_one, &info_);
+        } else {
+            LAPACK_cgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, qry_work, &ineg_one, &info_);
+        }
+    } else {
+        if constexpr (is_double<T>()) {
+            LAPACK_dgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, qry_work, &ineg_one, &info_);
+        } else {
+            LAPACK_sgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, qry_work, &ineg_one, &info_);
+        }
+    }
+    lapack_int lwork_ = qry_work[0];
+
+    // allocate workspace
+    std::vector< C > work( lwork_ );
+
+    if constexpr(is_complex<C>()) {
+        if constexpr(is_double<T>()) {
+            LAPACK_zgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, &work[0], &lwork_, &info_);
+        } else {
+            LAPACK_cgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, &work[0], &lwork_, &info_);
+        }
+    } else {
+        if constexpr (is_double<T>()) {
+            LAPACK_dgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, &work[0], &lwork_, &info_);
+        } else {
+            LAPACK_sgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, &work[0], &lwork_, &info_);
+        }
+    }
+}
+
+template<typename T>
+void lapack_gesvd(hcorepp::helpers::Job jobu, hcorepp::helpers::Job jobvt,
+                  int64_t m, int64_t n, T *A, int64_t lda, T *S,
+                  T *U, int64_t ldu, T *VT, int64_t ldvt) {
+    lapack_gesvd_core<T, T>(jobu, jobvt, m, n, A, lda, S, U, ldu, VT, ldvt);
+}
+
+template<typename T>
+void lapack_gesvd(hcorepp::helpers::Job jobu, hcorepp::helpers::Job jobvt,
+                  int64_t m, int64_t n, std::complex<T> *A, int64_t lda, T *S,
+                  std::complex<T> *U, int64_t ldu, std::complex<T> *VT, int64_t ldvt) {
+    lapack_gesvd_core<T, std::complex<T>>(jobu, jobvt, m, n, A, lda, S, U, ldu, VT, ldvt);
+}
+
+template<typename T, typename C>
+blas::real_type<T> lapack_lange_core(hcorepp::helpers::Norm aNorm, int64_t m, int64_t n,
+                       C const *A, int64_t lda) {
+    char norm_type = (char)aNorm;
+    lapack_int m_ = (lapack_int) m;
+    lapack_int n_ = (lapack_int) n;
+    lapack_int lda_ = (lapack_int) lda;
+    lapack_int lwork = std::max(1, m_);
+    std::vector<blas::real_type<T>> t(lwork);
+    if constexpr(is_complex<C>()) {
+        if constexpr(is_double<T>()) {
+            return LAPACK_zlange(&norm_type, &m_, &n_, A, &lda_, &t[0]);
+        } else {
+            return LAPACK_clange(&norm_type, &m_, &n_, A, &lda_, &t[0]);
+        }
+    } else {
+        if constexpr (is_double<T>()) {
+            return LAPACK_dlange(&norm_type, &m_, &n_, A, &lda_, &t[0]);
+        } else {
+            return LAPACK_slange(&norm_type, &m_, &n_, A, &lda_, &t[0]);
+        }
+    }
+}
+
+template<typename T>
+blas::real_type<T> lapack_lange(hcorepp::helpers::Norm aNorm, int64_t m, int64_t n,
+                  T const *A, int64_t lda) {
+    return lapack_lange_core<T, T>(aNorm, m, n, A, lda);
+}
+
+template<typename T>
+blas::real_type<T> lapack_lange(hcorepp::helpers::Norm aNorm, int64_t m, int64_t n,
+                  std::complex<T> const *A, int64_t lda) {
+    return lapack_lange_core<T, std::complex<T>>(aNorm, m, n, A, lda);
+}
+
+#endif // HCORE_HELPERS_LAPACK_WRAPPERS_HH

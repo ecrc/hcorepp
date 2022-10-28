@@ -1,13 +1,8 @@
-#ifndef HCOREPP_API_KERNELS_HPP
-#define HCOREPP_API_KERNELS_HPP
-
-//#ifdef USE_CUDA
-//
-//#else
-//#endif
+#ifndef HCOREPP_KERNELS_KERNELS_HPP
+#define HCOREPP_KERNELS_KERNELS_HPP
 
 #include "blas.hh"
-#include "lapack/wrappers.hh"
+#include "hcorepp/operators/helpers/SvdHelpers.hpp"
 
 namespace hcorepp {
     namespace kernels {
@@ -41,13 +36,13 @@ namespace hcorepp {
         void FillIdentityMatrix(int64_t aNumOfElements, T *apMatrix);
 
         template<typename T>
-        void LaCpy(lapack::MatrixType aType, int64_t aM, int64_t aRank, T *apCU, int64_t aLD, T *apU, int64_t aUm);
+        void LaCpy(helpers::MatrixType aType, int64_t aM, int64_t aRank, T *apCU, int64_t aLD, T *apU, int64_t aUm);
 
         template<typename T>
         void Geqrf(int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apTau);
 
         template<typename T>
-        void Laset(lapack::MatrixType aMatrixType, int64_t aM, int64_t aN, T aOffdiag, T aDiag,
+        void Laset(helpers::MatrixType aMatrixType, int64_t aM, int64_t aN, T aOffdiag, T aDiag,
                    T *apA, int64_t aLdA);
 
         template<typename T>
@@ -55,12 +50,14 @@ namespace hcorepp {
                   int64_t aM, int64_t aN, T aAlpha, T const *apA, int64_t aLdA, T *apB, int64_t aLdB);
 
         template<typename T>
-        void Gesvd(lapack::Job aJobu, lapack::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
-                   int64_t aLdU, T *apVT, int64_t aLdVt);
+        void
+        Gesvd(helpers::Job aJobu, helpers::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
+              int64_t aLdU, T *apVT, int64_t aLdVt);
 
         template<typename T>
         void
-        Unmqr(lapack::Side aSide, lapack::Op aTrans, int64_t aM, int64_t aN, int64_t aK, T const *apA, int64_t aLdA,
+        Unmqr(helpers::SideMode aSide, helpers::BlasOperation aTrans, int64_t aM, int64_t aN, int64_t aK, T const *apA,
+              int64_t aLdA,
               T const *apTau, T *apC, int64_t aLdC);
 
         template<typename T>
@@ -70,16 +67,10 @@ namespace hcorepp {
         void DestroySigma(blas::real_type<T> *apSigma);
 
         template<typename T>
-        T *AllocateArray(int64_t aRows, int64_t aCols, T *apSrc = nullptr);
-
-        template<typename T>
-        void DestroyArray(T *apArray);
-
-        template<typename T>
-        void Memcpy(T *apDestination, T *apSrcDataArray, int64_t aNumOfElements);
-
+        void
+        ungqr(int64_t aM, int64_t aN, int64_t aK, T *apA, int64_t aLdA, T *apTau);
 
     }
 }
 
-#endif //HCOREPP_API_KERNELS_HPP
+#endif //HCOREPP_KERNELS_KERNELS_HPP

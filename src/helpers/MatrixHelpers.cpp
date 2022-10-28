@@ -1,8 +1,12 @@
 #include <cstring>
-#include <lapack/wrappers.hh>
 #include <hcorepp/helpers/MatrixHelpers.hpp>
 #include <iostream>
 #include "hcorepp/helpers/lapack_wrappers.hpp"
+#if __has_include("openblas/lapack.h")
+#include <openblas/lapack.h>
+#else
+#include <lapack/fortran.h>
+#endif
 
 namespace hcorepp {
     namespace helpers {
@@ -10,7 +14,7 @@ namespace hcorepp {
             template<typename T>
             void generate_dense_matrix(int64_t m, int64_t n, T *A, int64_t lda, int64_t *iseed, int64_t mode,
                                        blas::real_type<T> cond) {
-                int16_t min_m_n = std::min(m, n);
+                int64_t min_m_n = std::min(m, n);
 
                 blas::real_type<T> *D = (blas::real_type<T> *) malloc(min_m_n * sizeof(blas::real_type<T>));
 
@@ -37,7 +41,7 @@ namespace hcorepp {
             template<typename T>
             void compress_dense_matrix(int64_t m, int64_t n, const T *A, int64_t lda, T **UV, int64_t &rk,
                                        blas::real_type<T> accuracy) {
-                int16_t min_m_n = std::min(m, n);
+                int64_t min_m_n = std::min(m, n);
 
                 blas::real_type<T> *Sigma = (blas::real_type<T> *) malloc(min_m_n * sizeof(blas::real_type<T>));
                 T *U = (T *) malloc(lda * min_m_n * sizeof(T));
@@ -45,7 +49,7 @@ namespace hcorepp {
 
                 T *a_temp = (T *) malloc(m * n * sizeof(T));
                 memcpy((void *) a_temp, (void *) A, m * n * sizeof(T));
-                lapack::gesvd(lapack::Job::SomeVec, lapack::Job::SomeVec, m, n, a_temp, lda, Sigma, U, lda, VT,
+                lapack_gesvd(helpers::Job::SomeVec, helpers::Job::SomeVec, m, n, a_temp, lda, Sigma, U, lda, VT,
                               min_m_n);
 
                 rk = 0;
@@ -69,17 +73,17 @@ namespace hcorepp {
                 // todo: we may need to have uplo parameter:
                 //       scale VT, if Lower, or scale U otherwise.
                 for (int64_t i = 0; i < rk; ++i) {
-                    blas::scal(n, Sigma[i], &VT[i], min_m_n);
+                    for (int j = 0; j < n; j++) {
+                        VT[i + j * min_m_n] *= Sigma[i];
+                    }
                 }
 
                 *UV = (T *) malloc((lda + n) * rk * sizeof(T));
 
                 memcpy((void *) (*UV), (void *) U, (lda * rk) * sizeof(T));
 
-                // copy first rk rows of VT; UV = VT(1:rk,:)
                 // todo: assume column-major, what about row-major?
-                lapack::lacpy(
-                        lapack::MatrixType::General, rk, n, VT, min_m_n, &(*UV)[lda * rk], rk);
+                lapack_lacpy(MatrixType::General, rk, n, VT, min_m_n, &(*UV)[lda * rk], rk);
 
                 free(U);
                 free(VT);
@@ -99,10 +103,7 @@ namespace hcorepp {
             void diff(T *Aref, int64_t lda_ref, T const *A, int64_t m, int64_t n, int64_t lda) {
                 for (int64_t j = 0; j < n; ++j) {
                     for (int64_t i = 0; i < m; ++i) {
-//                        auto temp = Aref[i + j * lda_ref];
                         Aref[i + j * lda_ref] -= A[i + j * lda];
-
-//                        std::cout << " New Aref " << (Aref[i + j * lda_ref] / temp) * 100 << std::endl;
                     }
                 }
             }
