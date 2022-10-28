@@ -23,6 +23,11 @@
 
 #include "type_check.h"
 #include "hcorepp/operators/helpers/SvdHelpers.hpp"
+#ifdef LAPACK_FORTRAN_STRLEN_END
+#ifndef USE_CUDA
+#define HCOREPP_ADD_FORTRAN_ENDING
+#endif
+#endif
 
 template<typename T, typename C>
 void lapack_latms_core(int64_t m, int64_t n, char dist, int64_t *iseed, char sym,
@@ -62,12 +67,18 @@ void lapack_latms_core(int64_t m, int64_t n, char dist, int64_t *iseed, char sym
                     &m_, &n_, &dist, iseed_ptr, &sym, d, &mode_, &cond, &dmax, &kl_, &ku_,
                     &pack, (lapack_complex_double *) A, &lda_,
                     (lapack_complex_double * ) & work[0], &info_
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                    , 1, 1, 1
+#endif
             );
         } else {
             LAPACK_clatms(
                     &m_, &n_, &dist, iseed_ptr, &sym, d, &mode_, &cond, &dmax, &kl_, &ku_,
                     &pack, (lapack_complex_float *) A, &lda_,
                     (lapack_complex_float * ) & work[0], &info_
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                    , 1, 1, 1
+#endif
             );
         }
     } else {
@@ -76,12 +87,19 @@ void lapack_latms_core(int64_t m, int64_t n, char dist, int64_t *iseed, char sym
                     &m_, &n_, &dist, iseed_ptr, &sym, d, &mode_, &cond, &dmax, &kl_, &ku_,
                     &pack, A, &lda_,
                     &work[0], &info_
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+, 1, 1, 1
+#endif
             );
         } else {
             LAPACK_slatms(
                     &m_, &n_, &dist, iseed_ptr, &sym, d, &mode_, &cond, &dmax, &kl_, &ku_,
                     &pack, A, &lda_,
-                    &work[0], &info_);
+                    &work[0], &info_
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+, 1, 1, 1
+#endif
+            );
         }
     }
     if (info_ != 0) {
@@ -117,15 +135,31 @@ void lapack_lacpy_core(hcorepp::helpers::MatrixType matrixtype, int64_t m, int64
     lapack_int ldb_ = (lapack_int) ldb;
     if constexpr(is_complex<C>()) {
         if constexpr(is_double<T>()) {
-            LAPACK_zlacpy(&matrix_type, &m_, &n_, A, &lda_, B, &ldb_);
+            LAPACK_zlacpy(&matrix_type, &m_, &n_, A, &lda_, B, &ldb_
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                          , 1
+#endif
+            );
         } else {
-            LAPACK_clacpy(&matrix_type, &m_, &n_, A, &lda_, B, &ldb_);
+            LAPACK_clacpy(&matrix_type, &m_, &n_, A, &lda_, B, &ldb_
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                          , 1
+#endif
+            );
         }
     } else {
         if constexpr (is_double<T>()) {
-            LAPACK_dlacpy(&matrix_type, &m_, &n_, A, &lda_, B, &ldb_);
+            LAPACK_dlacpy(&matrix_type, &m_, &n_, A, &lda_, B, &ldb_
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                          , 1
+#endif
+            );
         } else {
-            LAPACK_slacpy(&matrix_type, &m_, &n_, A, &lda_, B, &ldb_);
+            LAPACK_slacpy(&matrix_type, &m_, &n_, A, &lda_, B, &ldb_
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                          , 1
+#endif
+            );
         }
     }
 }
@@ -160,15 +194,31 @@ void lapack_gesvd_core(hcorepp::helpers::Job jobu, hcorepp::helpers::Job jobvt,
     lapack_int ineg_one = -1;
     if constexpr(is_complex<C>()) {
         if constexpr(is_double<T>()) {
-            LAPACK_zgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, qry_work, &ineg_one, &info_);
+            LAPACK_zgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, qry_work, &ineg_one, &info_
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                          , 1, 1
+#endif
+            );
         } else {
-            LAPACK_cgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, qry_work, &ineg_one, &info_);
+            LAPACK_cgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, qry_work, &ineg_one, &info_
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                          , 1, 1
+#endif
+            );
         }
     } else {
         if constexpr (is_double<T>()) {
-            LAPACK_dgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, qry_work, &ineg_one, &info_);
+            LAPACK_dgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, qry_work, &ineg_one, &info_
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                          , 1, 1
+#endif
+            );
         } else {
-            LAPACK_sgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, qry_work, &ineg_one, &info_);
+            LAPACK_sgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, qry_work, &ineg_one, &info_
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                          , 1, 1
+#endif
+            );
         }
     }
     lapack_int lwork_ = qry_work[0];
@@ -178,15 +228,31 @@ void lapack_gesvd_core(hcorepp::helpers::Job jobu, hcorepp::helpers::Job jobvt,
 
     if constexpr(is_complex<C>()) {
         if constexpr(is_double<T>()) {
-            LAPACK_zgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, &work[0], &lwork_, &info_);
+            LAPACK_zgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, &work[0], &lwork_, &info_
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                          , 1, 1
+#endif
+            );
         } else {
-            LAPACK_cgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, &work[0], &lwork_, &info_);
+            LAPACK_cgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, &work[0], &lwork_, &info_
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                          , 1, 1
+#endif
+            );
         }
     } else {
         if constexpr (is_double<T>()) {
-            LAPACK_dgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, &work[0], &lwork_, &info_);
+            LAPACK_dgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, &work[0], &lwork_, &info_
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                          , 1, 1
+#endif
+            );
         } else {
-            LAPACK_sgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, &work[0], &lwork_, &info_);
+            LAPACK_sgesvd(&job_u, &job_vt, &m_, &n_, A, &lda_, S, U, &ldu_, VT, &ldvt_, &work[0], &lwork_, &info_
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                          , 1, 1
+#endif
+            );
         }
     }
 }
@@ -216,15 +282,31 @@ blas::real_type<T> lapack_lange_core(hcorepp::helpers::Norm aNorm, int64_t m, in
     std::vector<blas::real_type<T>> t(lwork);
     if constexpr(is_complex<C>()) {
         if constexpr(is_double<T>()) {
-            return LAPACK_zlange(&norm_type, &m_, &n_, A, &lda_, &t[0]);
+            return LAPACK_zlange(&norm_type, &m_, &n_, A, &lda_, &t[0]
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                                 , 1
+#endif
+                    );
         } else {
-            return LAPACK_clange(&norm_type, &m_, &n_, A, &lda_, &t[0]);
+            return LAPACK_clange(&norm_type, &m_, &n_, A, &lda_, &t[0]
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                                 , 1
+#endif
+                    );
         }
     } else {
         if constexpr (is_double<T>()) {
-            return LAPACK_dlange(&norm_type, &m_, &n_, A, &lda_, &t[0]);
+            return LAPACK_dlange(&norm_type, &m_, &n_, A, &lda_, &t[0]
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                                 , 1
+#endif
+                    );
         } else {
-            return LAPACK_slange(&norm_type, &m_, &n_, A, &lda_, &t[0]);
+            return LAPACK_slange(&norm_type, &m_, &n_, A, &lda_, &t[0]
+#ifdef HCOREPP_ADD_FORTRAN_ENDING
+                                 , 1
+#endif
+                    );
         }
     }
 }
