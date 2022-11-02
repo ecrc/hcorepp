@@ -78,7 +78,17 @@ int main(int argc, char *argv[]) {
     RawMatrix<double> full_c(c_mt * row_tile_size, c_nt * column_tile_size, iseed, mode, cond);
     auto initial_c = full_c.Clone();
     timer.Snapshot("generation");
+    {
+	auto warm_a = full_a.Clone();
+	auto warm_b = full_b.Clone();
+	auto warm_c = full_c.Clone();
+    	blas::gemm(blas::Layout::ColMajor, trans_a, trans_b, warm_c.GetM(),
+               warm_c.GetN(), warm_a.GetN(), alpha, warm_a.GetData(),
+               warm_a.GetM(), warm_b.GetData(),
+               warm_b.GetM(), beta, warm_c.GetData(), warm_c.GetM());	    
+    }
     // Solve reference solution
+    timer.StartSnapshot();
     blas::gemm(blas::Layout::ColMajor, trans_a, trans_b, full_c.GetM(),
                full_c.GetN(), full_a.GetN(), alpha, full_a.GetData(),
                full_a.GetM(), full_b.GetData(),
