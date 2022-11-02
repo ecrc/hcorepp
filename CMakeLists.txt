@@ -27,9 +27,8 @@ endif ()
 include(ImportGFortran)
 include(ImportOpenMP)
 if (USE_CUDA)
-    include(ImportBlasPP)
-    # Do not do anything for now.
     include(ImportCuSolver)
+    include(ImportBlasPP)
     unset(BLA_VENDOR)
     include(ImportLapack)
     set(LIBS
