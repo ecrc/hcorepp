@@ -1,13 +1,32 @@
+/**
+ * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+ * ***************************************************************************
+ * *****      KAUST Extreme Computing and Research Center Property       *****
+ * ***************************************************************************
+ *
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+ */
 
 #ifndef HCOREPP_DATA_UNITS_DATA_HOLDER_HPP
 #define HCOREPP_DATA_UNITS_DATA_HOLDER_HPP
 
 #include <iostream>
 #include <cstddef>
+#include <hcorepp/common/Definitions.hpp>
 
 namespace hcorepp {
     namespace dataunits {
 
+        /**
+         * @brief
+         * The base unit of HCore, the data holder represents a single segment of contained numbers.
+         * Representing the data of a single component, whether that's a Dense Tile, or a component of the
+         * compressed tile(Whether U or V), it simply holds the data.
+         *
+         * @tparam T
+         * Data type held by the data container.
+         */
         template<typename T>
         class DataHolder {
         public:
@@ -126,7 +145,7 @@ namespace hcorepp {
 
         private:
             /** pointer to data array */
-            T *mDataArray;
+            T *mpDataArray;
             /** number of rows */
             size_t mNumOfRows;
             /** number of cols */
@@ -134,10 +153,6 @@ namespace hcorepp {
             /** leading dimension */
             size_t mLeadingDimension;
         };
-
-        template class DataHolder<float>;
-        template class DataHolder<double>;
-
     }
 }
 #endif //HCOREPP_DATA_UNITS_DATA_HOLDER_HPP

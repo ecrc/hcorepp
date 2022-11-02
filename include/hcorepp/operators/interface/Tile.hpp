@@ -1,12 +1,22 @@
+/**
+ * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+ * ***************************************************************************
+ * *****      KAUST Extreme Computing and Research Center Property       *****
+ * ***************************************************************************
+ *
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+ */
 
 #ifndef HCOREPP_OPERATORS_INTERFACE_TILE_HPP
 #define HCOREPP_OPERATORS_INTERFACE_TILE_HPP
 
 #include <vector>
+#include <functional>
 #include <cstdint>
 #include "blas.hh"
 #include <hcorepp/data-units/DataHolder.hpp>
-#include <hcorepp/operators/helpers/SvdHelpers.hpp>
+#include <hcorepp/operators/helpers/SVDParameters.hpp>
 
 namespace hcorepp {
     namespace operators {
@@ -23,52 +33,13 @@ namespace hcorepp {
 
             /**
              * @brief
-             * Get the physical packed storage type of the tile.
-             *
-             * @return
-             * Physical packed storage type.
-             */
-            blas::Uplo GetUpLoPhysical() const {
-                return mUpLo;
-            }
-
-            /**
-             * @brief
-             * Get the logical packed storage type of the tile.
-             *
-             * @return
-             * Logical packed storage type.
-             */
-            blas::Uplo GetUpLoLogical() const {
-                if (mUpLo == blas::Uplo::General) {
-                    return blas::Uplo::General;
-                } else if ((mUpLo == blas::Uplo::Lower) == (mOperation == blas::Op::NoTrans)) {
-                    return blas::Uplo::Lower;
-                } else {
-                    return blas::Uplo::Upper;
-                }
-            }
-
-            /**
-             * @brief
              * Get the physical ordering of the matrix elements in the data array.
              *
              * @return
              * Physical ordering of elements.
              */
-            blas::Layout layout() const {
+            blas::Layout GetLayout() const {
                 return mLayout;
-            }
-
-            /**
-             * @brief
-             * Get the transposition operation of the tile.
-             *
-             * @return
-             * transposition operation of the tile.
-             */
-            blas::Op operation() const {
-                return mOperation;
             }
 
             /**
@@ -120,8 +91,12 @@ namespace hcorepp {
              * The scalar alpha.
              * @param[in] aTileA
              * The m-by-k tile.
+             * @param[in] aTileAOp
+             * The operation to apply on data holder A.
              * @param[in] aTileB
              * The k-by-n tile.
+             * @param[in] aTileBOp
+             * The operation to apply on data holder B.
              * @param[in] aBeta
              * The scalar beta.
              * @param[in] aLdAu
@@ -135,7 +110,7 @@ namespace hcorepp {
             virtual void
             Gemm(T &aAlpha, dataunits::DataHolder<T> const &aTileA, blas::Op aTileAOp,
                  dataunits::DataHolder<T> const &aTileB, blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank,
-                 const helpers::SvdHelpers &aHelpers) = 0;
+                 const SVDParameters &aSVDParameters) = 0;
 
             /**
              * @brief
@@ -171,9 +146,9 @@ namespace hcorepp {
             ReadjustTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim, int64_t aRank) = 0;
 
         protected:
-            blas::Op mOperation;
-            blas::Uplo mUpLo;
+            // Matrix physical layout -> column major or row major.
             blas::Layout mLayout;
+            // Leading dimension of the tile.
             int64_t mLeadingDim;
         };
 

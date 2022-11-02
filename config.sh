@@ -1,5 +1,13 @@
 #!/bin/bash
-
+#
+# Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+# ***************************************************************************
+# *****      KAUST Extreme Computing and Research Center Property       *****
+# ***************************************************************************
+#
+# All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+#
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -8,12 +16,8 @@ NC='\033[0m'
 PROJECT_SOURCE_DIR=$(dirname "$0")
 ABSOLUE_PATH=$(dirname $(realpath "$0"))
 
-while getopts ":f:tevhic:" opt; do
+while getopts ":tevhi:cd" opt; do
   case $opt in
-  f) ##### Define test file path  #####
-    echo -e "${BLUE}Test File path set to $OPTARG${NC}"
-    TEST_PATH=$OPTARG
-    ;;
   t) ##### Building tests enabled #####
     echo -e "${GREEN}Building tests enabled${NC}"
     BUILDING_TESTS="ON"
@@ -34,17 +38,22 @@ while getopts ":f:tevhic:" opt; do
     echo -e "${YELLOW}Cuda enabled ${NC}"
     USE_CUDA=ON
     ;;
+  d)##### Using debug mode to build #####
+    echo -e "${RED}Debug mode enabled ${NC}"
+    BUILD_TYPE="DEBUG"
+    ;;
   \?) ##### using default settings #####
     echo -e "${RED}Building tests disabled${NC}"
     echo -e "${RED}Building examples disabled${NC}"
     echo -e "${BLUE}Installation path set to /usr/local${NC}"
-    echo -e "${BLUE}Test File path set to tests/test-files${NC}"
+    echo -e "${RED}Using CUDA disabled${NC}"
+    echo -e "${GREEN}Building in release mode${NC}"
     BUILDING_EXAMPLES="OFF"
     BUILDING_TESTS="OFF"
     INSTALL_PATH="/usr/local"
     VERBOSE=OFF
-    TEST_PATH="${ABSOLUE_PATH}/tests/test-files"
     USE_CUDA="OFF"
+    BUILD_TYPE="RELEASE"
     ;;
   :) ##### Error in an option #####
     echo "Option $OPTARG requires parameter(s)"
@@ -57,10 +66,12 @@ while getopts ":f:tevhic:" opt; do
     echo ""
     printf "%20s %s\n" "-e :" "to enable building examples"
     echo ""
+    printf "%20s %s\n" "-c :" "to enable cuda support on"
+    echo ""
+    printf "%20s %s\n" "-d :" "to build in debug mode"
+    echo ""
     printf "%20s %s\n" "-i [path] :" "specify installation path"
     printf "%20s %s\n" "" "default = /usr/local"
-    printf "%20s %s\n" "-f [path] :" "specify test files path"
-    printf "%20s %s\n" "" "default = tests/test-files"
     echo ""
     exit 1
     ;;
@@ -82,24 +93,23 @@ if [ -z "$INSTALL_PATH" ]; then
   echo -e "${BLUE}Installation path set to $INSTALL_PATH${NC}"
 fi
 
-if [ -z "$TEST_PATH" ]; then
-  TEST_PATH="${ABSOLUE_PATH}/tests/test-files"
-  echo -e "${BLUE}Test Files path set to $TEST_PATH${NC}"
-fi
-
 if [ -z "$USE_CUDA" ]; then
   USE_CUDA="OFF"
   echo -e "${RED}Using CUDA disabled${NC}"
 fi
 
+if [ -z "$BUILD_TYPE" ]; then
+  BUILD_TYPE="RELEASE"
+  echo -e "${GREEN}Building in release mode${NC}"
+fi
+
 rm -rf bin/
 mkdir bin/
-cmake -DCMAKE_BUILD_TYPE=Debug \
+cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
   -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
   -DHCOREPP_BUILD_TESTS=$BUILDING_TESTS \
   -DHCOREPP_BUILD_EXAMPLES=$BUILDING_EXAMPLES \
   -DCMAKE_INSTALL_PREFIX=$INSTALL_PATH \
-  -DCMAKE_TEST_PREFIX="$TEST_PATH" \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=$VERBOSE \
   -H"${PROJECT_SOURCE_DIR}" \
   -B"${PROJECT_SOURCE_DIR}/bin"\

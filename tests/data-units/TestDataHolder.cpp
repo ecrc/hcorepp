@@ -1,12 +1,17 @@
-#ifdef USE_CUDA
-
-#include <cuda_runtime.h>
-
-#endif
+/**
+ * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+ * ***************************************************************************
+ * *****      KAUST Extreme Computing and Research Center Property       *****
+ * ***************************************************************************
+ *
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+ */
 
 #include <libraries/catch/catch.hpp>
 #include <iostream>
 #include <hcorepp/data-units/DataHolder.hpp>
+#include <hcorepp/kernels/memory.hpp>
 #include <cstring>
 
 using namespace std;
@@ -30,11 +35,8 @@ void TEST_DATA_HOLDER() {
         REQUIRE(data_holder.GetNumOfCols() == n_cols);
         auto data = data_holder.GetData();
         T *host_data_array = new T[n_rows * n_cols];
-#ifdef USE_CUDA
-        cudaMemcpy((void *) host_data_array, (void *) data, n_rows * n_cols * sizeof(T), cudaMemcpyDeviceToHost);
-#else
-        memcpy(host_data_array, data,n_rows * n_cols * sizeof(T));
-#endif
+        hcorepp::memory::Memcpy<T>(host_data_array, data, n_rows * n_cols,
+                                   hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
 
         for (int i = 0; i < n_rows * n_cols; i++) {
             REQUIRE(host_data_array[i] == i);
@@ -61,12 +63,9 @@ void TEST_DATA_HOLDER() {
         data_holder.Resize(new_rows, new_cols, n_rows);
 
         T *host_data_array = new T[new_rows * new_cols];
-#ifdef USE_CUDA
-        cudaMemcpy((void *) host_data_array, (void *) data_holder.GetData(), new_rows * new_cols * sizeof(T),
-                   cudaMemcpyDeviceToHost);
-#else
-        memcpy((void*)host_data_array, (void*)data_holder.GetData(),new_rows * new_cols * sizeof(T));
-#endif
+        hcorepp::memory::Memcpy<T>(host_data_array, data_holder.GetData(), new_rows * new_cols,
+                                   hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+
         for (int i = 0; i < new_rows * new_cols; i++) {
             REQUIRE(host_data_array[i] == 0);
         }
@@ -82,12 +81,9 @@ void TEST_DATA_HOLDER() {
         REQUIRE(data_holder.GetNumOfRows() == new_rows);
         REQUIRE(data_holder.GetNumOfCols() == new_cols);
 
-#ifdef USE_CUDA
-        cudaMemcpy((void *) host_data_array, (void *) data_holder.GetData(), new_rows * new_cols * sizeof(T),
-                   cudaMemcpyDeviceToHost);
-#else
-        memcpy(host_data_array, data_holder.GetData(),new_rows * new_cols * sizeof(T));
-#endif
+        hcorepp::memory::Memcpy<T>(host_data_array, data_holder.GetData(), new_rows * new_cols,
+                                   hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+
         for (int i = 0; i < new_rows * new_cols; i++) {
             REQUIRE(host_data_array[i] == i * 2);
         }

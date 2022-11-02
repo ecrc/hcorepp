@@ -1,7 +1,17 @@
+/**
+ * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+ * ***************************************************************************
+ * *****      KAUST Extreme Computing and Research Center Property       *****
+ * ***************************************************************************
+ *
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+ */
+
 #include <libraries/catch/catch.hpp>
 #include <iostream>
 
-#include <hcorepp/api/hcorepp.hpp>
+#include <hcorepp/api/HCore.hpp>
 #include <hcorepp/operators/concrete/Compressed.hpp>
 #include <hcorepp/operators/concrete/Dense.hpp>
 #include <hcorepp/data-units/DataHolder.hpp>
@@ -67,8 +77,7 @@ void TEST_Compressed() {
         memcpy((void *) a_input, au_input, au_size * sizeof(T));
         memcpy((void *) &a_input[au_size], av_input, av_size * sizeof(T));
 
-        CompressedTile<T> compressed_tile_A(a_m, a_n, (T *) a_input, lda, arank,
-                                            std::numeric_limits<blas::real_type<T>>::epsilon());
+        CompressedTile<T> compressed_tile_A(a_m, a_n, (T *) a_input, lda, arank);
 
         REQUIRE(compressed_tile_A.GetNumberOfMatrices() == 2);
         REQUIRE(compressed_tile_A.GetTileStride(0) == au_m);
@@ -79,7 +88,7 @@ void TEST_Compressed() {
         REQUIRE(compressed_tile_A.GetTileSubMatrix(1).get().GetNumOfRows() == av_m);
         REQUIRE(compressed_tile_A.GetTileSubMatrix(1).get().GetNumOfCols() == av_n);
         REQUIRE(compressed_tile_A.GetTileSubMatrix(1).get().GetLeadingDim() == ldaV);
-        REQUIRE(compressed_tile_A.layout() == blas::Layout::ColMajor);
+        REQUIRE(compressed_tile_A.GetLayout() == blas::Layout::ColMajor);
 
         T *host_data_array_au = new T[au_size];
         T *host_data_array_av = new T[av_size];
@@ -215,17 +224,16 @@ void TEST_Compressed() {
 
         DenseTile<T> dense_tile_A(a_m, a_n, (T *) a_input, lda);
         DenseTile<T> dense_tile_B(b_m, b_n, (T *) b_input, ldb);
-        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldc, c_rank,
-                                            std::numeric_limits<blas::real_type<T>>::epsilon());
+        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldc, c_rank);
 
         REQUIRE(compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfRows() == cu_m);
         REQUIRE(compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfCols() == cu_n);
         REQUIRE(compressed_tile_C.GetTileSubMatrix(1).get().GetNumOfRows() == cv_m);
         REQUIRE(compressed_tile_C.GetTileSubMatrix(1).get().GetNumOfCols() == cv_n);
 
-        hcorepp::helpers::SvdHelpers helpers;
-        compressed_tile_C.Gemm(alpha, dense_tile_A.GetTileSubMatrix(0).get(), dense_tile_A.operation(),
-                               dense_tile_B.GetTileSubMatrix(0).get(), dense_tile_B.operation(), beta,
+        hcorepp::operators::SVDParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
+        compressed_tile_C.Gemm(alpha, dense_tile_A.GetTileSubMatrix(0).get(), blas::Op::NoTrans,
+                               dense_tile_B.GetTileSubMatrix(0).get(), blas::Op::NoTrans, beta,
                                dense_tile_A.GetTileSubMatrix(0).get().GetLeadingDim(),
                                dense_tile_A.GetTileSubMatrix(0).get().GetNumOfCols(), helpers);
 
@@ -323,8 +331,7 @@ void TEST_Compressed() {
         memcpy((void *) a_input, au_input, au_size * sizeof(T));
         memcpy((void *) &a_input[au_size], av_input, av_size * sizeof(T));
 
-        CompressedTile<T> compressed_tile_A(a_m, a_n, (T *) a_input, lda, arank,
-                                            std::numeric_limits<blas::real_type<T>>::epsilon());
+        CompressedTile<T> compressed_tile_A(a_m, a_n, (T *) a_input, lda, arank);
 
         REQUIRE(compressed_tile_A.GetNumberOfMatrices() == 2);
         REQUIRE(compressed_tile_A.GetTileStride(0) == au_m);
@@ -335,7 +342,7 @@ void TEST_Compressed() {
         REQUIRE(compressed_tile_A.GetTileSubMatrix(1).get().GetNumOfRows() == av_m);
         REQUIRE(compressed_tile_A.GetTileSubMatrix(1).get().GetNumOfCols() == av_n);
         REQUIRE(compressed_tile_A.GetTileSubMatrix(1).get().GetLeadingDim() == ldaV);
-        REQUIRE(compressed_tile_A.layout() == blas::Layout::ColMajor);
+        REQUIRE(compressed_tile_A.GetLayout() == blas::Layout::ColMajor);
 
         T *host_data_array_au = new T[au_size];
         T *host_data_array_av = new T[av_size];

@@ -1,12 +1,19 @@
+/**
+ * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+ * ***************************************************************************
+ * *****      KAUST Extreme Computing and Research Center Property       *****
+ * ***************************************************************************
+ *
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+ */
+
 #include <cuda_runtime.h>
 #include <iostream>
 #include <hcorepp/kernels/kernels.hpp>
 #include <cstring>
 #include <cublas_v2.h>
 #include "hcorepp/kernels/cuda/CudaKernels.hpp"
-//#include <cusolverDn.h>
-//#include "lapack/device.hh"
-//#include <hcorepp/kernels/cuda/CudaKernels.hpp>
 
 namespace hcorepp {
     namespace kernels {
@@ -161,17 +168,17 @@ namespace hcorepp {
 
         template<typename T>
         void
-        LaCpy(helpers::MatrixType aType, int64_t aM, int64_t aRank, T *apCU, int64_t aLD, T *apU, int64_t aUm) {
+        LaCpy(common::MatrixType aType, int64_t aM, int64_t aRank, T *apCU, int64_t aLD, T *apU, int64_t aUm) {
             hcorepp::cudakernels::LaCpy(aType, aM, aRank, apCU, aLD, apU, aUm);
         }
 
         template
         void
-        LaCpy(helpers::MatrixType, int64_t, int64_t, float *, int64_t, float *, int64_t);
+        LaCpy(common::MatrixType, int64_t, int64_t, float *, int64_t, float *, int64_t);
 
         template
         void
-        LaCpy(helpers::MatrixType, int64_t, int64_t, double *, int64_t, double *, int64_t);
+        LaCpy(common::MatrixType, int64_t, int64_t, double *, int64_t, double *, int64_t);
 
         template<typename T>
         void Geqrf(int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apTau) {
@@ -185,17 +192,17 @@ namespace hcorepp {
         void Geqrf(int64_t, int64_t, double *, int64_t, double *);
 
         template<typename T>
-        void Laset(helpers::MatrixType aMatrixType, int64_t aM, int64_t aN, T aOffdiag, T aDiag,
+        void Laset(common::MatrixType aMatrixType, int64_t aM, int64_t aN, T aOffdiag, T aDiag,
                    T *apA, int64_t aLdA) {
             hcorepp::cudakernels::Laset(aMatrixType, aM, aN, aOffdiag, aDiag, apA, aLdA);
         }
 
         template
-        void Laset(helpers::MatrixType aMatrixType, int64_t aM, int64_t aN, float aOffdiag, float aDiag,
+        void Laset(common::MatrixType aMatrixType, int64_t aM, int64_t aN, float aOffdiag, float aDiag,
                    float *apA, int64_t aLdA);
 
         template
-        void Laset(helpers::MatrixType aMatrixType, int64_t aM, int64_t aN, double aOffdiag, double aDiag,
+        void Laset(common::MatrixType aMatrixType, int64_t aM, int64_t aN, double aOffdiag, double aDiag,
                    double *apA, int64_t aLdA);
 
         template<typename T>
@@ -214,36 +221,36 @@ namespace hcorepp {
 
         template<typename T>
         void
-        Gesvd(helpers::Job aJobu, helpers::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
+        Gesvd(common::Job aJobu, common::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
               int64_t aLdU, T *apVT, int64_t aLdVt) {
             hcorepp::cudakernels::Gesvd(aJobu, aJobvt, aM, aN, apA, aLdA, apS, apU, aLdU, apVT, aLdVt);
         }
 
         template
         void
-        Gesvd(helpers::Job, helpers::Job, int64_t, int64_t, float *, int64_t, float *, float *, int64_t, float *,
+        Gesvd(common::Job, common::Job, int64_t, int64_t, float *, int64_t, float *, float *, int64_t, float *,
               int64_t);
 
         template
         void
-        Gesvd(helpers::Job, helpers::Job, int64_t, int64_t, double *, int64_t, double *, double *, int64_t, double *,
+        Gesvd(common::Job, common::Job, int64_t, int64_t, double *, int64_t, double *, double *, int64_t, double *,
               int64_t);
 
         template<typename T>
         void
-        Unmqr(helpers::SideMode aSide, helpers::BlasOperation aTrans, int64_t aM, int64_t aN, int64_t aK, T const *apA,
+        Unmqr(common::SideMode aSide, common::BlasOperation aTrans, int64_t aM, int64_t aN, int64_t aK, T const *apA,
               int64_t aLdA, T const *apTau, T *apC, int64_t aLdC) {
             hcorepp::cudakernels::Unmqr(aSide, aTrans, aM, aN, aK, apA, aLdA, apTau, apC, aLdC);
         }
 
         template
         void
-        Unmqr(helpers::SideMode, helpers::BlasOperation, int64_t, int64_t, int64_t, float const *, int64_t,
+        Unmqr(common::SideMode, common::BlasOperation, int64_t, int64_t, int64_t, float const *, int64_t,
               float const *, float *, int64_t);
 
         template
         void
-        Unmqr(helpers::SideMode, helpers::BlasOperation, int64_t, int64_t, int64_t, double const *, int64_t,
+        Unmqr(common::SideMode, common::BlasOperation, int64_t, int64_t, int64_t, double const *, int64_t,
               double const *, double *, int64_t);
 
         template<typename T>

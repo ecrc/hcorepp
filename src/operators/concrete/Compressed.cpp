@@ -1,13 +1,20 @@
-#include <functional>
-#include <iostream>
-//#include "lapack/wrappers.hh"
-#include <hcorepp/operators/helpers/SvdHelpers.hpp>
+/**
+ * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+ * ***************************************************************************
+ * *****      KAUST Extreme Computing and Research Center Property       *****
+ * ***************************************************************************
+ *
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+ */
+
 #include <hcorepp/operators/concrete/Compressed.hpp>
+#include <hcorepp/operators/helpers/SVDParameters.hpp>
 #include <hcorepp/kernels/kernels.hpp>
 #include <hcorepp/kernels/memory.hpp>
 
 using namespace hcorepp::dataunits;
-using namespace hcorepp::helpers;
+using namespace hcorepp::common;
 
 namespace hcorepp {
     namespace operators {
@@ -19,14 +26,8 @@ namespace hcorepp {
 
         template<typename T>
         CompressedTile<T>::CompressedTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim,
-                                          int64_t aRank, blas::real_type<T> aAccuracy, blas::Layout aLayout,
-                                          blas::Op aOperation, blas::Uplo aUplo) {
-            if (aRank < 0 || aAccuracy < 0) {
-            }
-            this->mOperation = aOperation;
+                                          int64_t aRank, blas::Layout aLayout) {
             this->mLayout = aLayout;
-            this->mUpLo = aUplo;
-            this->mAccuracy = aAccuracy;
             this->mMatrixRank = aRank;
             this->mLeadingDim = aLeadingDim;
             this->mNumOfRows = aNumOfRows;
@@ -109,7 +110,7 @@ namespace hcorepp {
         void
         CompressedTile<T>::Gemm(T &aAlpha, DataHolder<T> const &aTileA, blas::Op aTileAOp, DataHolder<T> const &aTileB,
                                 blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank,
-                                const SvdHelpers &aHelpers) {
+                                const SVDParameters &aHelpers) {
             using blas::conj;
 
             T zero = 0.0;
@@ -125,7 +126,7 @@ namespace hcorepp {
 
             int64_t Crk = this->GetTileRank();
 
-            blas::real_type<T> accuracy = this->GetAccuracy();
+            blas::real_type<T> accuracy = aHelpers.GetAccuracy();
 
             int64_t Um = m;
             int64_t Un = aARank + Crk;
@@ -350,24 +351,12 @@ namespace hcorepp {
 
         template<typename T>
         size_t CompressedTile<T>::GetNumOfRows() const {
-            if (this->mOperation == blas::Op::NoTrans) {
-                return mNumOfRows;
-            }
-            return mNumOfCols;
+            return mNumOfRows;
         }
 
         template<typename T>
         size_t CompressedTile<T>::GetNumOfCols() const {
-            if (this->mOperation == blas::Op::NoTrans) {
-                return mNumOfCols;
-            }
-            return mNumOfRows;
-        }
-
-
-        template<typename T>
-        blas::real_type<T> CompressedTile<T>::GetAccuracy() {
-            return this->mAccuracy;
+            return mNumOfCols;
         }
 
         template<typename T>
@@ -403,6 +392,7 @@ namespace hcorepp {
             }
         }
 
-    }
+        HCOREPP_INSTANTIATE_CLASS(CompressedTile)
 
+    }
 }

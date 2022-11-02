@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+ * ***************************************************************************
+ * *****      KAUST Extreme Computing and Research Center Property       *****
+ * ***************************************************************************
+ *
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+ */
 
 #ifndef HCOREPP_OPERATORS_CONCRETE_DENSE_HPP
 #define HCOREPP_OPERATORS_CONCRETE_DENSE_HPP
@@ -8,6 +17,15 @@
 namespace hcorepp {
     namespace operators {
 
+        /**
+         * @brief
+         * Class responsible for encapsulating a dense tile for all operations.
+         * Dense tiles represent a sub-matrix from a parent one that is fully packed and is
+         * not compressed at all.
+         *
+         * @tparam T
+         * The type of the elements inside the tile
+         */
         template<typename T>
         class DenseTile : public Tile<T> {
 
@@ -40,14 +58,9 @@ namespace hcorepp {
              * The physical ordering of matrix elements in the data array buffer:
              *              blas::Layout::ColMajor: column elements are 1-strided (default), or
              *              blas::Layout::RowMajor: row elements are 1-strided.
-             * @param aOperation
-             * transposition operation of the tile.
-             * @param aUplo
-             * logical packed storage type of the tile
              */
             DenseTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim,
-                      blas::Layout aLayout = blas::Layout::ColMajor, blas::Op aOperation = blas::Op::NoTrans,
-                      blas::Uplo aUplo = blas::Uplo::General);
+                      blas::Layout aLayout = blas::Layout::ColMajor);
 
             /**
              * @brief
@@ -133,7 +146,7 @@ namespace hcorepp {
             void
             Gemm(T &aAlpha, dataunits::DataHolder <T> const &aTileA, blas::Op aTileAOp,
                  dataunits::DataHolder <T> const &aTileB, blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank,
-                 const helpers::SvdHelpers &aHelpers) override;
+                 const SVDParameters &aSVDParameters) override;
 
             /**
              * @brief
@@ -167,15 +180,8 @@ namespace hcorepp {
             size_t mNumOfCols;
 
         };
-
-        template
-        class DenseTile<float>;
-
-        template
-        class DenseTile<double>;
-
     }
 
 }
 
-#endif //HCOREPP_DENSE_HPP
+#endif //HCOREPP_OPERATORS_CONCRETE_DENSE_HPP

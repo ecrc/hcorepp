@@ -1,9 +1,20 @@
+/**
+ * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+ * ***************************************************************************
+ * *****      KAUST Extreme Computing and Research Center Property       *****
+ * ***************************************************************************
+ *
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+ */
+
 #ifndef HCOREPP_KERNELS_CUDA_KERNELS_HPP
 #define HCOREPP_KERNELS_CUDA_KERNELS_HPP
 
 #include <cusolver_common.h>
 #include "blas/util.hh"
-#include "hcorepp/operators/helpers/SvdHelpers.hpp"
+#include <hcorepp/common/Definitions.hpp>
+#include <hcorepp/operators/helpers/SVDParameters.hpp>
 
 namespace hcorepp {
     namespace cudakernels {
@@ -70,21 +81,21 @@ namespace hcorepp {
 
         template<typename T>
         void
-        Gesvd(helpers::Job aJobu, helpers::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
+        Gesvd(common::Job aJobu, common::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
               int64_t aLdU, T *apVT, int64_t aLdVt);
 
         template<typename T>
         void
-        Unmqr(helpers::SideMode aSide, helpers::BlasOperation aTrans, int64_t aM, int64_t aN, int64_t aK,
+        Unmqr(common::SideMode aSide, common::BlasOperation aTrans, int64_t aM, int64_t aN, int64_t aK,
               T const *apA, int64_t aLdA, T const *apTau, T *apC, int64_t aLdC);
 
         template<typename T>
-        void Laset(helpers::MatrixType aMatrixType, int64_t aM, int64_t aN, T aOffdiag, T aDiag,
+        void Laset(common::MatrixType aMatrixType, int64_t aM, int64_t aN, T aOffdiag, T aDiag,
                    T *apA, int64_t aLdA);
 
         template<typename T>
         void
-        LaCpy(helpers::MatrixType aType, int64_t aM, int64_t aRank, T *apCU, int64_t aLD, T *apU, int64_t aUm);
+        LaCpy(common::MatrixType aType, int64_t aM, int64_t aRank, T *apCU, int64_t aLD, T *apU, int64_t aUm);
 
         template<typename T>
         void

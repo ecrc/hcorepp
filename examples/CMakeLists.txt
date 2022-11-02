@@ -1,5 +1,4 @@
-add_executable(hcorepp-gemm-example ${CMAKE_CURRENT_SOURCE_DIR}/HCoreppGemmExample.cpp)
-target_link_libraries(hcorepp-gemm-example ${PROJECT_NAME})
+# Add all examples of Hcore++ library
+add_subdirectory(gemm_example)
+add_subdirectory(matrix_multiplication)
 
-add_executable(hcorepp-2d-array-gemm-example ${CMAKE_CURRENT_SOURCE_DIR}/HCorepp2dArrayExample.cpp)
-target_link_libraries(hcorepp-2d-array-gemm-example ${PROJECT_NAME})

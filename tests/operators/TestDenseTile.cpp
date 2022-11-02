@@ -1,16 +1,23 @@
+/**
+ * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+ * ***************************************************************************
+ * *****      KAUST Extreme Computing and Research Center Property       *****
+ * ***************************************************************************
+ *
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+ */
+
 #include <libraries/catch/catch.hpp>
 #include <iostream>
-
-#include <hcorepp/api/hcorepp.hpp>
 #include <hcorepp/operators/concrete/Dense.hpp>
-#include <hcorepp/data-units/DataHolder.hpp>
 #include <hcorepp/test-helpers/testHelpers.hpp>
+#include <hcorepp/kernels/memory.hpp>
 #include <cstring>
 
 using namespace std;
 using namespace hcorepp::dataunits;
 using namespace hcorepp::operators;
-using namespace hcorepp::api;
 using namespace hcorepp::test_helpers;
 
 template<typename T>
@@ -42,16 +49,11 @@ void TEST_DENSE() {
         REQUIRE(dense_tile_A.GetTileSubMatrix(0).get().GetNumOfRows() == a_m);
         REQUIRE(dense_tile_A.GetTileSubMatrix(0).get().GetNumOfCols() == a_n);
         REQUIRE(dense_tile_A.GetTileSubMatrix(0).get().GetLeadingDim() == lda);
-        REQUIRE(dense_tile_A.layout() == blas::Layout::ColMajor);
+        REQUIRE(dense_tile_A.GetLayout() == blas::Layout::ColMajor);
 
         T *host_data_array = new T[a_size];
-
-#ifdef USE_CUDA
-        cudaMemcpy((void *) host_data_array, (void *) dense_tile_A.GetTileSubMatrix(0).get().GetData(),
-                   a_size * sizeof(T), cudaMemcpyDeviceToHost);
-#else
-        memcpy(host_data_array, dense_tile_A.GetTileSubMatrix(0).get().GetData(),a_size * sizeof(T));
-#endif
+        hcorepp::memory::Memcpy<T>(host_data_array, dense_tile_A.GetTileSubMatrix(0).get().GetData(),
+                                   a_size, hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
 
         memset(a_input, 0, a_size * sizeof(T));
 
@@ -60,9 +62,7 @@ void TEST_DENSE() {
                                  dense_tile_A.GetTileSubMatrix(0).get().GetNumOfRows(),
                                  (T *) a_input);
 
-//        std::cout << "CDATA \n";
         validateOutput(a_input, a_m, a_n, (T *) matrix_A);
-//        printMatrix(a_input, a_m, a_n);
 
 
         delete[] host_data_array;
@@ -126,11 +126,11 @@ void TEST_DENSE() {
         DenseTile<T> dense_tile_B(b_m, b_n, (T *) b_input, ldb);
         DenseTile<T> dense_tile_C(c_m, c_n, (T *) c_input, ldc);
 
-        hcorepp::helpers::SvdHelpers helpers;
+        hcorepp::operators::SVDParameters helpers(1e-9);
         int64_t ark = 1;
 
-        dense_tile_C.Gemm(alpha, dense_tile_A.GetTileSubMatrix(0).get(), dense_tile_A.operation(),
-                          dense_tile_B.GetTileSubMatrix(0).get(), dense_tile_B.operation(), beta,
+        dense_tile_C.Gemm(alpha, dense_tile_A.GetTileSubMatrix(0).get(), blas::Op::NoTrans,
+                          dense_tile_B.GetTileSubMatrix(0).get(), blas::Op::NoTrans, beta,
                           lda, ark, helpers);
 
         REQUIRE(dense_tile_C.GetTileSubMatrix(0).get().GetNumOfRows() == c_m);
@@ -139,19 +139,14 @@ void TEST_DENSE() {
         T *c_output = dense_tile_C.GetTileSubMatrix(0).get().GetData();
 
         T *host_data_array = new T[c_m * c_n];
-#ifdef USE_CUDA
-        cudaMemcpy((void *) host_data_array, (void *) c_output, c_m * c_n * sizeof(T),
-                   cudaMemcpyDeviceToHost);
-#else
-        memcpy(host_data_array, c_output,c_m * c_n * sizeof(T));
-#endif
+        hcorepp::memory::Memcpy<T>(host_data_array, c_output,
+                                   c_m * c_n,
+                                   hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
 
         columnMajorToRowMajor<T>(host_data_array, c_n, c_m, (T *) matrix_C_Row_Major);
 
         auto c_pointer = (T *) matrix_C_Row_Major;
-//        std::cout << "CDATA \n";
         validateOutput(c_pointer, c_m, c_n, (T *) matrix_C);
-//        printMatrix(c_pointer, c_m, c_n);
 
         delete[] a_input;
         delete[] b_input;

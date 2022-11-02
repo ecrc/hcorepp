@@ -1,10 +1,18 @@
-#include <functional>
-#include <iostream>
+/**
+ * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+ * ***************************************************************************
+ * *****      KAUST Extreme Computing and Research Center Property       *****
+ * ***************************************************************************
+ *
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+ */
+
 #include <hcorepp/operators/concrete/Dense.hpp>
 #include <hcorepp/kernels/kernels.hpp>
 
 using namespace hcorepp::dataunits;
-using namespace hcorepp::helpers;
+using namespace hcorepp::common;
 
 namespace hcorepp {
     namespace operators {
@@ -16,10 +24,8 @@ namespace hcorepp {
 
         template<typename T>
         DenseTile<T>::DenseTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim,
-                                blas::Layout aLayout, blas::Op aOperation, blas::Uplo aUplo) {
-            this->mOperation = aOperation;
+                                blas::Layout aLayout) {
             this->mLayout = aLayout;
-            this->mUpLo = aUplo;
             this->mLeadingDim = aLeadingDim;
             this->mNumOfRows = aNumOfRows;
             this->mNumOfCols = aNumOfCols;
@@ -56,14 +62,14 @@ namespace hcorepp {
         template<typename T>
         void DenseTile<T>::Gemm(T &aAlpha, DataHolder<T> const &aTileA, blas::Op aTileAOp, DataHolder<T> const &aTileB,
                                 blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank,
-                                const SvdHelpers &aHelpers) {
+                                const SVDParameters &aHelpers) {
 
             /**
              * Assuming that C operation is blas::Op::NoTrans
              * And C Layout is Column major.
              */
 
-            hcorepp::kernels::Gemm<T>(this->layout(), aTileAOp, aTileBOp,
+            hcorepp::kernels::Gemm<T>(this->GetLayout(), aTileAOp, aTileBOp,
                                       this->mNumOfRows, this->mNumOfCols, aTileA.GetNumOfCols(),
                                       aAlpha, (const T *) aTileA.GetData(), aTileA.GetLeadingDim(),
                                       (const T *) aTileB.GetData(), aTileB.GetLeadingDim(),
@@ -83,8 +89,6 @@ namespace hcorepp {
             if (aIndex != 0) {
                 throw std::invalid_argument(
                         "DenseTile::GetTileStride:: Index out of range, should be 0 in case of dense tile.\n");
-
-                std::cerr << "Index out of range, should be 0 in case of dense tile. ";
             }
 
             return this->mDataArrays[aIndex]->GetLeadingDim();
@@ -96,6 +100,8 @@ namespace hcorepp {
                                    int64_t aRank) {
 
         }
+
+        HCOREPP_INSTANTIATE_CLASS(DenseTile)
 
     }
 }

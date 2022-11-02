@@ -1,13 +1,11 @@
+# HCORE
 
-     |  |  __|  _ \  _ \ __|    |     |
-     __ | (    (   |   / _|  __ __|__ __|
-    _| _|\___|\___/ _|_\___|   _|    _|
+**C++ software library provides the Basic Linear Algebra Subroutines (BLAS)**
+**operations for matrices in tile low-rank format**
 
-**C++ API for the BLAS of Tile Low-rank Matrix Algebra**
+**Extreme Computing Research Center (ECRC)**
 
-**Extreme Computing Research Center**
-
-**King Abdullah University of Science and Technology**
+**King Abdullah University of Science and Technology (KAUST)**
 
 * * *
 
@@ -24,45 +22,32 @@
 
 ### About
 
-HCORE software library implements BLAS functionality in the form of
-tile routines, which update one or a small number of individual tiles, generally
-sequentially on a single compute unit. Notably, an m-by-n matrix is a collection
-of individual mb-by-nb tiles. In the context of C++, HCORE tiles are first class
-objects, which are entities that can be individually allocated, destroyed, and
-passed to low-level tile routines (e.g., GEMM). HCORE tile routines rely on the
-tile low-rank compression, which replaces the dense operations with the
-equivalent low-rank operations, to reduce the memory footprint and/or the
-time-to-solution.
-
-The objective of HCORE is to provide a convenient, performance-oriented API for
-development in the C++ language, that, for the most part, preserves established
-conventions, while, at the same time, takes advantages of modern C++ features,
-e.g., classes, namespaces, templates, exceptions, standard containers, etc.
-
-HCORE is part of the Hierarchical Computations on Manycore Architectures (HiCMA)
-project, which aims to redesign existing dense linear algebra
-libraries to exploit the data sparsity of the matrix operator. The core idea of
-HiCMA is to develop fast linear algebra computations operating on the underlying
-tile low-rank data format, while satisfying a specified numerical accuracy and
-leveraging performance from massively parallel hardware architectures.
-
-![HCORE software stack](http://ecrc.github.io/hcorepp/artwork/github/software_stack.png)
+The **Hierarchical Computations on Manycore Architectures (HiCMA)** library aims
+to redesign existing  dense linear algebra libraries to exploit the data sparsity
+of the matrix operator. Data sparse matrices arise in many scientific problems
+(e.g., in statistics-based weather forecasting, seismic imaging, and materials
+science applications) and are characterized by low-rank off-diagonal tile structure.
+Numerical low-rank approximations have demonstrated attractive theoretical bounds,
+both in memory footprint and arithmetic complexity. The core idea of HiCMA is to
+develop fast linear algebra computations operating on the underlying tile low-rank
+data format, while satisfying a specified numerical accuracy and leveraging
+performance from massively parallel hardware architectures.
 
 * * *
 
 ### Documentation
 
 * [INSTALL.md](INSTALL.md) for installation notes.
-* [HCORE Doxygen](https://ecrc.github.io/hcorepp/)
-* [HiCMA Users' Guide]()
-* [HiCMA Developers' Guide]()
+* [HCORE Doxygen](https://ecrc.github.io/hcore/)
+* [HiCMA Users' Guide](https://ecrc.github.io/hicma/)
 
 * * *
 
 ### Getting Help
 
-For assistance or bug reports, use Github's issue tracker:
-https://github.com/ecrc/hcorepp/issues to create a new issue.
+For assistance or bug reports,
+use [Github's issue tracker](https://github.com/ecrc/hcorepp/issues)
+to create a new issue.
 
 * * *
 
@@ -70,17 +55,17 @@ https://github.com/ecrc/hcorepp/issues to create a new issue.
 
 * Visit the [HiCMA website](https://cemse.kaust.edu.sa/hicma)
   for more information about the Hierarchical Computations on Manycore
-  Architectures research group.
+  Architectures (HiCMA) research group research group.
 * Visit the [ECRC website](https://cemse.kaust.edu.sa/ecrc)
-  to find out more about the Extreme Computing Research Center.
+  to find out more about the Extreme Computing Research Center (ECRC).
 * Visit the [HiCMA repository](https://github.com/ecrc/hicmapp)
-  for more information about the HiCMA software project.
+  for more information about the HiCMA project.
 * Visit the [BLAS++ repository](https://bitbucket.org/icl/blaspp)
   for more information about the C++ API for BLAS.
 * Visit the [LAPACK++ repository](https://bitbucket.org/icl/lapackpp)
   for more information about the C++ API for LAPACK.
-* Visit the [TestSweeper repository](https://bitbucket.org/icl/testsweeper)
-  for more information about the C++ testing framework for parameter sweeps.
+* Visit the [Catch2 repository](https://github.com/catchorg/Catch2)
+  for more information about the C++ unit testing framework used.
 
 * * *
 
@@ -131,8 +116,8 @@ Supercomputing Laboratory at KAUST.
 
 ### License
 
-Copyright (c) 2017-2021, King Abdullah University of Science and Technology.
-All rights reserved.
+Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+(KAUST). All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:

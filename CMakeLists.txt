@@ -29,6 +29,7 @@ include(ImportOpenMP)
 include(ImportBlasPP)
 if (USE_CUDA)
     # Do not do anything for now.
+    include(ImportCuSolver)
     unset(BLA_VENDOR)
     include(ImportLapack)
     set(LIBS

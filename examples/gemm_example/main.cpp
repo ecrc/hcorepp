@@ -1,10 +1,20 @@
+/**
+ * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+ * ***************************************************************************
+ * *****      KAUST Extreme Computing and Research Center Property       *****
+ * ***************************************************************************
+ *
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+ */
+
 #include <cstring>
 #include <chrono>
 #include "blas/flops.hh"
-#include <hcorepp/api/hcorepp.hpp>
+#include <hcorepp/api/HCore.hpp>
 #include <hcorepp/operators/concrete/Dense.hpp>
 #include <hcorepp/helpers/MatrixHelpers.hpp>
-#include <hcorepp/helpers/lapack_wrappers.hpp>
+#include <hcorepp/helpers/LapackWrappers.hpp>
 #include <hcorepp/kernels/memory.hpp>
 #include <iostream>
 
@@ -53,14 +63,14 @@ void run(blas::Op aTransA, blas::Op aTransB, blas::Op aTransC, T aAlpha, T aBeta
 
     generate_dense_matrix(Cm, Cn, Cdata, ldc, iseed, mode, cond);
 
-    hcorepp::helpers::Norm norm = hcorepp::helpers::Norm::INF; // todo: variable norm type
+    hcorepp::common::Norm norm = hcorepp::common::Norm::INF; // todo: variable norm type
     blas::real_type<T> Anorm = lapack_lange(norm, Am, An, Adata, lda);
     blas::real_type<T> Bnorm = lapack_lange(norm, Bm, Bn, Bdata, ldb);
     blas::real_type<T> Cnorm = lapack_lange(norm, Cm, Cn, Cdata, ldc);
 
-    DenseTile<T> A(Am, An, Adata, lda, blas::Layout::ColMajor, transA, blas::Uplo::General);
-    DenseTile<T> B(Bm, Bn, Bdata, ldb, blas::Layout::ColMajor, transB, blas::Uplo::General);
-    DenseTile<T> C(Cm, Cn, Cdata, ldc, blas::Layout::ColMajor, transC, blas::Uplo::General);
+    DenseTile<T> A(Am, An, Adata, lda, blas::Layout::ColMajor);
+    DenseTile<T> B(Bm, Bn, Bdata, ldb, blas::Layout::ColMajor);
+    DenseTile<T> C(Cm, Cn, Cdata, ldc, blas::Layout::ColMajor);
 
     int64_t ldcref = ((m + align - 1) / align) * align;
 
@@ -83,20 +93,17 @@ void run(blas::Op aTransA, blas::Op aTransB, blas::Op aTransC, T aAlpha, T aBeta
     CompressedTile<T> *CUV;
     if (aCombination == CDD || aCombination == CDC || aCombination == CCD || aCombination == CCC) {
         compress_dense_matrix(Am, An, Adata, lda, &AUVdata, Ark, accuracy);
-        AUV = new CompressedTile<T>(Am, An, AUVdata, lda, Ark, accuracy, blas::Layout::ColMajor, transA,
-                                    blas::Uplo::General);
+        AUV = new CompressedTile<T>(Am, An, AUVdata, lda, Ark, blas::Layout::ColMajor);
         free(AUVdata);
     }
     if (aCombination == DCD || aCombination == DCC || aCombination == CCD || aCombination == CCC) {
         compress_dense_matrix(Bm, Bn, Bdata, ldb, &BUVdata, Brk, accuracy);
-        BUV = new CompressedTile<T>(Bm, Bn, BUVdata, ldb, Brk, accuracy, blas::Layout::ColMajor, transB,
-                                    blas::Uplo::General);
+        BUV = new CompressedTile<T>(Bm, Bn, BUVdata, ldb, Brk, blas::Layout::ColMajor);
         free(BUVdata);
     }
     if (aCombination == DDC || aCombination == DCC || aCombination == CDC || aCombination == CCC) {
         compress_dense_matrix(Cm, Cn, Cdata, ldc, &CUVdata, Crk, accuracy);
-        CUV = new CompressedTile<T>(Cm, Cn, CUVdata, ldc, Crk, accuracy, blas::Layout::ColMajor, transC,
-                                    blas::Uplo::General);
+        CUV = new CompressedTile<T>(Cm, Cn, CUVdata, ldc, Crk, blas::Layout::ColMajor);
         free(CUVdata);
     }
 
@@ -105,38 +112,38 @@ void run(blas::Op aTransA, blas::Op aTransB, blas::Op aTransC, T aAlpha, T aBeta
 
     start = std::chrono::system_clock::now();
 
-    hcorepp::helpers::SvdHelpers helpers;
+    hcorepp::operators::SVDParameters helpers(accuracy);
     switch (aCombination) {
         case DDD:
-            hcorepp::api::gemm(alpha, A, transA, B, transB, beta, C, transC, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, B, transB, beta, C, helpers);
             gflops = blas::Gflop<T>::gemm(m, n, k);
             break;
         case DDC:
-            hcorepp::api::gemm(alpha, A, transA, B, transB, beta, *CUV, transC, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, B, transB, beta, *CUV, helpers);
             gflops = blas::Gflop<T>::gemm(Cm, Cn, An) + blas::Gflop<T>::gemm(Cm, Cn, Crk);
             break;
         case DCD:
-            hcorepp::api::gemm(alpha, A, transA, *BUV, transB, beta, C, transC, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, *BUV, transB, beta, C, helpers);
             gflops = blas::Gflop<T>::gemm(Cm, Brk, An) + blas::Gflop<T>::gemm(Cm, Cn, Brk);
             break;
         case DCC:
-            hcorepp::api::gemm(alpha, A, transA, *BUV, transB, beta, *CUV, transC, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, *BUV, transB, beta, *CUV, helpers);
             // todo
             // gflops = blas::Gflop<T>::gemm(Cm, Brk, An) +
             //          internal::gemm;
             break;
         case CDD:
-            hcorepp::api::gemm(alpha, *AUV, transA, B, transB, beta, C, transC, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, B, transB, beta, C, helpers);
             gflops = blas::Gflop<T>::gemm(Ark, Cn, An) + blas::Gflop<T>::gemm(Cm, Cn, Ark);
             break;
         case CDC:
-            hcorepp::api::gemm(alpha, *AUV, transA, B, transB, beta, *CUV, transC, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, B, transB, beta, *CUV, helpers);
             // todo
             // gflops = blas::Gflop<T>::gemm(Ark, Cn, An) +
             //          internal::gemm;
             break;
         case CCD:
-            hcorepp::api::gemm(alpha, *AUV, transA, *BUV, transB, beta, C, transC, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, *BUV, transB, beta, C, helpers);
             gflops = blas::Gflop<T>::gemm(Ark, Brk, An) +
                      (Ark <= Brk ? blas::Gflop<T>::gemm(Ark, Cn, Brk) +
                                    blas::Gflop<T>::gemm(Cm, Cn, Ark)
@@ -144,7 +151,7 @@ void run(blas::Op aTransA, blas::Op aTransB, blas::Op aTransC, T aAlpha, T aBeta
                                    blas::Gflop<T>::gemm(Cm, Cn, Brk));
             break;
         case CCC:
-            hcorepp::api::gemm(alpha, *AUV, transA, *BUV, transB, beta, *CUV, transC, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, *BUV, transB, beta, *CUV, helpers);
             // todo: for now use PASC paper, which assumes square matrices
             int64_t max_Ark_Brk_Crk = std::max({Ark, Brk, Crk});
             int64_t max_m_n_k = std::max({m, n, k});

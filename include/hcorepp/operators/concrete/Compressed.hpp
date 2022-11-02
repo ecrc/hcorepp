@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+ * ***************************************************************************
+ * *****      KAUST Extreme Computing and Research Center Property       *****
+ * ***************************************************************************
+ *
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+ */
 
 #ifndef HCOREPP_OPERATORS_CONCRETE_COMPRESSED_HPP
 #define HCOREPP_OPERATORS_CONCRETE_COMPRESSED_HPP
@@ -7,6 +16,17 @@
 namespace hcorepp {
     namespace operators {
 
+        /**
+         * @brief
+         * Class responsible for encapsulating a compressed tile for all operations.
+         * Compressed tiles represent a sub-matrix from a parent one that is
+         * compressed and represented by two matrices U and V where if the
+         * dense and original representation of the sub-matrix is A, the compressed tile
+         * will contain a matrix U and a matrix V where A = U * V with some error rate.
+         *
+         * @tparam T
+         * The type of the elements inside the tile
+         */
         template<typename T>
         class CompressedTile : public Tile<T> {
         public:
@@ -41,14 +61,9 @@ namespace hcorepp {
              * The physical ordering of matrix elements in the data array buffer:
              *              blas::Layout::ColMajor: column elements are 1-strided (default), or
              *              blas::Layout::RowMajor: row elements are 1-strided.
-             * @param aOperation
-             * transposition operation of the tile.
-             * @param aUplo
-             * logical packed storage type of the tile
              */
             CompressedTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim, int64_t aRank,
-                           blas::real_type<T> aAccuracy, blas::Layout aLayout = blas::Layout::ColMajor,
-                           blas::Op aOperation = blas::Op::NoTrans, blas::Uplo aUplo = blas::Uplo::General);
+                           blas::Layout aLayout = blas::Layout::ColMajor);
 
 
             /**
@@ -126,7 +141,7 @@ namespace hcorepp {
             void
             Gemm(T &aAlpha, dataunits::DataHolder <T> const &aTileA, blas::Op aTileAOp,
                  dataunits::DataHolder <T> const &aTileB, blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank,
-                 const helpers::SvdHelpers &aHelpers) override;
+                 const SVDParameters &aSVDParameters) override;
 
             /**
              * @brief
@@ -147,16 +162,6 @@ namespace hcorepp {
              */
             int64_t
             GetTileRank() const;
-
-            /**
-             * @brief
-             * Get matrix accuracy.
-             *
-             * @return
-             * Tile accuracy.
-             */
-            blas::real_type<T>
-            GetAccuracy();
 
             /**
              * Get Compressed Tile num of rows.
@@ -215,20 +220,12 @@ namespace hcorepp {
             mDataArrays;
             /** Linear Algebra Matrix rank*/
             int64_t mMatrixRank;
-            /** Numerical error thershold */
-            blas::real_type<T> mAccuracy;
             /** number of rows */
             size_t mNumOfRows;
             /** number of cols */
             size_t mNumOfCols;
             static const int64_t FULL_RANK_ = -1;
         };
-
-        template
-        class CompressedTile<float>;
-
-        template
-        class CompressedTile<double>;
 
     }
 }

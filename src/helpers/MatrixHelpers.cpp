@@ -1,7 +1,17 @@
+/**
+ * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+ * ***************************************************************************
+ * *****      KAUST Extreme Computing and Research Center Property       *****
+ * ***************************************************************************
+ *
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+ */
+
 #include <cstring>
 #include <hcorepp/helpers/MatrixHelpers.hpp>
 #include <iostream>
-#include "hcorepp/helpers/lapack_wrappers.hpp"
+#include "hcorepp/helpers//LapackWrappers.hpp"
 #if __has_include("openblas/lapack.h")
 #include <openblas/lapack.h>
 #else
@@ -49,7 +59,7 @@ namespace hcorepp {
 
                 T *a_temp = (T *) malloc(m * n * sizeof(T));
                 memcpy((void *) a_temp, (void *) A, m * n * sizeof(T));
-                lapack_gesvd(helpers::Job::SomeVec, helpers::Job::SomeVec, m, n, a_temp, lda, Sigma, U, lda, VT,
+                lapack_gesvd(common::Job::SomeVec, common::Job::SomeVec, m, n, a_temp, lda, Sigma, U, lda, VT,
                               min_m_n);
 
                 rk = 0;
@@ -83,7 +93,7 @@ namespace hcorepp {
                 memcpy((void *) (*UV), (void *) U, (lda * rk) * sizeof(T));
 
                 // todo: assume column-major, what about row-major?
-                lapack_lacpy(MatrixType::General, rk, n, VT, min_m_n, &(*UV)[lda * rk], rk);
+                lapack_lacpy(common::MatrixType::General, rk, n, VT, min_m_n, &(*UV)[lda * rk], rk);
 
                 free(U);
                 free(VT);

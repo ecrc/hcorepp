@@ -1,3 +1,13 @@
+/**
+ * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+ * ***************************************************************************
+ * *****      KAUST Extreme Computing and Research Center Property       *****
+ * ***************************************************************************
+ *
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+ */
+
 #include <cuda_runtime.h>
 #include <cusolverDn.h>
 #include <hcorepp/kernels/cuda/CudaKernels.hpp>
@@ -6,7 +16,7 @@
 #include "blas/util.hh"
 #include "blas/scal.hh"
 #include <cuComplex.h>
-#include <hcorepp/helpers/type_check.h>
+#include <hcorepp/common/TypeCheck.hpp>
 
 #define THREADS 32
 const int max_blocks = 65535;
@@ -626,7 +636,7 @@ namespace hcorepp {
 
         template<typename T>
         void
-        Gesvd(helpers::Job aJobu, helpers::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
+        Gesvd(common::Job aJobu, common::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
               int64_t aLdU, T *apVT, int64_t aLdVt) {
 
             ///https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSOLVER/Xgesvd/cusolver_Xgesvd_example.cu
@@ -687,17 +697,17 @@ namespace hcorepp {
 
         template
         void
-        Gesvd(helpers::Job, helpers::Job, int64_t, int64_t, float *, int64_t, float *, float *, int64_t, float *,
+        Gesvd(common::Job, common::Job, int64_t, int64_t, float *, int64_t, float *, float *, int64_t, float *,
               int64_t);
 
         template
         void
-        Gesvd(helpers::Job, helpers::Job, int64_t, int64_t, double *, int64_t, double *, double *, int64_t, double *,
+        Gesvd(common::Job, common::Job, int64_t, int64_t, double *, int64_t, double *, double *, int64_t, double *,
               int64_t);
 
         template<typename T>
         void
-        Unmqr(helpers::SideMode aSide, helpers::BlasOperation aTrans, int64_t aM, int64_t aN, int64_t aK,
+        Unmqr(common::SideMode aSide, common::BlasOperation aTrans, int64_t aM, int64_t aN, int64_t aK,
               T const *apA, int64_t aLdA, T const *apTau, T *apC, int64_t aLdC) {
             ///https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSOLVER/ormqr/cusolver_ormqr_example.cu
 
@@ -756,24 +766,24 @@ namespace hcorepp {
 
         template
         void
-        Unmqr(helpers::SideMode, helpers::BlasOperation, int64_t, int64_t, int64_t, float const *, int64_t,
+        Unmqr(common::SideMode, common::BlasOperation, int64_t, int64_t, int64_t, float const *, int64_t,
               float const *, float *, int64_t);
 
         template
         void
-        Unmqr(helpers::SideMode, helpers::BlasOperation, int64_t, int64_t, int64_t, double const *, int64_t,
+        Unmqr(common::SideMode, common::BlasOperation, int64_t, int64_t, int64_t, double const *, int64_t,
               double const *, double *, int64_t);
 
         template<typename T>
-        void Laset(helpers::MatrixType aMatrixType, int64_t aM, int64_t aN, T aOffdiag, T aDiag,
+        void Laset(common::MatrixType aMatrixType, int64_t aM, int64_t aN, T aOffdiag, T aDiag,
                    T *apA, int64_t aLdA) {
 
 #define dA(i_, j_) (dA + (i_) + (j_)*ldda)
 
 
             int info = 0;
-            if (aMatrixType != helpers::MatrixType::Lower && aMatrixType != helpers::MatrixType::Upper &&
-                aMatrixType != helpers::MatrixType::General)
+            if (aMatrixType != common::MatrixType::Lower && aMatrixType != common::MatrixType::Upper &&
+                aMatrixType != common::MatrixType::General)
                 info = -1;
             else if (aM < 0)
                 info = -2;
@@ -799,7 +809,7 @@ namespace hcorepp {
             dim3 grid;
 
             int64_t mm, nn;
-            if (aMatrixType == helpers::MatrixType::Lower) {
+            if (aMatrixType == common::MatrixType::Lower) {
                 for (unsigned int i = 0; i < super_grid.x; ++i) {
                     mm = (i == super_grid.x - 1 ? aM % super_NB : super_NB);
                     grid.x = ceil(mm / THREADS);
@@ -815,7 +825,7 @@ namespace hcorepp {
                         }
                     }
                 }
-            } else if (aMatrixType == helpers::MatrixType::Upper) {
+            } else if (aMatrixType == common::MatrixType::Upper) {
                 for (unsigned int i = 0; i < super_grid.x; ++i) {
                     mm = (i == super_grid.x - 1 ? aM % super_NB : super_NB);
                     grid.x = ceil(mm / THREADS);
@@ -864,22 +874,22 @@ namespace hcorepp {
         }
 
         template
-        void Laset(helpers::MatrixType aMatrixType, int64_t aM, int64_t aN, float aOffdiag, float aDiag,
+        void Laset(common::MatrixType aMatrixType, int64_t aM, int64_t aN, float aOffdiag, float aDiag,
                    float *apA, int64_t aLdA);
 
         template
-        void Laset(helpers::MatrixType aMatrixType, int64_t aM, int64_t aN, double aOffdiag, double aDiag,
+        void Laset(common::MatrixType aMatrixType, int64_t aM, int64_t aN, double aOffdiag, double aDiag,
                    double *apA, int64_t aLdA);
 
         template<typename T>
         void
-        LaCpy(helpers::MatrixType aType, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apB, int64_t aLdB) {
+        LaCpy(common::MatrixType aType, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apB, int64_t aLdB) {
 #define dA(i_, j_) (dA + (i_) + (j_)*ldda)
 #define dB(i_, j_) (dB + (i_) + (j_)*lddb)
 
             int info = 0;
-            if (aType != helpers::MatrixType::Lower && aType != helpers::MatrixType::Upper &&
-                aType != helpers::MatrixType::General)
+            if (aType != common::MatrixType::Lower && aType != common::MatrixType::Upper &&
+                aType != common::MatrixType::General)
                 info = -1;
             else if (aM < 0)
                 info = -2;
@@ -905,7 +915,7 @@ namespace hcorepp {
             dim3 grid;
 
             int64_t mm, nn;
-            if (aType == helpers::MatrixType::Lower) {
+            if (aType == common::MatrixType::Lower) {
                 for (unsigned int i = 0; i < super_grid.x; ++i) {
                     mm = (i == super_grid.x - 1 ? aM % super_NB : super_NB);
                     grid.x = ceil(mm / THREADS);
@@ -924,7 +934,7 @@ namespace hcorepp {
                         }
                     }
                 }
-            } else if (aType == helpers::MatrixType::Upper) {
+            } else if (aType == common::MatrixType::Upper) {
                 for (unsigned int i = 0; i < super_grid.x; ++i) {
                     mm = (i == super_grid.x - 1 ? aM % super_NB : super_NB);
                     grid.x = (mm + THREADS - 1) / THREADS;
@@ -963,11 +973,11 @@ namespace hcorepp {
 
         template
         void
-        LaCpy(helpers::MatrixType, int64_t, int64_t, float *, int64_t, float *, int64_t);
+        LaCpy(common::MatrixType, int64_t, int64_t, float *, int64_t, float *, int64_t);
 
         template
         void
-        LaCpy(helpers::MatrixType, int64_t, int64_t, double *, int64_t, double *, int64_t);
+        LaCpy(common::MatrixType, int64_t, int64_t, double *, int64_t, double *, int64_t);
 
         template<typename T>
         void

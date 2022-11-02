@@ -1,5 +1,14 @@
-#include <hcorepp/api/hcorepp.hpp>
-#include <iostream>
+/**
+ * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+ * ***************************************************************************
+ * *****      KAUST Extreme Computing and Research Center Property       *****
+ * ***************************************************************************
+ *
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+ */
+
+#include <hcorepp/api/HCore.hpp>
 #include <functional>
 
 using namespace hcorepp::operators;
@@ -9,10 +18,8 @@ namespace hcorepp {
     namespace api {
 
         template<typename T>
-        void
-        gemm(T aAlpha, operators::Tile<T> const &aA, blas::Op const &aAOp, operators::Tile<T> const &aB,
-             blas::Op const &aBOp, T aBeta, operators::Tile<T> &aC, blas::Op const &aCOp,
-             helpers::SvdHelpers &aSvdHelpers) {
+        void HCore<T>::Gemm(T aAlpha, const Tile<T> &aA, const blas::Op &aAOp, const Tile<T> &aB, const blas::Op &aBOp,
+                            T aBeta, Tile<T> &aC, const SVDParameters &aSVDParameters) {
             int tile_a_size = aA.GetNumberOfMatrices();
             int tile_b_size = aB.GetNumberOfMatrices();
             int tile_c_size = aC.GetNumberOfMatrices();
@@ -72,24 +79,24 @@ namespace hcorepp {
                 auto tile = temp_tiles.back();
 
                 tile->Gemm(alpha_local, a_data, a_op, b_data, b_op, beta_local, a_data.get().GetLeadingDim(),
-                           std::min(b_data.get().GetNumOfRows(), b_data.get().GetNumOfCols()), aSvdHelpers);
+                           std::min(b_data.get().GetNumOfRows(), b_data.get().GetNumOfCols()), aSVDParameters);
 
                 if (number_of_temporary_dense_gemms == 2) {
                     auto a_data_holder = (tile->GetTileSubMatrix(0));
-                    a_operation = tile->operation();
+                    a_operation = blas::Op::NoTrans;
 
                     a_data_holders[a_idx] = a_data_holder;
                     b_idx++;
                 } else if (number_of_temporary_dense_gemms == 1) {
                     if (a_idx == 0) {
                         auto a_tile = (tile->GetTileSubMatrix(0));
-                        a_operation = tile->operation();
+                        a_operation = blas::Op::NoTrans;
 
                         a_data_holders[a_idx] = a_tile;
                         b_idx++;
                     } else {
                         auto b_tile = tile->GetTileSubMatrix(0);
-                        b_operation = tile->operation();
+                        b_operation = blas::Op::NoTrans;
 
                         b_data_holders[b_idx] = b_tile;
                         a_idx--;
@@ -105,15 +112,15 @@ namespace hcorepp {
                 if (dense_dense_comp) {
                     auto target = temp_tiles[0];
                     auto a_data = aC.GetTileSubMatrix(0);
-                    auto a_op = aCOp;
+                    auto a_op = blas::Op::NoTrans;
                     auto b_data = aC.GetTileSubMatrix(1);
-                    auto b_op = aCOp;
+                    auto b_op = blas::Op::NoTrans;
                     alpha_local = 1;
 
                     // W += beta * Cu*Cv;
 
                     target->Gemm(aBeta, a_data, a_op, b_data, b_op, alpha_local, a_data.get().GetLeadingDim(),
-                                 std::min(b_data.get().GetNumOfRows(), b_data.get().GetNumOfCols()), aSvdHelpers);
+                                 std::min(b_data.get().GetNumOfRows(), b_data.get().GetNumOfCols()), aSVDParameters);
 
                     int num_of_rows = target->GetTileSubMatrix(0).get().GetNumOfRows();
                     int num_of_cols = target->GetTileSubMatrix(0).get().GetNumOfCols();
@@ -136,7 +143,7 @@ namespace hcorepp {
                     int64_t c_rank = a_data.get().GetNumOfCols();
 
                     aC.Gemm(aAlpha, a_data, a_operation, b_data, b_operation, aBeta, a_data.get().GetLeadingDim(),
-                            c_rank, aSvdHelpers);
+                            c_rank, aSVDParameters);
                 }
             }
 
@@ -146,14 +153,7 @@ namespace hcorepp {
             }
         }
 
-        template void
-        gemm(float, hcorepp::operators::Tile<float> const &, blas::Op const &, hcorepp::operators::Tile<float> const &,
-             blas::Op const &, float, hcorepp::operators::Tile<float> &, blas::Op const &, helpers::SvdHelpers &);
-
-        template void
-        gemm(double, hcorepp::operators::Tile<double> const &, blas::Op const &,
-             hcorepp::operators::Tile<double> const &, blas::Op const &, double, hcorepp::operators::Tile<double> &,
-             blas::Op const &, helpers::SvdHelpers &);
+        HCOREPP_INSTANTIATE_CLASS(HCore)
 
     }
 }

@@ -1,7 +1,17 @@
+/**
+ * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
+ * ***************************************************************************
+ * *****      KAUST Extreme Computing and Research Center Property       *****
+ * ***************************************************************************
+ *
+ * All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+ */
+
 #include <libraries/catch/catch.hpp>
 #include <iostream>
 
-#include <hcorepp/api/hcorepp.hpp>
+#include <hcorepp/api/HCore.hpp>
 #include <hcorepp/operators/concrete/Dense.hpp>
 #include <hcorepp/operators/concrete/Compressed.hpp>
 #include <hcorepp/data-units/DataHolder.hpp>
@@ -54,18 +64,14 @@ void TEST_GEMM() {
         rowMajorToColumnMajor<T>((T *) matrix_A, n, m, a_input);
         rowMajorToColumnMajor<T>((T *) matrix_B, n, m, b_input);
 
-        DenseTile<T> dense_tile_A(m, n, (T *) a_input, lda, blas::Layout::ColMajor, blas::Op::NoTrans,
-                                  blas::Uplo::General);
+        DenseTile<T> dense_tile_A(m, n, (T *) a_input, lda, blas::Layout::ColMajor);
 
-        DenseTile<T> dense_tile_B(m, n, (T *) b_input, ldb, blas::Layout::ColMajor, blas::Op::NoTrans,
-                                  blas::Uplo::General);
+        DenseTile<T> dense_tile_B(m, n, (T *) b_input, ldb, blas::Layout::ColMajor);
 
-        DenseTile<T> dense_tile_C(m, n, (T *) nullptr, ldc, blas::Layout::ColMajor, blas::Op::NoTrans,
-                                  blas::Uplo::General);
+        DenseTile<T> dense_tile_C(m, n, (T *) nullptr, ldc, blas::Layout::ColMajor);
 
-        hcorepp::helpers::SvdHelpers helpers;
-        gemm<T>(alpha, dense_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta, dense_tile_C,
-                blas::Op::NoTrans, helpers);
+        HCore<T>::Gemm(alpha, dense_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans,
+                       beta, dense_tile_C);
         T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
 
         columnMajorToRowMajor<T>(output, n, m, (T *) matrix_D);
@@ -114,18 +120,14 @@ void TEST_GEMM() {
         rowMajorToColumnMajor<T>((T *) matrix_A, k, m, a_input);
         rowMajorToColumnMajor<T>((T *) matrix_B, n, k, b_input);
 
-        DenseTile<T> dense_tile_A(m, k, (T *) matrix_A, lda, blas::Layout::ColMajor, blas::Op::NoTrans,
-                                  blas::Uplo::General);
+        DenseTile<T> dense_tile_A(m, k, (T *) matrix_A, lda, blas::Layout::ColMajor);
 
-        DenseTile<T> dense_tile_B(k, n, (T *) matrix_B, ldb, blas::Layout::ColMajor, blas::Op::NoTrans,
-                                  blas::Uplo::General);
+        DenseTile<T> dense_tile_B(k, n, (T *) matrix_B, ldb, blas::Layout::ColMajor);
 
-        DenseTile<T> dense_tile_C(m, n, (T *) nullptr, ldc, blas::Layout::ColMajor, blas::Op::NoTrans,
-                                  blas::Uplo::General);
+        DenseTile<T> dense_tile_C(m, n, (T *) nullptr, ldc, blas::Layout::ColMajor);
 
-        hcorepp::helpers::SvdHelpers helpers;
-        gemm<T>(alpha, dense_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta, dense_tile_C,
-                blas::Op::NoTrans, helpers);
+        HCore<T>::Gemm(alpha, dense_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans,
+                       beta, dense_tile_C);
 
         T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
 
@@ -176,18 +178,14 @@ void TEST_GEMM() {
         rowMajorToColumnMajor<T>((T *) matrix_A, a_n, a_m, a_input);
         rowMajorToColumnMajor<T>((T *) matrix_B, b_n, b_m, b_input);
 
-        DenseTile<T> dense_tile_A(a_m, a_n, a_input, lda, blas::Layout::ColMajor, blas::Op::NoTrans,
-                                  blas::Uplo::General);
+        DenseTile<T> dense_tile_A(a_m, a_n, a_input, lda, blas::Layout::ColMajor);
 
-        DenseTile<T> dense_tile_B(b_m, b_n, b_input, ldb, blas::Layout::ColMajor, blas::Op::NoTrans,
-                                  blas::Uplo::General);
+        DenseTile<T> dense_tile_B(b_m, b_n, b_input, ldb, blas::Layout::ColMajor);
 
-        DenseTile<T> dense_tile_C(m, n, nullptr, ldc, blas::Layout::ColMajor, blas::Op::NoTrans,
-                                  blas::Uplo::General);
+        DenseTile<T> dense_tile_C(m, n, nullptr, ldc, blas::Layout::ColMajor);
 
-        hcorepp::helpers::SvdHelpers helpers;
-        gemm<T>(alpha, dense_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta, dense_tile_C,
-                blas::Op::NoTrans, helpers);
+        HCore<T>::Gemm(alpha, dense_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta,
+                       dense_tile_C);
 
         T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
 
@@ -256,19 +254,16 @@ void TEST_GEMM() {
         memcpy(compressed_tile_a_data, au_input, au_size * sizeof(T));
         memcpy(&compressed_tile_a_data[au_size], av_input, av_size * sizeof(T));
 
-        CompressedTile<T> compressed_tile_A(au_m, av_n, compressed_tile_a_data, ldau, rank, 1,
-                                            blas::Layout::ColMajor,
-                                            blas::Op::NoTrans, blas::Uplo::General);
+        CompressedTile<T> compressed_tile_A(au_m, av_n, compressed_tile_a_data, ldau, rank,
+                                            blas::Layout::ColMajor);
 
-        DenseTile<T> dense_tile_B(b_m, b_n, (T *) b_input, ldb, blas::Layout::ColMajor, blas::Op::NoTrans,
-                                  blas::Uplo::General);
+        DenseTile<T> dense_tile_B(b_m, b_n, (T *) b_input, ldb, blas::Layout::ColMajor);
 
-        DenseTile<T> dense_tile_C(c_m, c_n, nullptr, ldc, blas::Layout::ColMajor, blas::Op::NoTrans,
-                                  blas::Uplo::General);
+        DenseTile<T> dense_tile_C(c_m, c_n, nullptr, ldc, blas::Layout::ColMajor);
 
-        hcorepp::helpers::SvdHelpers helpers;
-        gemm<T>(alpha, compressed_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta, dense_tile_C,
-                blas::Op::NoTrans, helpers);
+        hcorepp::operators::SVDParameters helpers(1);
+        HCore<T>::Gemm(alpha, compressed_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta, dense_tile_C,
+                       helpers);
         T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
 
         columnMajorToRowMajor<T>(output, c_n, c_m, (T *) matrix_D);
@@ -340,13 +335,13 @@ void TEST_GEMM() {
         memcpy(compressed_tile_b_data, bu_input, bu_size * sizeof(T));
         memcpy(&compressed_tile_b_data[bu_size], bv_input, bv_size * sizeof(T));
 
-        CompressedTile<T> compressed_tile_B(bu_m, bv_n, compressed_tile_b_data, ldbu, rank, 1);
+        CompressedTile<T> compressed_tile_B(bu_m, bv_n, compressed_tile_b_data, ldbu, rank);
         DenseTile<T> dense_tile_A(a_m, a_n, (T *) a_input, lda);
         DenseTile<T> dense_tile_C(c_m, c_n, nullptr, ldc);
 
-        hcorepp::helpers::SvdHelpers helpers;
-        gemm<T>(alpha, dense_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta, dense_tile_C,
-                blas::Op::NoTrans, helpers);
+        hcorepp::operators::SVDParameters helpers(1);
+        HCore<T>::Gemm(alpha, dense_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta, dense_tile_C,
+                       helpers);
         T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
 
         columnMajorToRowMajor<T>(output, c_n, c_m, (T *) matrix_D);
@@ -431,13 +426,13 @@ void TEST_GEMM() {
         memcpy(compressed_tile_b_data, bu_input, bu_size * sizeof(T));
         memcpy(&compressed_tile_b_data[bu_size], bv_input, bv_size * sizeof(T));
 
-        CompressedTile<T> compressed_tile_A(au_m, av_n, compressed_tile_a_data, ldau, a_rank, 1);
-        CompressedTile<T> compressed_tile_B(bu_m, bv_n, compressed_tile_b_data, ldbu, b_rank, 1);
+        CompressedTile<T> compressed_tile_A(au_m, av_n, compressed_tile_a_data, ldau, a_rank);
+        CompressedTile<T> compressed_tile_B(bu_m, bv_n, compressed_tile_b_data, ldbu, b_rank);
         DenseTile<T> dense_tile_C(c_m, c_n, nullptr, ldc);
 
-        hcorepp::helpers::SvdHelpers helpers;
-        gemm<T>(alpha, compressed_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta,
-                dense_tile_C, blas::Op::NoTrans, helpers);
+        hcorepp::operators::SVDParameters helpers(1);
+        HCore<T>::Gemm(alpha, compressed_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta,
+                       dense_tile_C, helpers);
         T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
 
         columnMajorToRowMajor<T>(output, c_n, c_m, (T *) matrix_D);
@@ -541,17 +536,15 @@ void TEST_GEMM() {
         memcpy(compressed_tile_a_data, au_input, au_size * sizeof(T));
         memcpy(&compressed_tile_a_data[au_size], av_input, av_size * sizeof(T));
 
-        CompressedTile<T> compressed_tile_A(au_m, av_n, compressed_tile_a_data, ldau, a_rank,
-                                            std::numeric_limits<blas::real_type<T>>::epsilon());
+        CompressedTile<T> compressed_tile_A(au_m, av_n, compressed_tile_a_data, ldau, a_rank);
 
-        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldcu, c_rank,
-                                            std::numeric_limits<blas::real_type<T>>::epsilon());
+        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldcu, c_rank);
 
         DenseTile<T> dense_tile_B(b_m, b_n, (T *) b_input, ldb);
 
-        hcorepp::helpers::SvdHelpers helpers;
-        gemm<T>(alpha, compressed_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta,
-                compressed_tile_C, blas::Op::NoTrans, helpers);
+        hcorepp::operators::SVDParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
+        HCore<T>::Gemm(alpha, compressed_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta,
+                       compressed_tile_C, helpers);
 
         T *cu_output = copy_output(compressed_tile_C.GetTileSubMatrix(0).get());
         T *cv_output = copy_output(compressed_tile_C.GetTileSubMatrix(1).get());
@@ -692,17 +685,15 @@ void TEST_GEMM() {
         memcpy(compressed_tile_b_data, bu_input, bu_size * sizeof(T));
         memcpy(&compressed_tile_b_data[bu_size], bv_input, bv_size * sizeof(T));
 
-        CompressedTile<T> compressed_tile_B(bu_m, bv_n, compressed_tile_b_data, ldbu, b_rank,
-                                            std::numeric_limits<blas::real_type<T>>::epsilon());
+        CompressedTile<T> compressed_tile_B(bu_m, bv_n, compressed_tile_b_data, ldbu, b_rank);
 
-        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldc, c_rank,
-                                            std::numeric_limits<blas::real_type<T>>::epsilon());
+        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldc, c_rank);
 
         DenseTile<T> dense_tile_A(a_m, a_n, (T *) a_input, lda);
 
-        hcorepp::helpers::SvdHelpers helpers;
-        gemm<T>(alpha, dense_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta,
-                compressed_tile_C, blas::Op::NoTrans, helpers);
+        hcorepp::operators::SVDParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
+        HCore<T>::Gemm(alpha, dense_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta,
+                       compressed_tile_C, helpers);
         T *cu_output = copy_output(compressed_tile_C.GetTileSubMatrix(0).get());
         T *cv_output = copy_output(compressed_tile_C.GetTileSubMatrix(1).get());
 
@@ -867,18 +858,15 @@ void TEST_GEMM() {
         memcpy(compressed_tile_b_data, bu_input, bu_size * sizeof(T));
         memcpy(&compressed_tile_b_data[bu_size], bv_input, bv_size * sizeof(T));
 
-        CompressedTile<T> compressed_tile_A(au_m, av_n, compressed_tile_a_data, ldau, a_rank,
-                                            std::numeric_limits<blas::real_type<T>>::epsilon());
+        CompressedTile<T> compressed_tile_A(au_m, av_n, compressed_tile_a_data, ldau, a_rank);
 
-        CompressedTile<T> compressed_tile_B(bu_m, bv_n, compressed_tile_b_data, ldbu, b_rank,
-                                            std::numeric_limits<blas::real_type<T>>::epsilon());
+        CompressedTile<T> compressed_tile_B(bu_m, bv_n, compressed_tile_b_data, ldbu, b_rank);
 
-        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldc, c_rank,
-                                            std::numeric_limits<blas::real_type<T>>::epsilon());
+        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldc, c_rank);
 
-        hcorepp::helpers::SvdHelpers helpers;
-        gemm<T>(alpha, compressed_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta,
-                compressed_tile_C, blas::Op::NoTrans, helpers);
+        hcorepp::operators::SVDParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
+        HCore<T>::Gemm(alpha, compressed_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta,
+                       compressed_tile_C, helpers);
         T *cu_output = copy_output(compressed_tile_C.GetTileSubMatrix(0).get());
         T *cv_output = copy_output(compressed_tile_C.GetTileSubMatrix(1).get());
 
@@ -1014,12 +1002,11 @@ void TEST_GEMM() {
         DenseTile<T> dense_tile_A(a_m, a_n, (T *) a_input, lda);
         DenseTile<T> dense_tile_B(b_m, b_n, (T *) b_input, ldb);
 
-        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldc, c_rank,
-                                            std::numeric_limits<blas::real_type<T>>::epsilon());
+        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldc, c_rank);
 
-        hcorepp::helpers::SvdHelpers helpers;
-        gemm<T>(alpha, dense_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta, compressed_tile_C,
-                blas::Op::NoTrans, helpers);
+        hcorepp::operators::SVDParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
+        HCore<T>::Gemm(alpha, dense_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta, compressed_tile_C,
+                       helpers);
         T *cu_output = copy_output(compressed_tile_C.GetTileSubMatrix(0).get());
         T *cv_output = copy_output(compressed_tile_C.GetTileSubMatrix(1).get());
 
