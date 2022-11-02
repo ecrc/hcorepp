@@ -15,22 +15,33 @@ fi
 
 export HCOREPP_VERBOSE=ON
 TileCount=(1 2 4 8 16 32 64 128)
-acc="1e-1,1e-2,1e-3,1e-4,1e-5,1e-6,1e-7,1e-8"
+acc="1e-1,1e-2,1e-4,1e-8"
 
-cat /dev/null > benchmark_512.csv
+cat /dev/null > benchmark_ts512.csv
 
 for tile_count in ${TileCount[@]}; do
-      $1 $tile_count $acc $tile_size 512 >> benchmark_512.csv
+      $1 $tile_count $acc 512 >> benchmark_ts512.csv
       unset HCOREPP_VERBOSE
 done
 
 
 export HCOREPP_VERBOSE=ON
 
-cat /dev/null > benchmark_1024.csv
+cat /dev/null > benchmark_t1.csv
 
-TileCount=(1 2 4 8 16 32 64)
+Prop=(128 256 512 1024 2048 4096 8192 16384 32768 65536)
+for tile_size in ${Prop[@]}; do
+      $1 1 "$acc" $tile_size >> benchmark_t1.csv
+      unset HCOREPP_VERBOSE
+done
+
+
+export HCOREPP_VERBOSE=ON
+TileCount=(1 2 4 8 16 32)
+
+cat /dev/null > benchmark_ts2048.csv
+
 for tile_count in ${TileCount[@]}; do
-      $1 $tile_count "$acc" $tile_size 1024 >> benchmark_1024.csv
+      $1 $tile_count $acc 2048 >> benchmark_ts2048.csv
       unset HCOREPP_VERBOSE
 done

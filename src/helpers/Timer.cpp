@@ -18,17 +18,17 @@ namespace hcorepp {
         }
 
         void Timer::StartSnapshot() {
-            this->mLastSnapshotTime = std::chrono::system_clock::now();
+            this->mLastSnapshotTime = std::chrono::high_resolution_clock::now();
         }
 
         void Timer::Snapshot(const std::string &aSnapshotName) {
-            auto new_snapshot_time = std::chrono::system_clock::now();
-            std::chrono::duration<double> elapsed_seconds = new_snapshot_time - this->mLastSnapshotTime;
+            auto new_snapshot_time = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::milli> elapsed_ms = new_snapshot_time - this->mLastSnapshotTime;
             if (this->mSnapshotIndex.count(aSnapshotName) > 0) {
                 auto index = mSnapshotIndex[aSnapshotName];
-                this->mSnapshots[index].second += (elapsed_seconds.count() * 1000);
+                this->mSnapshots[index].second += (elapsed_ms.count());
             } else {
-                this->mSnapshots.emplace_back(aSnapshotName, elapsed_seconds.count());
+                this->mSnapshots.emplace_back(aSnapshotName, elapsed_ms.count());
                 mSnapshotIndex[aSnapshotName] = this->mSnapshots.size() - 1;
             }
             this->StartSnapshot();
