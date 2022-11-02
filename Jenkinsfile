@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'jenkinsfile' }
+    agent none
     triggers {
         pollSCM('H/10 * * * *')
     }
@@ -9,48 +9,156 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '50'))
         timestamps()
     }
-   // environment {
-     //   HCORECPPDEVDIR= "{$PWD}"
-    //}
 
     stages {
-        stage ('build') {
+        stage ('build_mkl') {
+            agent { label 'jenkinsfile' }
             steps {
                 sh '''#!/bin/bash -le
-                             ####################################################
-                            # Configure and build
-                            ####################################################
-                             module load gcc/10.2.0
-			     module load cmake-3.22.1-gcc-7.5.0-4se4k5d
-                            ####################################################
-                            # BLAS/LAPACK
-                            ####################################################
-                            module load mkl/2020.0.166
-                         #   cd $HCORECPPDEVDIR
-                            ./config.sh -t
-                            ./clean_build.sh
+                    ####################################################
+                    # Configure and build
+                    ####################################################
+	                module purge
+                    module load gcc/10.2.0
+	                module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+                    ####################################################
+                    # BLAS/LAPACK
+                    ####################################################
+                    module load mkl/2020.0.166
+                    ./config.sh -t -e
+                    ./clean_build.sh
                 '''
             }
         }
-                stage ('test') {
+        stage ('test_mkl') {
+            agent { label 'jenkinsfile' }
+            steps {
+
+                sh '''#!/bin/bash -le
+                    ####################################################
+                    # Run tester
+                    ####################################################
+                    echo "========================================"
+                    module purge
+		            module load gcc/10.2.0
+			        module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+                    ####################################################
+                    # BLAS/LAPACK
+                    ####################################################
+                    module load mkl/2020.0.166
+                    cd bin/tests
+                    ./hcorepp-tests                
+                    '''
+            }
+        }
+        stage ('build_openblas') {
+            agent { label 'jenkinsfile' }
             steps {
                 sh '''#!/bin/bash -le
-                            ####################################################
-                            # Run tester
-                            ####################################################
-                            echo "========================================"
-                                module load gcc/10.2.0
-				module load cmake-3.22.1-gcc-7.5.0-4se4k5d
-                            ####################################################
-                            # BLAS/LAPACK
-                            ####################################################
-                            module load mkl/2020.0.166
-                         #   cd $HCORECPPDEVDIR
-                            cd bin/tests
-                            ./hcorepp-tests                
-                            '''
-    }
-                }
+                    ####################################################
+                    # Configure and build
+                    ####################################################
+                    module purge
+                    module load gcc/10.2.0
+                    module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+                    ./config.sh -t -e
+                    ./clean_build.sh
+                '''
+            }
+        }
+        stage ('test_openblas') {
+            agent { label 'jenkinsfile' }
+            steps {
+
+                sh '''#!/bin/bash -le
+                    ####################################################
+                    # Run tester
+                    ####################################################
+                    echo "========================================"
+                    module purge
+                    module load gcc/10.2.0
+                    module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+                    cd bin/tests
+                    ./hcorepp-tests                
+                    '''
+            }
+        }
+        stage ('build_cuda_openblas') {
+            agent { label 'gpu' }
+            steps {
+                sh '''#!/bin/bash -le
+                    ####################################################
+                    # Configure and build
+                    ####################################################
+                    module purge
+                    module load gcc/10.2.0
+                    module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+                    module load cuda/11.6
+                    ./config.sh -t -e -c
+                    ./clean_build.sh
+                '''
+            }
+        }
+        stage ('test_cuda_openblas') {
+            agent { label 'gpu' }
+            steps {
+
+                sh '''#!/bin/bash -le
+                    ####################################################
+                    # Run tester
+                    ####################################################
+                    echo "========================================"
+                    module purge
+                    module load gcc/10.2.0
+                    module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+                    module load cuda/11.6
+                    cd bin/tests
+                    ./hcorepp-tests                
+                    '''
+            }
+        }
+        stage ('build_cuda_mkl') {
+            agent { label 'gpu' }
+            steps {
+                sh '''#!/bin/bash -le
+                    ####################################################
+                    # Configure and build
+                    ####################################################
+                    module purge
+                    module load gcc/10.2.0
+                    module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+                    module load cuda/11.6
+                    ####################################################
+                    # BLAS/LAPACK
+                    ####################################################
+                    module load mkl/2020.0.166
+                    ./config.sh -t -e -c
+                    ./clean_build.sh
+                '''
+            }
+        }
+        stage ('test_cuda_mkl') {
+            agent { label 'gpu' }
+            steps {
+
+                sh '''#!/bin/bash -le
+                    ####################################################
+                    # Run tester
+                    ####################################################
+                    echo "========================================"
+                    module purge
+                    module load gcc/10.2.0
+                    module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+                    module load cuda/11.6
+                    ####################################################
+                    # BLAS/LAPACK
+                    ####################################################
+                    module load mkl/2020.0.166
+                    cd bin/tests
+                    ./hcorepp-tests                
+                    '''
+            }
+        }
     }
         
     // Post build actions

@@ -133,6 +133,7 @@ int main(int argc, char *argv[]) {
                                   + c_dense.GetMemoryFootprint()) / 1024;
     }
     // Compressed flow
+    bool first_print = true;
     for (auto &accuracy : accuracy_list) {
         //Reset all compression timers
         timer.ResetSnapshot("comp_creation");
@@ -177,22 +178,25 @@ int main(int argc, char *argv[]) {
         size_t compressed_memory_footprint = (a_comp.GetMemoryFootprint() + b_comp.GetMemoryFootprint()
                                               + c_comp.GetMemoryFootprint()) / 1024;
         // Print results
-        if (print_header) {
-            printf("tile_count, accuracy, tile_size, dense_error, comp_error, ref_memory, dense_memory, comp_memory,"
-                   "%s, %s, %s, %s, %s, %s, %s, %s\n",
-                   timer.GetSnapshot(0).first.c_str(), timer.GetSnapshot(1).first.c_str(),
-                   timer.GetSnapshot(2).first.c_str(), timer.GetSnapshot(3).first.c_str(),
-                   timer.GetSnapshot(4).first.c_str(), timer.GetSnapshot(5).first.c_str(),
-                   timer.GetSnapshot(6).first.c_str(), timer.GetSnapshot(7).first.c_str());
-            print_header = false;
+        if (first_print) {
+            if (print_header) {
+                printf("tile_count, tile_size, matrix_size, type, error, memory(KB), creation(ms), gemm_time(ms)\n");
+                print_header = false;
+            }
+            printf("%d, %d, %d, ref, 0, %zu, %f, %f\n",
+                   matrix_tiles, tile_size, matrix_tiles * tile_size,
+                   ref_memory_footprint, timer.GetSnapshot("generation"),
+                   timer.GetSnapshot("ref_gemm"));
+            printf("%d, %d, %d, dense, %e, %zu, %f, %f\n",
+                   matrix_tiles, tile_size, matrix_tiles * tile_size, dense_error,
+                   ref_memory_footprint, timer.GetSnapshot("dense_creation"),
+                   timer.GetSnapshot("dense_gemm"));
+            first_print = false;
         }
-        printf("%d, %4.1e, %d, %e, %e, %zu, %zu, %zu, %f, %f, %f, %f, %f, %f, %f, %f\n", matrix_tiles, accuracy,
-               tile_size,
-               dense_error, comp_error, ref_memory_footprint, dense_memory_footprint,
-               compressed_memory_footprint, timer.GetSnapshot(0).second, timer.GetSnapshot(1).second,
-               timer.GetSnapshot(2).second, timer.GetSnapshot(3).second,
-               timer.GetSnapshot(4).second, timer.GetSnapshot(5).second,
-               timer.GetSnapshot(6).second, timer.GetSnapshot(7).second);
+        printf("%d, %d, %d, %2.1e, %e, %zu, %f, %f\n",
+               matrix_tiles, tile_size, matrix_tiles * tile_size, accuracy, comp_error,
+               compressed_memory_footprint, timer.GetSnapshot("comp_creation"),
+               timer.GetSnapshot("comp_gemm"));
     }
     return 0;
 }

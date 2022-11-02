@@ -22,7 +22,7 @@ namespace hcorepp {
          * @brief
          * Timer class to help with benchmarking and timing examples.
          */
-        class Timer{
+        class Timer {
         public:
             /**
              * @brief
@@ -77,8 +77,28 @@ namespace hcorepp {
              * @return
              * A pair of the snapshot name and the time associated with it.
              */
-            const std::pair<std::string, double>& GetSnapshot(size_t aIndex) const {
+            const std::pair<std::string, double> &GetSnapshot(size_t aIndex) const {
                 return this->mSnapshots[aIndex];
+            }
+
+            /**
+             * @brief
+             * Retrieve a snapshot time from the timer.
+             *
+             * @param[in] aSnapshotName
+             * Name of the target snapshot
+             *
+             * @return
+             * The time associated with the snapshot, if it is not existent,
+             * it will return 0;
+             */
+            double GetSnapshot(const std::string &aSnapshotName) {
+                double time = 0;
+                if (this->mSnapshotIndex.count(aSnapshotName) > 0) {
+                    auto index = this->mSnapshotIndex[aSnapshotName];
+                    time = this->mSnapshots[index].second;
+                }
+                return time;
             }
 
             /**

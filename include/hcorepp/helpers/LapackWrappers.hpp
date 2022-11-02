@@ -24,6 +24,7 @@
 // Check if using OpenBLAS, import its lapack, otherwise use default lapack directory.
 #if __has_include("openblas/lapack.h")
 #include <openblas/lapack.h>
+#undef LAPACK_FORTRAN_STRLEN_END
 #else
 
 #include <lapack/fortran.h>

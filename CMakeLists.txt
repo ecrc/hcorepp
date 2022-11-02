@@ -26,8 +26,8 @@ endif ()
 # Add all dependencies for HCorePP
 include(ImportGFortran)
 include(ImportOpenMP)
-include(ImportBlasPP)
 if (USE_CUDA)
+    include(ImportBlasPP)
     # Do not do anything for now.
     include(ImportCuSolver)
     unset(BLA_VENDOR)
@@ -37,6 +37,8 @@ if (USE_CUDA)
             ${LIBS}
             )
 else ()
+    set(gpu_backend CACHE "none" FORCE)
+    include(ImportBlasPP)
     include(ImportLapackPP)
 endif ()
 
