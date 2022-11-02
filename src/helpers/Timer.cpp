@@ -26,7 +26,7 @@ namespace hcorepp {
             std::chrono::duration<double> elapsed_seconds = new_snapshot_time - this->mLastSnapshotTime;
             if (this->mSnapshotIndex.count(aSnapshotName) > 0) {
                 auto index = mSnapshotIndex[aSnapshotName];
-                this->mSnapshots[index].second += elapsed_seconds.count() * 1000;
+                this->mSnapshots[index].second += (elapsed_seconds.count() * 1000);
             } else {
                 this->mSnapshots.emplace_back(aSnapshotName, elapsed_seconds.count());
                 mSnapshotIndex[aSnapshotName] = this->mSnapshots.size() - 1;

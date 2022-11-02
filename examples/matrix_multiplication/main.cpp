@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
                    timer.GetSnapshot("ref_gemm"));
             printf("%d, %d, %d, dense, %e, %zu, %f, %f\n",
                    matrix_tiles, tile_size, matrix_tiles * tile_size, dense_error,
-                   ref_memory_footprint, timer.GetSnapshot("dense_creation"),
+                   dense_memory_footprint, timer.GetSnapshot("dense_creation"),
                    timer.GetSnapshot("dense_gemm"));
             first_print = false;
         }

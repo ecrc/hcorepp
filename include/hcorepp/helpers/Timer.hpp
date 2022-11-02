@@ -92,10 +92,10 @@ namespace hcorepp {
              * The time associated with the snapshot, if it is not existent,
              * it will return 0;
              */
-            double GetSnapshot(const std::string &aSnapshotName) {
+            double GetSnapshot(const std::string &aSnapshotName) const {
                 double time = 0;
                 if (this->mSnapshotIndex.count(aSnapshotName) > 0) {
-                    auto index = this->mSnapshotIndex[aSnapshotName];
+                    auto index = this->mSnapshotIndex.find(aSnapshotName)->second;
                     time = this->mSnapshots[index].second;
                 }
                 return time;

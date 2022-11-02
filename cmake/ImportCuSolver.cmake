@@ -1,6 +1,8 @@
+set(cudart_lib CUDA::cudart)
+set(cublas_lib CUDA::cublas)
 set(LIBS
-        -lcusolver
-        -lcublas
-        -lcublasLt
+        CUDA::cusolver
+        CUDA::cublas
+        CUDA::cublasLt
         ${LIBS}
         )
