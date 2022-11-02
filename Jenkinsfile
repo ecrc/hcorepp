@@ -20,7 +20,7 @@ pipeline {
                     ####################################################
 	                module purge
                     module load gcc/10.2.0
-	                module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+	                module load cmake/3.21.2
                     ####################################################
                     # BLAS/LAPACK
                     ####################################################
@@ -41,7 +41,7 @@ pipeline {
                     echo "========================================"
                     module purge
 		            module load gcc/10.2.0
-			        module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+			        module load cmake/3.21.2
                     ####################################################
                     # BLAS/LAPACK
                     ####################################################
@@ -60,7 +60,7 @@ pipeline {
                     ####################################################
                     module purge
                     module load gcc/10.2.0
-                    module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+                    module load cmake/3.21.2
                     ./config.sh -t -e
                     ./clean_build.sh
                 '''
@@ -77,7 +77,7 @@ pipeline {
                     echo "========================================"
                     module purge
                     module load gcc/10.2.0
-                    module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+                    module load cmake/3.21.2
                     cd bin/tests
                     ./hcorepp-tests                
                     '''
@@ -92,7 +92,7 @@ pipeline {
                     ####################################################
                     module purge
                     module load gcc/10.2.0
-                    module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+                    module load cmake/3.21.2
                     module load cuda/11.6
                     ./config.sh -t -e -c
                     ./clean_build.sh
@@ -110,7 +110,7 @@ pipeline {
                     echo "========================================"
                     module purge
                     module load gcc/10.2.0
-                    module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+                    module load cmake/3.21.2
                     module load cuda/11.6
                     cd bin/tests
                     ./hcorepp-tests                
@@ -126,7 +126,7 @@ pipeline {
                     ####################################################
                     module purge
                     module load gcc/10.2.0
-                    module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+                    module load cmake/3.21.2
                     module load cuda/11.6
                     ####################################################
                     # BLAS/LAPACK
@@ -148,7 +148,7 @@ pipeline {
                     echo "========================================"
                     module purge
                     module load gcc/10.2.0
-                    module load cmake-3.22.1-gcc-7.5.0-4se4k5d
+                    module load cmake/3.21.2
                     module load cuda/11.6
                     ####################################################
                     # BLAS/LAPACK
