@@ -7,7 +7,7 @@ project(hcorepp VERSION 1.0.0)
 option(USE_CUDA "Use Cuda, if available" false)
 option(HCOREPP_BUILD_TESTS "Option to enable building tests" ON)
 option(HCOREPP_BUILD_EXAMPLES "Option to enable building examples" ON)
-
+option(HCOREPP_BUILD_DOCS "Build documentation in docs directory" ON)
 
 message("CMAKE VERSION: ${CMAKE_VERSION}")
 enable_language(CXX)
@@ -40,6 +40,15 @@ else ()
     include(ImportBlasPP)
     include(ImportLapackPP)
 endif ()
+
+if(HCOREPP_BUILD_DOCS)
+    find_package(Doxygen)
+    if(DOXYGEN_FOUND)
+        add_subdirectory("docs")
+    else()
+        message(STATUS "Doxygen NOT found, skipping it")
+    endif()
+endif()
 
 # Include directories for HCorePP
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)

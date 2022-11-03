@@ -88,6 +88,25 @@ pipeline {
                 }
             }
         }
+	stage('documentation') {
+             agent { label 'jenkinsfile'}
+             steps {
+                 sh '''
+                    module purge
+                    module load gcc/10.2.0
+                    module load cmake/3.21.2
+                    ####################################################
+                    # BLAS/LAPACK
+                    ####################################################
+                    module load mkl/2020.0.166
+                    ./config.sh -t -e
+                    ./clean_build.sh
+                    cd bin
+                    make docs
+                    '''
+                 publishHTML( target: [allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'bin/docs/build/html', reportFiles: 'index.html', reportName: 'Doxygen Documentation', reportTitles: ''] )
+             }
+        }
     }
         
     // Post build actions

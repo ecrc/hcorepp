@@ -103,6 +103,23 @@ int main(int argc, char *argv[]) {
     blas::real_type<double> c_norm = full_c.Norm();
     size_t dense_memory_footprint;
     double dense_error;
+    // Dense Warmup
+    {
+        TileMatrix<double> a_dense(full_a, row_tile_size, column_tile_size);
+        TileMatrix<double> b_dense(full_b, row_tile_size, column_tile_size);
+        TileMatrix<double> c_dense(initial_c, row_tile_size, column_tile_size);
+        for (int i = 0; i < c_nt; i++) {
+            for (int j = 0; j < c_mt; j++) {
+                auto dense_c_tile = c_dense.GetTile(j, i);
+                for (int k = 0; k < b_mt; k++) {
+                    auto dense_a_tile = a_dense.GetTile(j, k);
+                    auto dense_b_tile = b_dense.GetTile(k, i);
+                    hcorepp::api::HCore<double>::Gemm(alpha, *dense_a_tile, trans_a, *dense_b_tile,
+                                                      trans_b, beta, *dense_c_tile);
+                }
+            }
+        }
+    }
     // Dense Flow
     {
         timer.StartSnapshot();
@@ -145,17 +162,36 @@ int main(int argc, char *argv[]) {
     // Compressed flow
     bool first_print = true;
     for (auto &accuracy : accuracy_list) {
+        SVDParameters svd_parameters(accuracy);
+        // Compressed Warmup
+        {
+            TileMatrix<double> a_comp(full_a, row_tile_size, column_tile_size, accuracy);
+            TileMatrix<double> b_comp(full_b, row_tile_size, column_tile_size, accuracy);
+            TileMatrix<double> c_comp(initial_c, row_tile_size, column_tile_size, accuracy);
+            for (int i = 0; i < c_nt; i++) {
+                for (int j = 0; j < c_mt; j++) {
+                    auto comp_c_tile = c_comp.GetTile(j, i);
+                    for (int k = 0; k < b_mt; k++) {
+                        auto comp_a_tile = a_comp.GetTile(j, k);
+                        auto comp_b_tile = b_comp.GetTile(k, i);
+                        // Pure Compressed HCORE multiplication.
+                        hcorepp::api::HCore<double>::Gemm(alpha, *comp_a_tile, trans_a, *comp_b_tile,
+                                                          trans_b, beta, *comp_c_tile, svd_parameters);
+                    }
+                }
+            }
+        }
         //Reset all compression timers
         timer.ResetSnapshot("comp_creation");
         timer.ResetSnapshot("comp_gemm");
         timer.ResetSnapshot("comp_error_calc");
+        timer.StartSnapshot();
         // Create compressed tiles matrix
         TileMatrix<double> a_comp(full_a, row_tile_size, column_tile_size, accuracy);
         TileMatrix<double> b_comp(full_b, row_tile_size, column_tile_size, accuracy);
         TileMatrix<double> c_comp(initial_c, row_tile_size, column_tile_size, accuracy);
         timer.Snapshot("comp_creation");
         // Do matrix multiplication.
-        SVDParameters svd_parameters(accuracy);
         for (int i = 0; i < c_nt; i++) {
             for (int j = 0; j < c_mt; j++) {
                 auto comp_c_tile = c_comp.GetTile(j, i);
@@ -210,3 +246,4 @@ int main(int argc, char *argv[]) {
     }
     return 0;
 }
+
