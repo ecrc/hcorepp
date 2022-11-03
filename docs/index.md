@@ -49,7 +49,7 @@ make install
         export PKG_CONFIG_PATH=/path/to/install:$PKG_CONFIG_PATH
 ```
     
-Now you can use `pkg-config` executable to collect compiler and linker flags for Hcore++ or run the binaries under `/path/to/install/timing/`.
+Now you can use `pkg-config` executable to collect compiler and linker flags for Hcore++.
 
 # Quick Start
 

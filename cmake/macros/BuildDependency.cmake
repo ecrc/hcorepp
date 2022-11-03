@@ -20,7 +20,11 @@ macro(BuildDependency raw_name url tag)
     # Build and install subproject
     include(ProcessorCount)
     ProcessorCount(N)
-    execute_process(COMMAND ${CMAKE_COMMAND} --build ${${name}_binpath} --parallel ${N} --target install)
+    if(NOT N EQUAL 0)
+        execute_process(COMMAND ${CMAKE_COMMAND} --build ${${name}_binpath} --parallel ${N} --target install)
+    else()
+        execute_process(COMMAND ${CMAKE_COMMAND} --build ${${name}_binpath} --parallel 48 --target install)
+    endif()
     set(ENV{LD_LIBRARY_PATH} "${${name}_installpath}/lib:${${name}_installpath}/lib64:$ENV{LD_LIBRARY_PATH}")
     set(ENV{LIBRARY_PATH} "${${name}_installpath}/lib:${${name}_installpath}/lib64:$ENV{LIBRARY_PATH}")
     set(ENV{CPATH} "${${name}_installpath}/include:$ENV{CPATH}")
@@ -28,4 +32,22 @@ macro(BuildDependency raw_name url tag)
     set(${capital_name}_DIR "${${name}_installpath}/lib")
     include_directories(${${name}_installpath}/include)
     link_directories(${${name}_installpath}/lib)
+    install(
+            DIRECTORY
+            "${${name}_installpath}/lib"
+            DESTINATION
+            ./
+    )
+    install(
+            DIRECTORY
+            "${${name}_installpath}/include"
+            DESTINATION
+            ./
+    )
+    install(
+            DIRECTORY
+            "${${name}_installpath}/share"
+            DESTINATION
+            ./
+    )
 endmacro()
