@@ -91,7 +91,7 @@ pipeline {
 	stage('documentation') {
              agent { label 'jenkinsfile'}
              steps {
-                 sh '''
+                 sh '''#!/bin/bash -le
                     module purge
                     module load gcc/10.2.0
                     module load cmake/3.21.2
