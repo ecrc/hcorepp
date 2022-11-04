@@ -54,11 +54,11 @@ namespace hcorepp {
              * @param[in] aColumnTileSize
              * The number of columns in each tile.
              *
-             * @param[in] aAccuracy
-             * The accuracy for the compression
+             * @param[in] aParameters
+             * The parameters used for the compression.
              */
             TileMatrix(const RawMatrix <T> &aRawMatrix, int64_t aRowTileSize, int64_t aColumnTileSize,
-                       double aAccuracy);
+                       const operators::CompressionParameters &aParameters);
 
             /**
              * @brief

@@ -30,6 +30,7 @@ namespace hcorepp {
             this->mpData = (T *) malloc(aM * aN * sizeof(T));
             this->mM = aM;
             this->mN = aN;
+            memset(this->mpData, 0, aM * aN * sizeof(T));
         }
 
         template<typename T>

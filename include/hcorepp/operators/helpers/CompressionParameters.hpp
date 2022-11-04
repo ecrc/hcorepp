@@ -21,7 +21,7 @@ namespace hcorepp {
          * Class responsible of encapsulating all optional parameters responsible for the potential SVD
          * operation.
          */
-        class SVDParameters {
+        class CompressionParameters {
         public:
 
             /**
@@ -43,7 +43,7 @@ namespace hcorepp {
              * @param[in] aFixedRank
              * Truncation to fixed rank. fixed_rk >= 0.
              */
-            SVDParameters(double aAccuracy, bool aUseTrmm = false, bool aUseUngqr = true,
+            CompressionParameters(double aAccuracy, bool aUseTrmm = false, bool aUseUngqr = true,
                           bool aTruncatedSvd = false, int64_t aFixedRank = 0,
                           common::OperationType aOpType = common::OperationType::LAPACK_GESVD);
 
@@ -51,7 +51,7 @@ namespace hcorepp {
              * @brief
              * SVD helpers destructor.
              */
-            ~SVDParameters();
+            ~CompressionParameters();
 
             /**
              * @brief

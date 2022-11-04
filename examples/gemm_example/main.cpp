@@ -112,7 +112,7 @@ void run(blas::Op aTransA, blas::Op aTransB, blas::Op aTransC, T aAlpha, T aBeta
 
     start = std::chrono::system_clock::now();
 
-    hcorepp::operators::SVDParameters helpers(accuracy);
+    hcorepp::operators::CompressionParameters helpers(accuracy);
     switch (aCombination) {
         case DDD:
             hcorepp::api::HCore<T>::Gemm(alpha, A, transA, B, transB, beta, C, helpers);

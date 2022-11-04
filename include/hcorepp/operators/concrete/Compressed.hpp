@@ -41,13 +41,13 @@ namespace hcorepp {
 
             /**
              * @brief
-             * Dense Tile parameterized constructor.
+             * Compressed Tile parameterized constructor taking an already compressed UV array.
              *
              * @param aNumOfRows
              * NUm of tile rows, should be >=0
              * @param aNumOfCols
              * Num of tile cols, should be >=0
-             * @param aPdata
+             * @param apData
              * Compressed data array of @aNumOfRows * @aNumOfCols matrix.
              * @param aLeadingDim
              * Data array leading dimension :
@@ -62,8 +62,34 @@ namespace hcorepp {
              *              blas::Layout::ColMajor: column elements are 1-strided (default), or
              *              blas::Layout::RowMajor: row elements are 1-strided.
              */
-            CompressedTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim, int64_t aRank,
+            CompressedTile(int64_t aNumOfRows, int64_t aNumOfCols, T *apData, int64_t aLeadingDim, int64_t aRank,
                            blas::Layout aLayout = blas::Layout::ColMajor);
+
+            /**
+             * @brief
+             * Constructor taking a dense matrix, compressing it and creating a tile
+             * resulting from its compression as guided by the SVD parameters.
+             *
+             * @param[in] aNumOfRows
+             * The number of rows in the given dense array.
+             *
+             * @param[in] aNumOfCols
+             * The number of columns in the given dense array.
+             *
+             * @param[in] apData
+             * The data pointer for the dense data.
+             *
+             * @param[in] aLeadingDim
+             * The leading dimension for the data.
+             *
+             * @param[in] aParameters
+             * The SVD parameters used for compression.
+             *
+             * @param[in] aLayout
+             * The matrix layout used.
+             */
+            CompressedTile(int64_t aNumOfRows, int64_t aNumOfCols, T *apData, int64_t aLeadingDim,
+                           const CompressionParameters &aParameters, blas::Layout aLayout = blas::Layout::ColMajor);
 
 
             /**
@@ -91,8 +117,11 @@ namespace hcorepp {
              * @return
              * DataHolder object describing the Tile sub matrix.
              */
-            std::reference_wrapper<dataunits::DataHolder <T>>
-            GetTileSubMatrix(size_t aIndex) override;
+            std::reference_wrapper<dataunits::DataHolder < T>>
+            GetTileSubMatrix(
+            size_t aIndex
+            )
+            override;
 
             /**
              * @brief
@@ -104,8 +133,11 @@ namespace hcorepp {
              * @return
              * const DataHolder object describing the Tile sub matrix.
              */
-            const std::reference_wrapper<dataunits::DataHolder <T>>
-            GetTileSubMatrix(size_t aIndex) const override;
+            const std::reference_wrapper<dataunits::DataHolder < T>>
+            GetTileSubMatrix(
+            size_t aIndex
+            )
+            const override;
 
             /**
              * @brief
@@ -141,7 +173,7 @@ namespace hcorepp {
             void
             Gemm(T &aAlpha, dataunits::DataHolder <T> const &aTileA, blas::Op aTileAOp,
                  dataunits::DataHolder <T> const &aTileB, blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank,
-                 const SVDParameters &aSVDParameters) override;
+                 const CompressionParameters &aCompressionParameters) override;
 
             /**
              * @brief

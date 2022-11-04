@@ -8,11 +8,11 @@
  * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
  */
 
-#include <hcorepp/operators/helpers/SVDParameters.hpp>
+#include <hcorepp/operators/helpers/CompressionParameters.hpp>
 
 namespace hcorepp {
     namespace operators {
-        SVDParameters::SVDParameters(double aAccuracy, bool aUseTrmm, bool aUseUngqr,
+        CompressionParameters::CompressionParameters(double aAccuracy, bool aUseTrmm, bool aUseUngqr,
                                      bool aTruncatedSvd, int64_t aFixedRank,
                                      common::OperationType aOpType) {
             mUseTrmm = aUseTrmm;
@@ -23,31 +23,31 @@ namespace hcorepp {
             mAccuracy = aAccuracy;
         }
 
-        SVDParameters::~SVDParameters() {
+        CompressionParameters::~CompressionParameters() {
 
         }
 
-        bool SVDParameters::GetTrmm() const {
+        bool CompressionParameters::GetTrmm() const {
             return mUseTrmm;
         }
 
-        bool SVDParameters::GetUngqr() const {
+        bool CompressionParameters::GetUngqr() const {
             return mUseUngqr;
         }
 
-        bool SVDParameters::GetTruncatedSvd() const {
+        bool CompressionParameters::GetTruncatedSvd() const {
             return mTruncatedSvd;
         }
 
-        int64_t SVDParameters::GetFixedRank() const {
+        int64_t CompressionParameters::GetFixedRank() const {
             return mFixedRank;
         }
 
-        common::OperationType SVDParameters::GetOperationType() const {
+        common::OperationType CompressionParameters::GetOperationType() const {
             return mOpType;
         }
 
-        double SVDParameters::GetAccuracy() const {
+        double CompressionParameters::GetAccuracy() const {
             return this->mAccuracy;
         }
     }

@@ -19,7 +19,7 @@ namespace hcorepp {
 
         template<typename T>
         void HCore<T>::Gemm(T aAlpha, const Tile<T> &aA, const blas::Op &aAOp, const Tile<T> &aB, const blas::Op &aBOp,
-                            T aBeta, Tile<T> &aC, const SVDParameters &aSVDParameters) {
+                            T aBeta, Tile<T> &aC, const CompressionParameters &aCompressionParameters) {
             int tile_a_size = aA.GetNumberOfMatrices();
             int tile_b_size = aB.GetNumberOfMatrices();
             int tile_c_size = aC.GetNumberOfMatrices();
@@ -79,7 +79,7 @@ namespace hcorepp {
                 auto tile = temp_tiles.back();
 
                 tile->Gemm(alpha_local, a_data, a_op, b_data, b_op, beta_local, a_data.get().GetLeadingDim(),
-                           std::min(b_data.get().GetNumOfRows(), b_data.get().GetNumOfCols()), aSVDParameters);
+                           std::min(b_data.get().GetNumOfRows(), b_data.get().GetNumOfCols()), aCompressionParameters);
 
                 if (number_of_temporary_dense_gemms == 2) {
                     auto a_data_holder = (tile->GetTileSubMatrix(0));
@@ -120,7 +120,7 @@ namespace hcorepp {
                     // W += beta * Cu*Cv;
 
                     target->Gemm(aBeta, a_data, a_op, b_data, b_op, alpha_local, a_data.get().GetLeadingDim(),
-                                 std::min(b_data.get().GetNumOfRows(), b_data.get().GetNumOfCols()), aSVDParameters);
+                                 std::min(b_data.get().GetNumOfRows(), b_data.get().GetNumOfCols()), aCompressionParameters);
 
                     int num_of_rows = target->GetTileSubMatrix(0).get().GetNumOfRows();
                     int num_of_cols = target->GetTileSubMatrix(0).get().GetNumOfCols();
@@ -143,7 +143,7 @@ namespace hcorepp {
                     int64_t c_rank = a_data.get().GetNumOfCols();
 
                     aC.Gemm(aAlpha, a_data, a_operation, b_data, b_operation, aBeta, a_data.get().GetLeadingDim(),
-                            c_rank, aSVDParameters);
+                            c_rank, aCompressionParameters);
                 }
             }
 

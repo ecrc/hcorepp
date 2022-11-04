@@ -62,14 +62,14 @@ namespace hcorepp {
         template<typename T>
         void DenseTile<T>::Gemm(T &aAlpha, DataHolder<T> const &aTileA, blas::Op aTileAOp, DataHolder<T> const &aTileB,
                                 blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank,
-                                const SVDParameters &aHelpers) {
+                                const CompressionParameters &aHelpers) {
 
             /**
              * Assuming that C operation is blas::Op::NoTrans
              * And C Layout is Column major.
              */
 
-            hcorepp::kernels::Gemm<T>(this->GetLayout(), aTileAOp, aTileBOp,
+            hcorepp::kernels::HCoreKernels<T>::Gemm(this->GetLayout(), aTileAOp, aTileBOp,
                                       this->mNumOfRows, this->mNumOfCols, aTileA.GetNumOfCols(),
                                       aAlpha, (const T *) aTileA.GetData(), aTileA.GetLeadingDim(),
                                       (const T *) aTileB.GetData(), aTileB.GetLeadingDim(),

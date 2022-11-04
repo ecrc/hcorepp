@@ -126,7 +126,7 @@ void TEST_DENSE() {
         DenseTile<T> dense_tile_B(b_m, b_n, (T *) b_input, ldb);
         DenseTile<T> dense_tile_C(c_m, c_n, (T *) c_input, ldc);
 
-        hcorepp::operators::SVDParameters helpers(1e-9);
+        hcorepp::operators::CompressionParameters helpers(1e-9);
         int64_t ark = 1;
 
         dense_tile_C.Gemm(alpha, dense_tile_A.GetTileSubMatrix(0).get(), blas::Op::NoTrans,

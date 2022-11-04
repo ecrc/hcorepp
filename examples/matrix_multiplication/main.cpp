@@ -13,9 +13,97 @@
 #include <hcorepp/helpers/TileMatrix.hpp>
 #include <hcorepp/helpers/Timer.hpp>
 
+#ifdef BLAS_HAVE_MKL
+
+#include <mkl.h>
+
+#endif
+
 using namespace std::chrono;
 using namespace hcorepp::operators;
 using namespace hcorepp::helpers;
+
+
+/**
+ * @brief
+ * Do a full tile-matrix multiplication using HCORE++ Gemm
+ *
+ * @tparam T
+ * The datatype of each element.
+ *
+ * @param[in] aMatrixA
+ * First Input matrix
+ *
+ * @param[in] aAOp
+ * The operation to apply on A(whether to transpose or not)
+ *
+ * @param[in] aMatrixB
+ * Second Input matrix
+ *
+ * @param[in] aBOp
+ * The operation to apply on B(whether to transpose or not)
+ *
+ * @param[out] aMatrixC
+ * The output matrix: C = A * B
+ * @param[in] aTimer
+ * The timer object in case of snapshot.
+ *
+ * @param[in] aAlpha
+ * Alpha parameter
+ *
+ * @param[in] aBeta
+ * Beta parameter
+ *
+ * @param[in] aSnapshotName
+ * The snapshot name to use.
+ *
+ * @param[in] aParameters
+ * The SVD parameters utilized.
+ */
+template<typename T>
+void tile_matrix_multiplication(TileMatrix<T> &aMatrixA,
+                                const blas::Op &aAOp,
+                                TileMatrix<T> &aMatrixB,
+                                const blas::Op &aBOp,
+                                TileMatrix<T> &aMatrixC,
+                                Timer &aTimer,
+                                T aAlpha, T aBeta,
+                                const std::string &aSnapshotName,
+                                const CompressionParameters &aParameters = {1e-8}) {
+    auto c_nt = aMatrixC.GetColTileCount();
+    auto c_mt = aMatrixC.GetRowTileCount();
+    auto b_mt = aMatrixB.GetRowTileCount();
+#ifdef BLAS_HAVE_MKL
+    auto thread_number = mkl_get_max_threads();
+    if (thread_number < c_mt * c_nt) {
+        mkl_set_num_threads(1);
+    }
+#endif
+    if (!aSnapshotName.empty()) {
+        aTimer.StartSnapshot();
+    }
+#pragma omp parallel for collapse(2) default(none) shared(aMatrixA, aMatrixB, aMatrixC, aSnapshotName, aTimer, \
+        c_nt, c_mt, b_mt, aAlpha, aAOp, aBOp, aBeta, aParameters)
+    for (int i = 0; i < c_nt; i++) {
+        for (int j = 0; j < c_mt; j++) {
+            auto dense_c_tile = aMatrixC.GetTile(j, i);
+            for (int k = 0; k < b_mt; k++) {
+                auto dense_a_tile = aMatrixA.GetTile(j, k);
+                auto dense_b_tile = aMatrixB.GetTile(k, i);
+                hcorepp::api::HCore<T>::Gemm(aAlpha, *dense_a_tile, aAOp, *dense_b_tile,
+                                             aBOp, aBeta, *dense_c_tile, aParameters);
+            }
+        }
+    }
+    if (!aSnapshotName.empty()) {
+        aTimer.Snapshot(aSnapshotName);
+    }
+#ifdef BLAS_HAVE_MKL
+    if (thread_number < c_mt * c_nt) {
+        mkl_set_num_threads(thread_number);
+    }
+#endif
+}
 
 int main(int argc, char *argv[]) {
     // single tile dimensions.
@@ -29,7 +117,7 @@ int main(int argc, char *argv[]) {
     int64_t mode = 0;
     blas::real_type<double> cond = std::numeric_limits<double>::epsilon();
     // Target accuracy.
-    std::vector<double> accuracy_list = {1e-4};
+    std::vector<double> accuracy_list = {1e-1, 1e-4, 1e-8};
     // Assuming square matrix, default tile matrix is 2 x 2 tiles.
     int matrix_tiles = 2;
     // Parse optional arguments from command line.
@@ -75,17 +163,17 @@ int main(int argc, char *argv[]) {
     Timer timer;
     RawMatrix<double> full_a(a_mt * row_tile_size, a_nt * column_tile_size, iseed, mode, cond);
     RawMatrix<double> full_b(b_mt * row_tile_size, b_nt * column_tile_size, iseed, mode, cond);
-    RawMatrix<double> full_c(c_mt * row_tile_size, c_nt * column_tile_size, iseed, mode, cond);
+    RawMatrix<double> full_c(c_mt * row_tile_size, c_nt * column_tile_size);
     auto initial_c = full_c.Clone();
     timer.Snapshot("generation");
     {
-	auto warm_a = full_a.Clone();
-	auto warm_b = full_b.Clone();
-	auto warm_c = full_c.Clone();
-    	blas::gemm(blas::Layout::ColMajor, trans_a, trans_b, warm_c.GetM(),
-               warm_c.GetN(), warm_a.GetN(), alpha, warm_a.GetData(),
-               warm_a.GetM(), warm_b.GetData(),
-               warm_b.GetM(), beta, warm_c.GetData(), warm_c.GetM());	    
+        auto warm_a = full_a.Clone();
+        auto warm_b = full_b.Clone();
+        auto warm_c = full_c.Clone();
+        blas::gemm(blas::Layout::ColMajor, trans_a, trans_b, warm_c.GetM(),
+                   warm_c.GetN(), warm_a.GetN(), alpha, warm_a.GetData(),
+                   warm_a.GetM(), warm_b.GetData(),
+                   warm_b.GetM(), beta, warm_c.GetData(), warm_c.GetM());
     }
     // Solve reference solution
     timer.StartSnapshot();
@@ -103,22 +191,14 @@ int main(int argc, char *argv[]) {
     blas::real_type<double> c_norm = full_c.Norm();
     size_t dense_memory_footprint;
     double dense_error;
+    double dense_error_normalized;
     // Dense Warmup
     {
         TileMatrix<double> a_dense(full_a, row_tile_size, column_tile_size);
         TileMatrix<double> b_dense(full_b, row_tile_size, column_tile_size);
         TileMatrix<double> c_dense(initial_c, row_tile_size, column_tile_size);
-        for (int i = 0; i < c_nt; i++) {
-            for (int j = 0; j < c_mt; j++) {
-                auto dense_c_tile = c_dense.GetTile(j, i);
-                for (int k = 0; k < b_mt; k++) {
-                    auto dense_a_tile = a_dense.GetTile(j, k);
-                    auto dense_b_tile = b_dense.GetTile(k, i);
-                    hcorepp::api::HCore<double>::Gemm(alpha, *dense_a_tile, trans_a, *dense_b_tile,
-                                                      trans_b, beta, *dense_c_tile);
-                }
-            }
-        }
+        tile_matrix_multiplication(a_dense, trans_a, b_dense, trans_b, c_dense, timer, alpha,
+                                   beta, "");
     }
     // Dense Flow
     {
@@ -129,27 +209,15 @@ int main(int argc, char *argv[]) {
         TileMatrix<double> c_dense(initial_c, row_tile_size, column_tile_size);
         timer.Snapshot("dense_creation");
         // Do matrix multiplication.
-        for (int i = 0; i < c_nt; i++) {
-            for (int j = 0; j < c_mt; j++) {
-                auto dense_c_tile = c_dense.GetTile(j, i);
-                for (int k = 0; k < b_mt; k++) {
-                    auto dense_a_tile = a_dense.GetTile(j, k);
-                    auto dense_b_tile = b_dense.GetTile(k, i);
-                    // Pure Dense HCORE multiplication.
-                    timer.StartSnapshot();
-                    hcorepp::api::HCore<double>::Gemm(alpha, *dense_a_tile, trans_a, *dense_b_tile,
-                                                      trans_b, beta, *dense_c_tile);
-                    timer.Snapshot("dense_gemm");
-                }
-            }
-        }
+        tile_matrix_multiplication(a_dense, trans_a, b_dense, trans_b, c_dense, timer, alpha,
+                                   beta, "dense_gemm");
         // Retrieve results back from tile format for verification.
         timer.StartSnapshot();
         auto full_dense_c = c_dense.ToRawMatrix();
         full_dense_c.ReferenceDifference(full_c);
         dense_error = full_dense_c.Norm() /
-                      ((a_norm + b_norm + c_norm) * std::max(full_dense_c.GetM(), full_dense_c.GetN()) *
-                       std::numeric_limits<double>::epsilon());
+                      ((a_norm + b_norm + c_norm) * std::max(full_dense_c.GetM(), full_dense_c.GetN()));
+        dense_error_normalized = dense_error / std::numeric_limits<double>::epsilon();
         timer.Snapshot("dense_error_calc");
         // Error checking.
         if (dense_error >= 10) {
@@ -162,24 +230,14 @@ int main(int argc, char *argv[]) {
     // Compressed flow
     bool first_print = true;
     for (auto &accuracy : accuracy_list) {
-        SVDParameters svd_parameters(accuracy);
+        CompressionParameters svd_parameters(accuracy);
         // Compressed Warmup
         {
-            TileMatrix<double> a_comp(full_a, row_tile_size, column_tile_size, accuracy);
-            TileMatrix<double> b_comp(full_b, row_tile_size, column_tile_size, accuracy);
-            TileMatrix<double> c_comp(initial_c, row_tile_size, column_tile_size, accuracy);
-            for (int i = 0; i < c_nt; i++) {
-                for (int j = 0; j < c_mt; j++) {
-                    auto comp_c_tile = c_comp.GetTile(j, i);
-                    for (int k = 0; k < b_mt; k++) {
-                        auto comp_a_tile = a_comp.GetTile(j, k);
-                        auto comp_b_tile = b_comp.GetTile(k, i);
-                        // Pure Compressed HCORE multiplication.
-                        hcorepp::api::HCore<double>::Gemm(alpha, *comp_a_tile, trans_a, *comp_b_tile,
-                                                          trans_b, beta, *comp_c_tile, svd_parameters);
-                    }
-                }
-            }
+            TileMatrix<double> a_comp(full_a, row_tile_size, column_tile_size, svd_parameters);
+            TileMatrix<double> b_comp(full_b, row_tile_size, column_tile_size, svd_parameters);
+            TileMatrix<double> c_comp(initial_c, row_tile_size, column_tile_size, svd_parameters);
+            tile_matrix_multiplication(a_comp, trans_a, b_comp, trans_b, c_comp, timer, alpha,
+                                       beta, "", svd_parameters);
         }
         //Reset all compression timers
         timer.ResetSnapshot("comp_creation");
@@ -187,25 +245,13 @@ int main(int argc, char *argv[]) {
         timer.ResetSnapshot("comp_error_calc");
         timer.StartSnapshot();
         // Create compressed tiles matrix
-        TileMatrix<double> a_comp(full_a, row_tile_size, column_tile_size, accuracy);
-        TileMatrix<double> b_comp(full_b, row_tile_size, column_tile_size, accuracy);
-        TileMatrix<double> c_comp(initial_c, row_tile_size, column_tile_size, accuracy);
+        TileMatrix<double> a_comp(full_a, row_tile_size, column_tile_size, svd_parameters);
+        TileMatrix<double> b_comp(full_b, row_tile_size, column_tile_size, svd_parameters);
+        TileMatrix<double> c_comp(initial_c, row_tile_size, column_tile_size, svd_parameters);
         timer.Snapshot("comp_creation");
         // Do matrix multiplication.
-        for (int i = 0; i < c_nt; i++) {
-            for (int j = 0; j < c_mt; j++) {
-                auto comp_c_tile = c_comp.GetTile(j, i);
-                for (int k = 0; k < b_mt; k++) {
-                    auto comp_a_tile = a_comp.GetTile(j, k);
-                    auto comp_b_tile = b_comp.GetTile(k, i);
-                    timer.StartSnapshot();
-                    // Pure Compressed HCORE multiplication.
-                    hcorepp::api::HCore<double>::Gemm(alpha, *comp_a_tile, trans_a, *comp_b_tile,
-                                                      trans_b, beta, *comp_c_tile, svd_parameters);
-                    timer.Snapshot("comp_gemm");
-                }
-            }
-        }
+        tile_matrix_multiplication(a_comp, trans_a, b_comp, trans_b, c_comp, timer, alpha,
+                                   beta, "comp_gemm", svd_parameters);
         // Retrieve results back from tile format for verification.
         timer.StartSnapshot();
         auto full_approximate_c = c_comp.ToRawMatrix();
@@ -213,8 +259,8 @@ int main(int argc, char *argv[]) {
         full_approximate_c.ReferenceDifference(full_c);
         double comp_error = full_approximate_c.Norm() /
                             ((a_norm + b_norm + c_norm) *
-                             std::max(full_approximate_c.GetM(), full_approximate_c.GetN()) *
-                             accuracy);
+                             std::max(full_approximate_c.GetM(), full_approximate_c.GetN()));
+        double comp_error_normalized = comp_error / accuracy;
         timer.Snapshot("comp_error_calc");
         // Error checking.
         if (comp_error >= 10) {
@@ -226,21 +272,21 @@ int main(int argc, char *argv[]) {
         // Print results
         if (first_print) {
             if (print_header) {
-                printf("tile_count, tile_size, matrix_size, type, error, memory(KB), creation(ms), gemm_time(ms)\n");
+                printf("tile_count, tile_size, matrix_size, type, error, error_normalized, memory(KB), creation(ms), gemm_time(ms)\n");
                 print_header = false;
             }
-            printf("%d, %d, %d, ref, 0, %zu, %f, %f\n",
+            printf("%d, %d, %d, ref, 0, 0, %zu, %f, %f\n",
                    matrix_tiles, tile_size, matrix_tiles * tile_size,
                    ref_memory_footprint, timer.GetSnapshot("generation"),
                    timer.GetSnapshot("ref_gemm"));
-            printf("%d, %d, %d, dense, %e, %zu, %f, %f\n",
-                   matrix_tiles, tile_size, matrix_tiles * tile_size, dense_error,
+            printf("%d, %d, %d, dense, %e, %e, %zu, %f, %f\n",
+                   matrix_tiles, tile_size, matrix_tiles * tile_size, dense_error, dense_error_normalized,
                    dense_memory_footprint, timer.GetSnapshot("dense_creation"),
                    timer.GetSnapshot("dense_gemm"));
             first_print = false;
         }
-        printf("%d, %d, %d, %2.1e, %e, %zu, %f, %f\n",
-               matrix_tiles, tile_size, matrix_tiles * tile_size, accuracy, comp_error,
+        printf("%d, %d, %d, %2.1e, %e, %e, %zu, %f, %f\n",
+               matrix_tiles, tile_size, matrix_tiles * tile_size, accuracy, comp_error, comp_error_normalized,
                compressed_memory_footprint, timer.GetSnapshot("comp_creation"),
                timer.GetSnapshot("comp_gemm"));
     }

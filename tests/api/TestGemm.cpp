@@ -261,7 +261,7 @@ void TEST_GEMM() {
 
         DenseTile<T> dense_tile_C(c_m, c_n, nullptr, ldc, blas::Layout::ColMajor);
 
-        hcorepp::operators::SVDParameters helpers(1);
+        hcorepp::operators::CompressionParameters helpers(1);
         HCore<T>::Gemm(alpha, compressed_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta, dense_tile_C,
                        helpers);
         T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
@@ -339,7 +339,7 @@ void TEST_GEMM() {
         DenseTile<T> dense_tile_A(a_m, a_n, (T *) a_input, lda);
         DenseTile<T> dense_tile_C(c_m, c_n, nullptr, ldc);
 
-        hcorepp::operators::SVDParameters helpers(1);
+        hcorepp::operators::CompressionParameters helpers(1);
         HCore<T>::Gemm(alpha, dense_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta, dense_tile_C,
                        helpers);
         T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
@@ -430,7 +430,7 @@ void TEST_GEMM() {
         CompressedTile<T> compressed_tile_B(bu_m, bv_n, compressed_tile_b_data, ldbu, b_rank);
         DenseTile<T> dense_tile_C(c_m, c_n, nullptr, ldc);
 
-        hcorepp::operators::SVDParameters helpers(1);
+        hcorepp::operators::CompressionParameters helpers(1);
         HCore<T>::Gemm(alpha, compressed_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta,
                        dense_tile_C, helpers);
         T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
@@ -542,7 +542,7 @@ void TEST_GEMM() {
 
         DenseTile<T> dense_tile_B(b_m, b_n, (T *) b_input, ldb);
 
-        hcorepp::operators::SVDParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
+        hcorepp::operators::CompressionParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
         HCore<T>::Gemm(alpha, compressed_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta,
                        compressed_tile_C, helpers);
 
@@ -691,7 +691,7 @@ void TEST_GEMM() {
 
         DenseTile<T> dense_tile_A(a_m, a_n, (T *) a_input, lda);
 
-        hcorepp::operators::SVDParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
+        hcorepp::operators::CompressionParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
         HCore<T>::Gemm(alpha, dense_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta,
                        compressed_tile_C, helpers);
         T *cu_output = copy_output(compressed_tile_C.GetTileSubMatrix(0).get());
@@ -864,7 +864,7 @@ void TEST_GEMM() {
 
         CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldc, c_rank);
 
-        hcorepp::operators::SVDParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
+        hcorepp::operators::CompressionParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
         HCore<T>::Gemm(alpha, compressed_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta,
                        compressed_tile_C, helpers);
         T *cu_output = copy_output(compressed_tile_C.GetTileSubMatrix(0).get());
@@ -1004,7 +1004,7 @@ void TEST_GEMM() {
 
         CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldc, c_rank);
 
-        hcorepp::operators::SVDParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
+        hcorepp::operators::CompressionParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
         HCore<T>::Gemm(alpha, dense_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta, compressed_tile_C,
                        helpers);
         T *cu_output = copy_output(compressed_tile_C.GetTileSubMatrix(0).get());

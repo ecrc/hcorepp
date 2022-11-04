@@ -16,7 +16,7 @@
 #include <cstdint>
 #include "blas.hh"
 #include <hcorepp/data-units/DataHolder.hpp>
-#include <hcorepp/operators/helpers/SVDParameters.hpp>
+#include <hcorepp/operators/helpers/CompressionParameters.hpp>
 
 namespace hcorepp {
     namespace operators {
@@ -110,7 +110,7 @@ namespace hcorepp {
             virtual void
             Gemm(T &aAlpha, dataunits::DataHolder<T> const &aTileA, blas::Op aTileAOp,
                  dataunits::DataHolder<T> const &aTileB, blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank,
-                 const SVDParameters &aSVDParameters) = 0;
+                 const CompressionParameters &aCompressionParameters) = 0;
 
             /**
              * @brief

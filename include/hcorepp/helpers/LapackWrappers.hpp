@@ -32,7 +32,7 @@
 #endif
 
 #include "hcorepp/common/TypeCheck.hpp"
-#include <hcorepp/operators/helpers/SVDParameters.hpp>
+#include <hcorepp/operators/helpers/CompressionParameters.hpp>
 
 // Define appropriate fortran ending arguments that are needed
 // sometime by the lapack library in case of building for CPU support.

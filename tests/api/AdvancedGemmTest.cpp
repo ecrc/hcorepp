@@ -117,7 +117,7 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
 
     start = std::chrono::system_clock::now();
 
-    hcorepp::operators::SVDParameters helpers(accuracy);
+    hcorepp::operators::CompressionParameters helpers(accuracy);
     switch (Combination) {
         case DDD:
             hcorepp::api::HCore<T>::Gemm(alpha, A, transA, B, transB, beta, C, helpers);

@@ -146,7 +146,7 @@ namespace hcorepp {
             void
             Gemm(T &aAlpha, dataunits::DataHolder <T> const &aTileA, blas::Op aTileAOp,
                  dataunits::DataHolder <T> const &aTileB, blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank,
-                 const SVDParameters &aSVDParameters) override;
+                 const CompressionParameters &aCompressionParameters) override;
 
             /**
              * @brief

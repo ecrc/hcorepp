@@ -48,7 +48,7 @@ namespace hcorepp {
             static void
             Gemm(T aAlpha, operators::Tile<T> const &aA, blas::Op const &aAOp, operators::Tile<T> const &aB,
                  blas::Op const &aBOp, T aBeta, operators::Tile<T> &aC,
-                 const operators::SVDParameters &aSVDArguments = {1e-9});
+                 const operators::CompressionParameters &aSVDArguments = {1e-9});
 
         private:
             /**

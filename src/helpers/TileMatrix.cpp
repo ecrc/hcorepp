@@ -63,7 +63,7 @@ namespace hcorepp {
 
         template<typename T>
         TileMatrix<T>::TileMatrix(const RawMatrix<T> &aRawMatrix, int64_t aRowTileSize, int64_t aColumnTileSize,
-                                  double aAccuracy) :
+                                  const operators::CompressionParameters &aParameters) :
                 mColTileSize(aColumnTileSize), mRowTileSize(aRowTileSize), mRowTileCount(0), mColTileCount(0),
                 mM(aRawMatrix.GetM()), mN(aRawMatrix.GetN()) {
             // Get number of tiles in first-direction.
@@ -95,63 +95,14 @@ namespace hcorepp {
                         }
                     }
 
-                    int64_t rk;
-                    T *auv;
-                    int64_t min_m_n = std::min(tile_rows, tile_cols);
-                    auto sigma = (blas::real_type<T> *) malloc(min_m_n * sizeof(blas::real_type<T>));
-                    auto u = (T *) malloc(tile_rows * min_m_n * sizeof(T));
-                    auto vt = (T *) malloc(min_m_n * tile_cols * sizeof(T));
-
-                    auto a_temp = (T *) malloc(tile_rows * tile_cols * sizeof(T));
-                    memcpy((void *) a_temp, (void *) tile_data, tile_rows * tile_cols * sizeof(T));
-                    lapack_gesvd(common::Job::SomeVec, common::Job::SomeVec,
-                                 tile_rows, tile_cols, a_temp, tile_rows, sigma, u, tile_rows, vt,
-                                 min_m_n);
-                    rk = 0;
-                    while (sigma[rk] >= aAccuracy && rk < min_m_n) {
-                        rk++;
-                        if (rk < min_m_n) {
-                            continue;
-                        } else {
-                            break;
-                        }
-
-                    }
-
-                    // todo: more conservative max rank assumption, e.g., min_m_n / 3.
-                    int64_t max_rk = min_m_n / 2;
-                    if (rk > max_rk) {
-                        rk = max_rk;
-                    }
-                    // Ensure at least rank is 1.
-                    rk = std::max(rk, 1L);
-
-                    // VT eats Sigma.
-                    // todo: we may need to have uplo parameter:
-                    //       scale VT, if Lower, or scale U otherwise.
-                    for (int64_t i_r = 0; i_r < rk; ++i_r) {
-                        for (int j_r = 0; j_r < tile_cols; j_r++) {
-                            vt[i_r + j_r * min_m_n] *= sigma[i_r];
-                        }
-                    }
-
-                    auv = (T *) malloc((tile_rows + tile_cols) * rk * sizeof(T));
-
-                    memcpy((void *) auv, (void *) u, (tile_rows * rk) * sizeof(T));
-
-                    lapack_lacpy(common::MatrixType::General, rk, tile_cols, vt, min_m_n,
-                                 &auv[tile_rows * rk], rk);
-
-                    free(u);
-                    free(vt);
-                    free(sigma);
-                    free(a_temp);
-                    mMemory += (tile_rows + tile_cols) * rk * sizeof(T);
-                    this->mMatrixTiles[i][j] = new operators::CompressedTile<T>(tile_rows, tile_cols, auv,
-                                                                                tile_rows, rk, blas::Layout::ColMajor);
+                    this->mMatrixTiles[i][j] = new operators::CompressedTile<T>(tile_rows, tile_cols,
+                                                                                tile_data, tile_rows,
+                                                                                aParameters,
+                                                                                blas::Layout::ColMajor);
 
                     delete[] tile_data;
-                    free(auv);
+                    mMemory += ((tile_rows + tile_cols) *
+                               this->mMatrixTiles[i][j]->GetTileSubMatrix(1).get().GetNumOfRows() * sizeof(T));
                 }
             }
         }

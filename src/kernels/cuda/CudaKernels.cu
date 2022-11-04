@@ -419,39 +419,23 @@ namespace hcorepp {
         }
 
         template<typename T>
-        void GenerateIdentityMatrix(int64_t aNumOfCols, T *apMatrix) {
+        void HCoreCudaKernels<T>::GenerateIdentityMatrix(int64_t aNumOfCols, T *apMatrix) {
             dim3 dimBlock(THREADS, 1);
             dim3 dimGrid((aNumOfCols + dimBlock.x - 1) / dimBlock.x);
 
             GenerateIdentityMatrix_kernel<<<dimGrid, dimBlock>>>(aNumOfCols, apMatrix);
         }
 
-        template
-        void
-        GenerateIdentityMatrix(int64_t, float *);
-
-        template
-        void
-        GenerateIdentityMatrix(int64_t, double *);
-
         template<typename T>
-        void MultiplyByAlpha(T *apArray, int64_t aRows, int64_t aCols, int64_t aM, int64_t aRank, T &aAlpha) {
+        void HCoreCudaKernels<T>::MultiplyByAlpha(T *apArray, int64_t aRows, int64_t aCols, int64_t aM, int64_t aRank, T &aAlpha) {
             dim3 dimBlock(THREADS, 1);
             dim3 dimGrid(((aRows * aCols) + dimBlock.x - 1) / dimBlock.x);
 
             MultiplyByAlpha_kernel<<<dimGrid, dimBlock>>>(apArray, aRows, aCols, aM, aRank, aAlpha);
         }
 
-        template
-        void
-        MultiplyByAlpha(float *, int64_t, int64_t, int64_t, int64_t, float &);
-
-        template
-        void
-        MultiplyByAlpha(double *, int64_t, int64_t, int64_t, int64_t, double &);
-
         template<typename T>
-        void Geqrf(int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apTau) {
+        void HCoreCudaKernels<T>::Geqrf(int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apTau) {
             /// https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSOLVER/Xgeqrf/cusolver_Xgeqrf_example.cu
             cusolverDnHandle_t cusolverH = nullptr;
             cudaStream_t stream = nullptr;
@@ -503,15 +487,9 @@ namespace hcorepp {
             cudaStreamDestroy(stream);
         }
 
-        template
-        void Geqrf(int64_t, int64_t, float *, int64_t, float *);
-
-        template
-        void Geqrf(int64_t, int64_t, double *, int64_t, double *);
-
         template<typename T>
         void
-        ProcessVpointer(int64_t aN, int64_t aCRank, bool aGetUngqr, int64_t Vm, T &aBeta, T *apCV, int64_t aLdcV, T *V,
+        HCoreCudaKernels<T>::ProcessVpointer(int64_t aN, int64_t aCRank, bool aGetUngqr, int64_t Vm, T &aBeta, T *apCV, int64_t aLdcV, T *V,
                         int64_t aArank, const T *apBdata) {
 
             dim3 dimBlock(THREADS, THREADS);
@@ -538,42 +516,17 @@ namespace hcorepp {
 
         }
 
-        template
-        void
-        ProcessVpointer(int64_t, int64_t, bool, int64_t, float &, float *, int64_t, float *, int64_t, const float *);
-
-        template
-        void
-        ProcessVpointer(int64_t, int64_t, bool, int64_t, double &, double *, int64_t, double *, int64_t,
-                        const double *);
-
-//        template
-//        void
-//        ProcessVpointer(int64_t, int64_t, bool, int64_t, cuFloatComplex &, cuFloatComplex *, int64_t, cuFloatComplex *,
-//                        int64_t, const cuFloatComplex *);
-//
-//        template
-//        void
-//        ProcessVpointer(int64_t, int64_t, bool, int64_t, cuDoubleComplex &, cuDoubleComplex *, int64_t,
-//                        cuDoubleComplex *, int64_t, const cuDoubleComplex *);
-
         template<typename T>
         void
-        CalculateUVptrConj(int64_t aRank, int64_t aVm, T *UVptr) {
+        HCoreCudaKernels<T>::CalculateUVptrConj(int64_t aRank, int64_t aVm, T *UVptr) {
             dim3 dimBlock(THREADS, THREADS);
             dim3 dimGrid((aRank + dimBlock.x - 1) / dimBlock.x, (aVm + dimBlock.y - 1) / dimBlock.y);
             CalculateUVptrConj_kernel_<<<dimGrid, dimBlock>>>(aRank, aVm, UVptr);
         }
 
-        template
-        void CalculateUVptrConj(int64_t, int64_t, float *);
-
-        template
-        void CalculateUVptrConj(int64_t, int64_t, double *);
-
         template<typename T>
         void
-        CalculateVTnew(int64_t aRkNew, bool aUngqr, int64_t aMinVmVn, blas::real_type<T> *apSigma, T *apVTnew,
+        HCoreCudaKernels<T>::CalculateVTnew(int64_t aRkNew, bool aUngqr, int64_t aMinVmVn, blas::real_type<T> *apSigma, T *apVTnew,
                        int64_t aSizeS, int64_t aVm) {
             dim3 dimBlock(THREADS, THREADS);
 
@@ -588,16 +541,8 @@ namespace hcorepp {
             }
         }
 
-        template
-        void
-        CalculateVTnew(int64_t, bool, int64_t, blas::real_type<float> *, float *, int64_t, int64_t);
-
-        template
-        void
-        CalculateVTnew(int64_t, bool, int64_t, blas::real_type<double> *, double *, int64_t, int64_t);
-
         template<typename T>
-        void CalculateUVptr(int64_t aRank, int64_t aVm, T *UVptr, const T *Vnew) {
+        void HCoreCudaKernels<T>::CalculateUVptr(int64_t aRank, int64_t aVm, T *UVptr, const T *Vnew) {
             dim3 dimBlock(THREADS, THREADS);
 
             dim3 dimGrid((aRank + dimBlock.x - 1) / dimBlock.x, (aVm + dimBlock.y - 1) / dimBlock.y);
@@ -605,15 +550,9 @@ namespace hcorepp {
             CalculateUVptr_kernel<<<dimGrid, dimBlock>>>(aRank, aVm, UVptr, Vnew);
         }
 
-        template
-        void CalculateUVptr(int64_t, int64_t, float *, const float *);
-
-        template
-        void CalculateUVptr(int64_t, int64_t, double *, const double *);
-
         template<typename T>
-        void CalculateNewRank(int64_t &aNewRank, bool aTruncatedSvd, blas::real_type<T> *apSigma, int64_t sizeS,
-                              blas::real_type<T> &accuracy) {
+        void HCoreCudaKernels<T>::CalculateNewRank(int64_t &aNewRank, bool aTruncatedSvd, blas::real_type<T> *apSigma, int64_t sizeS,
+                              blas::real_type<T> accuracy) {
             aNewRank = sizeS;
 
             dim3 dimBlock(THREADS);
@@ -628,15 +567,9 @@ namespace hcorepp {
 
         }
 
-        template
-        void CalculateNewRank<float>(int64_t &, bool, blas::real_type<float> *, int64_t, blas::real_type<float> &);
-
-        template
-        void CalculateNewRank<double>(int64_t &, bool, blas::real_type<double> *, int64_t, blas::real_type<double> &);
-
         template<typename T>
         void
-        Gesvd(common::Job aJobu, common::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
+        HCoreCudaKernels<T>::Gesvd(common::Job aJobu, common::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
               int64_t aLdU, T *apVT, int64_t aLdVt) {
 
             ///https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSOLVER/Xgesvd/cusolver_Xgesvd_example.cu
@@ -695,19 +628,9 @@ namespace hcorepp {
             cudaStreamDestroy(stream);
         }
 
-        template
-        void
-        Gesvd(common::Job, common::Job, int64_t, int64_t, float *, int64_t, float *, float *, int64_t, float *,
-              int64_t);
-
-        template
-        void
-        Gesvd(common::Job, common::Job, int64_t, int64_t, double *, int64_t, double *, double *, int64_t, double *,
-              int64_t);
-
         template<typename T>
         void
-        Unmqr(common::SideMode aSide, common::BlasOperation aTrans, int64_t aM, int64_t aN, int64_t aK,
+        HCoreCudaKernels<T>::Unmqr(common::SideMode aSide, common::BlasOperation aTrans, int64_t aM, int64_t aN, int64_t aK,
               T const *apA, int64_t aLdA, T const *apTau, T *apC, int64_t aLdC) {
             ///https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSOLVER/ormqr/cusolver_ormqr_example.cu
 
@@ -764,18 +687,8 @@ namespace hcorepp {
             cudaStreamDestroy(stream);
         }
 
-        template
-        void
-        Unmqr(common::SideMode, common::BlasOperation, int64_t, int64_t, int64_t, float const *, int64_t,
-              float const *, float *, int64_t);
-
-        template
-        void
-        Unmqr(common::SideMode, common::BlasOperation, int64_t, int64_t, int64_t, double const *, int64_t,
-              double const *, double *, int64_t);
-
         template<typename T>
-        void Laset(common::MatrixType aMatrixType, int64_t aM, int64_t aN, T aOffdiag, T aDiag,
+        void HCoreCudaKernels<T>::Laset(common::MatrixType aMatrixType, int64_t aM, int64_t aN, T aOffdiag, T aDiag,
                    T *apA, int64_t aLdA) {
 
 #define dA(i_, j_) (dA + (i_) + (j_)*ldda)
@@ -873,17 +786,9 @@ namespace hcorepp {
             }
         }
 
-        template
-        void Laset(common::MatrixType aMatrixType, int64_t aM, int64_t aN, float aOffdiag, float aDiag,
-                   float *apA, int64_t aLdA);
-
-        template
-        void Laset(common::MatrixType aMatrixType, int64_t aM, int64_t aN, double aOffdiag, double aDiag,
-                   double *apA, int64_t aLdA);
-
         template<typename T>
         void
-        LaCpy(common::MatrixType aType, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apB, int64_t aLdB) {
+        HCoreCudaKernels<T>::LaCpy(common::MatrixType aType, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apB, int64_t aLdB) {
 #define dA(i_, j_) (dA + (i_) + (j_)*ldda)
 #define dB(i_, j_) (dB + (i_) + (j_)*lddb)
 
@@ -971,17 +876,9 @@ namespace hcorepp {
             }
         }
 
-        template
-        void
-        LaCpy(common::MatrixType, int64_t, int64_t, float *, int64_t, float *, int64_t);
-
-        template
-        void
-        LaCpy(common::MatrixType, int64_t, int64_t, double *, int64_t, double *, int64_t);
-
         template<typename T>
         void
-        ungqr(int64_t aM, int64_t aN, int64_t aK, T *apA, int64_t aLdA, T *apTau) {
+        HCoreCudaKernels<T>::ungqr(int64_t aM, int64_t aN, int64_t aK, T *apA, int64_t aLdA, T *apTau) {
             ///https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSOLVER/orgqr/cusolver_orgqr_example.cu
 
             cusolverDnHandle_t cusolverH = nullptr;
@@ -1059,13 +956,7 @@ namespace hcorepp {
             cudaStreamDestroy(stream);
         }
 
-        template
-        void
-        ungqr(int64_t, int64_t, int64_t, float *, int64_t, float *);
-
-        template
-        void
-        ungqr(int64_t, int64_t, int64_t, double *, int64_t, double *);
+        HCOREPP_INSTANTIATE_CLASS(HCoreCudaKernels)
 
     }
 }

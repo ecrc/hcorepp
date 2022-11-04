@@ -231,7 +231,7 @@ void TEST_Compressed() {
         REQUIRE(compressed_tile_C.GetTileSubMatrix(1).get().GetNumOfRows() == cv_m);
         REQUIRE(compressed_tile_C.GetTileSubMatrix(1).get().GetNumOfCols() == cv_n);
 
-        hcorepp::operators::SVDParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
+        hcorepp::operators::CompressionParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
         compressed_tile_C.Gemm(alpha, dense_tile_A.GetTileSubMatrix(0).get(), blas::Op::NoTrans,
                                dense_tile_B.GetTileSubMatrix(0).get(), blas::Op::NoTrans, beta,
                                dense_tile_A.GetTileSubMatrix(0).get().GetLeadingDim(),
@@ -356,7 +356,7 @@ void TEST_Compressed() {
                                    av_size,
                                    hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
 
-        hcorepp::kernels::FillIdentityMatrix(compressed_tile_A.GetTileSubMatrix(0).get().GetNumOfCols(),
+        hcorepp::kernels::HCoreKernels<T>::FillIdentityMatrix(compressed_tile_A.GetTileSubMatrix(0).get().GetNumOfCols(),
                                              compressed_tile_A.GetTileSubMatrix(0).get().GetData());
 
         T *host_data_array_au_identity_matrix = new T[au_size];
