@@ -12,6 +12,8 @@
 #include <hcorepp/helpers/RawMatrix.hpp>
 #include <hcorepp/helpers/TileMatrix.hpp>
 #include <hcorepp/helpers/Timer.hpp>
+#include <hcorepp/helpers/generators/concrete/LatmsGenerator.hpp>
+#include <hcorepp/helpers/generators/concrete/TileLatmsGenerator.hpp>
 
 #ifdef BLAS_HAVE_MKL
 
@@ -45,6 +47,7 @@ using namespace hcorepp::helpers;
  *
  * @param[out] aMatrixC
  * The output matrix: C = A * B
+ *
  * @param[in] aTimer
  * The timer object in case of snapshot.
  *
@@ -115,11 +118,12 @@ int main(int argc, char *argv[]) {
     blas::Op trans_b = blas::Op::NoTrans;
     // parameters for matrix generation.
     int64_t mode = 0;
-    blas::real_type<double> cond = std::numeric_limits<double>::epsilon();
+    blas::real_type<double> cond = 1;
     // Target accuracy.
     std::vector<double> accuracy_list = {1e-1, 1e-4, 1e-8};
     // Assuming square matrix, default tile matrix is 2 x 2 tiles.
     int matrix_tiles = 2;
+    int per_tile_generation = 0;
     // Parse optional arguments from command line.
     if (argc > 1) {
         matrix_tiles = atoi(argv[1]);
@@ -134,6 +138,9 @@ int main(int argc, char *argv[]) {
             }
             if (argc > 3) {
                 tile_size = atoi(argv[3]);
+                if (argc > 4) {
+                    per_tile_generation = atoi(argv[4]);;
+                }
             }
         }
     }
@@ -161,9 +168,16 @@ int main(int argc, char *argv[]) {
     int64_t iseed[4] = {0, 0, 0, 1};
     // Create full matrices with automatic generation.
     Timer timer;
-    RawMatrix<double> full_a(a_mt * row_tile_size, a_nt * column_tile_size, iseed, mode, cond);
-    RawMatrix<double> full_b(b_mt * row_tile_size, b_nt * column_tile_size, iseed, mode, cond);
+    generators::Generator<double> *generator;
+    if (per_tile_generation > 0) {
+        generator = new generators::TileLatmsGenerator<double>(iseed, mode, cond, tile_size);
+    } else {
+        generator = new generators::LatmsGenerator<double>(iseed, mode, cond);
+    }
+    RawMatrix<double> full_a(a_mt * row_tile_size, a_nt * column_tile_size, *generator);
+    RawMatrix<double> full_b(b_mt * row_tile_size, b_nt * column_tile_size, *generator);
     RawMatrix<double> full_c(c_mt * row_tile_size, c_nt * column_tile_size);
+    delete generator;
     auto initial_c = full_c.Clone();
     timer.Snapshot("generation");
     {

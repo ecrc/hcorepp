@@ -17,12 +17,12 @@ namespace hcorepp {
     namespace helpers {
 
         template<typename T>
-        RawMatrix<T>::RawMatrix(int64_t aM, int64_t aN, int64_t *apSeed, int64_t aMode,
-                                blas::real_type<T> aCond) : mpData(nullptr), mM(0), mN(0) {
+        RawMatrix<T>::RawMatrix(int64_t aM, int64_t aN,
+                                const generators::Generator<T> &aGenerator) : mpData(nullptr), mM(0), mN(0) {
             this->mpData = (T *) malloc(aM * aN * sizeof(T));
             this->mM = aM;
             this->mN = aN;
-            this->GenerateValues(apSeed, aMode, aCond);
+            aGenerator.GenerateValues(aM, aN, aM, mpData);
         }
 
         template<typename T>
@@ -31,23 +31,6 @@ namespace hcorepp {
             this->mM = aM;
             this->mN = aN;
             memset(this->mpData, 0, aM * aN * sizeof(T));
-        }
-
-        template<typename T>
-        void RawMatrix<T>::GenerateValues(int64_t *apSeed, int64_t aMode, blas::real_type<T> aCond) {
-            int64_t min_m_n = std::min(this->mM, this->mN);
-
-            auto eigen_values = (blas::real_type<T> *) malloc(min_m_n * sizeof(blas::real_type<T>));
-
-            for (int64_t i = 0; i < min_m_n; ++i) {
-                eigen_values[i] = std::pow(10, -1 * i);
-            }
-            T dmax = -1.0;
-            lapack_latms(
-                    this->mM, this->mN, 'U', apSeed, 'N', eigen_values, aMode, aCond,
-                    dmax, this->mM - 1, this->mN - 1, 'N',
-                    this->mpData, this->mM);
-            free(eigen_values);
         }
 
         template<typename T>

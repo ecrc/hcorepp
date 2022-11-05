@@ -12,6 +12,7 @@
 #define HCOREPP_HELPERS_RAW_MATRIX_HPP
 
 #include <blas/util.hh>
+#include "hcorepp/helpers/generators/Generator.hpp"
 
 namespace hcorepp {
     namespace helpers {
@@ -35,17 +36,11 @@ namespace hcorepp {
              * @param[in] aN
              * The number of cols.
              *
-             * @param[in] apSeed
-             * The seed to use for random generation.
+             * @param[in] aGenerator
+             * Generator used to fill elements of the matrix.
              *
-             * @param[in] aMode
-             * The mode to use.
-             *
-             * @param[in] aCond
-             * The machine epsilon to use.
              */
-            RawMatrix(int64_t aM, int64_t aN, int64_t *apSeed, int64_t aMode,
-                      blas::real_type<T> aCond);
+            RawMatrix(int64_t aM, int64_t aN, const generators::Generator<T> &aGenerator);
 
             /**
              * @brief
@@ -71,22 +66,6 @@ namespace hcorepp {
                 this->mpData = aMatrix.mpData;
                 aMatrix.mpData = nullptr;
             }
-
-            /**
-             * @brief
-             * Generate values inside the raw pointer randomly.
-             *
-             * @param[in] apSeed
-             * The seed to use for random generation.
-             *
-             * @param[in] aMode
-             * The mode to use.
-             *
-             * @param[in] aCond
-             * The machine epsilon to use.
-             */
-            void GenerateValues(int64_t *apSeed, int64_t aMode,
-                                blas::real_type<T> aCond);
 
             /**
              * @brief

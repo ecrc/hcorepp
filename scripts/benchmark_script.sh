@@ -13,47 +13,51 @@ if [[ $# -eq 0 ]] ; then
     exit 0
 fi
 
-export HCOREPP_VERBOSE=ON
-TileCount=(10 25 40 55 70 85 100 115 130 145 160 175 190 205)
-acc="1e-1,1e-2,1e-4,1e-8"
+PER_TILE_OPTIONS=(1 0)
+acc="1e-1,1e-4,1e-8"
 
-cat /dev/null > benchmark_ts128.csv
-
-for tile_count in ${TileCount[@]}; do
-      $1 $tile_count $acc 128 >> benchmark_ts128.csv
-      unset HCOREPP_VERBOSE
-done
+for per_tile in ${PER_TILE_OPTIONS[@]}; do
+  export HCOREPP_VERBOSE=ON
+  TileCount=(10 25 40 55 70 85 100 115 130 145 160 175 190 205)
 
 
-export HCOREPP_VERBOSE=ON
-TileCount=(1 2 4 8 16 32 64)
-acc="1e-1,1e-2,1e-4,1e-8"
+  cat /dev/null > benchmark_ts128_$per_tile.csv
 
-cat /dev/null > benchmark_ts512.csv
-
-for tile_count in ${TileCount[@]}; do
-      $1 $tile_count $acc 512 >> benchmark_ts512.csv
-      unset HCOREPP_VERBOSE
-done
+  for tile_count in ${TileCount[@]}; do
+        $1 $tile_count $acc 128 $per_tile >> benchmark_ts128_$per_tile.csv
+        unset HCOREPP_VERBOSE
+  done
 
 
-export HCOREPP_VERBOSE=ON
+  export HCOREPP_VERBOSE=ON
+  TileCount=(1 2 4 8 16 32 64)
 
-cat /dev/null > benchmark_t1.csv
+  cat /dev/null > benchmark_ts512_$per_tile.csv
 
-Prop=(128 256 512 1024 2048 4096 8192 16384 32768)
-for tile_size in ${Prop[@]}; do
-      $1 1 "$acc" $tile_size >> benchmark_t1.csv
-      unset HCOREPP_VERBOSE
-done
+  for tile_count in ${TileCount[@]}; do
+        $1 $tile_count $acc 512 $per_tile >> benchmark_ts512_$per_tile.csv
+        unset HCOREPP_VERBOSE
+  done
 
 
-export HCOREPP_VERBOSE=ON
-TileCount=(1 2 3 4 6 8 12 16)
+  export HCOREPP_VERBOSE=ON
 
-cat /dev/null > benchmark_ts2048.csv
+  cat /dev/null > benchmark_t1_$per_tile.csv
 
-for tile_count in ${TileCount[@]}; do
-      $1 $tile_count $acc 2048 >> benchmark_ts2048.csv
-      unset HCOREPP_VERBOSE
+  Prop=(128 256 512 1024 2048 4096 8192 16384 32768)
+  for tile_size in ${Prop[@]}; do
+        $1 1 "$acc" $tile_size $per_tile >> benchmark_t1_$per_tile.csv
+        unset HCOREPP_VERBOSE
+  done
+
+
+  export HCOREPP_VERBOSE=ON
+  TileCount=(1 2 3 4 6 8 12 16)
+
+  cat /dev/null > benchmark_ts2048_$per_tile.csv
+
+  for tile_count in ${TileCount[@]}; do
+        $1 $tile_count $acc 2048 $per_tile >> benchmark_ts2048_$per_tile.csv
+        unset HCOREPP_VERBOSE
+  done
 done
