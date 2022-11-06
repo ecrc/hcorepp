@@ -60,9 +60,9 @@ namespace hcorepp {
 
                         auto eigen_values = (blas::real_type<T> *) malloc(min_m_n * sizeof(blas::real_type<T>));
 
-                        double deno = (min_m_n - 1);
+                        auto delta = 32.0 / (min_m_n - 1);
                         for (int64_t i = 0; i < min_m_n; ++i) {
-                            eigen_values[i] = (deno - i  + i * 1e-16) / deno;
+                            eigen_values[i] = std::pow(10, -i * delta);
                         }
                         T dmax = -1.0;
                         lapack_latms(

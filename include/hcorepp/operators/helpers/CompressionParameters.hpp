@@ -45,7 +45,7 @@ namespace hcorepp {
              */
             CompressionParameters(double aAccuracy, bool aUseTrmm = false, bool aUseUngqr = true,
                           bool aTruncatedSvd = false, int64_t aFixedRank = 0,
-                          common::OperationType aOpType = common::OperationType::LAPACK_GESVD);
+                          common::OperationType aOpType = common::OperationType::LAPACK_GESDD);
 
             /**
              * @brief

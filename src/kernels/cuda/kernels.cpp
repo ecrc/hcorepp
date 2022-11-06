@@ -104,10 +104,11 @@ namespace hcorepp {
 
         template<typename T>
         void
-        HCoreKernels<T>::Gesvd(common::Job aJobu, common::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA,
-                               T *apS, T *apU,
-                               int64_t aLdU, T *apVT, int64_t aLdVt) {
-            hcorepp::cudakernels::HCoreCudaKernels<T>::Gesvd(aJobu, aJobvt, aM, aN, apA, aLdA, apS, apU, aLdU, apVT, aLdVt);
+        HCoreKernels<T>::SVD(common::Job aJobu, common::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA,
+                             T *apS, T *apU,
+                             int64_t aLdU, T *apVT, int64_t aLdVt, common::OperationType aSVDOperation) {
+            hcorepp::cudakernels::HCoreCudaKernels<T>::SVD(aJobu, aJobvt, aM, aN, apA, aLdA, apS, apU, aLdU,
+                                                           apVT, aLdVt, aSVDOperation);
         }
 
         template<typename T>

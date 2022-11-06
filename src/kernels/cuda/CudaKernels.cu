@@ -569,8 +569,8 @@ namespace hcorepp {
 
         template<typename T>
         void
-        HCoreCudaKernels<T>::Gesvd(common::Job aJobu, common::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
-              int64_t aLdU, T *apVT, int64_t aLdVt) {
+        HCoreCudaKernels<T>::SVD(common::Job aJobu, common::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
+                                 int64_t aLdU, T *apVT, int64_t aLdVt, common::OperationType aSVDOperationType) {
 
             ///https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSOLVER/Xgesvd/cusolver_Xgesvd_example.cu
 

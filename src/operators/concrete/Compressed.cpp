@@ -75,10 +75,10 @@ namespace hcorepp {
 
             DataHolder<T> a_temp_dataholder(aNumOfRows, aNumOfCols, aNumOfRows, apData);
             auto a_temp = a_temp_dataholder.GetData();
-            hcorepp::kernels::HCoreKernels<T>::Gesvd(common::Job::SomeVec, common::Job::SomeVec,
-                                                     aNumOfRows, aNumOfCols, a_temp, aNumOfRows, sigma, u, aNumOfRows,
-                                                     vt,
-                                                     min_m_n);
+            hcorepp::kernels::HCoreKernels<T>::SVD(common::Job::SomeVec, common::Job::SomeVec,
+                                                   aNumOfRows, aNumOfCols, a_temp, aNumOfRows, sigma, u, aNumOfRows,
+                                                   vt,
+                                                   min_m_n, aParameters.GetOperationType());
             rk = 0;
             if (aParameters.GetFixedRank()) {
                 /// truncate according to fixed_rk
@@ -292,18 +292,18 @@ namespace hcorepp {
                                                             one, V, Vm, RU,
                                                             min_Um_Un);
 
-                    hcorepp::kernels::HCoreKernels<T>::Gesvd(Job::SomeVec, Job::SomeVec,
-                                                             min_Um_Un, Un, RU, min_Um_Un, Sigma, Unew, min_Um_Un,
-                                                             VTnew, sizeS);
+                    hcorepp::kernels::HCoreKernels<T>::SVD(Job::SomeVec, Job::SomeVec,
+                                                           min_Um_Un, Un, RU, min_Um_Un, Sigma, Unew, min_Um_Un,
+                                                           VTnew, sizeS, aHelpers.GetOperationType());
                 } else {
                     hcorepp::kernels::HCoreKernels<T>::Trmm(blas::Layout::ColMajor, blas::Side::Right,
                                                             blas::Uplo::Upper,
                                                             blas::Op::Trans, blas::Diag::NonUnit,
                                                             min_Um_Un, Un, one, V, Vm, RU, min_Um_Un);
 
-                    hcorepp::kernels::HCoreKernels<T>::Gesvd(Job::SomeVec, Job::SomeVec,
-                                                             min_Um_Un, Un, RU, min_Um_Un,
-                                                             Sigma, Unew, Um, VTnew, sizeS);
+                    hcorepp::kernels::HCoreKernels<T>::SVD(Job::SomeVec, Job::SomeVec,
+                                                           min_Um_Un, Un, RU, min_Um_Un,
+                                                           Sigma, Unew, Um, VTnew, sizeS, aHelpers.GetOperationType());
                 }
             } else {
 
@@ -325,18 +325,19 @@ namespace hcorepp {
                                                             one, RU, min_Um_Un, RV, min_Vm_Vn,
                                                             zero, RURV, min_Um_Un);
 
-                    hcorepp::kernels::HCoreKernels<T>::Gesvd(Job::SomeVec, Job::SomeVec, min_Um_Un,
-                                                             min_Vm_Vn, RURV, min_Um_Un, Sigma, Unew, min_Um_Un,
-                                                             VTnew, sizeS);
+                    hcorepp::kernels::HCoreKernels<T>::SVD(Job::SomeVec, Job::SomeVec, min_Um_Un,
+                                                           min_Vm_Vn, RURV, min_Um_Un, Sigma, Unew, min_Um_Un,
+                                                           VTnew, sizeS, aHelpers.GetOperationType());
                 } else {
                     hcorepp::kernels::HCoreKernels<T>::Gemm(blas::Layout::ColMajor, blas::Op::NoTrans,
                                                             blas::Op::Trans, min_Um_Un, min_Vm_Vn,
                                                             (aARank + Crk), one, RU, min_Um_Un, RV,
                                                             min_Vm_Vn, zero, RURV, min_Um_Un);
 
-                    hcorepp::kernels::HCoreKernels<T>::Gesvd(Job::SomeVec, Job::SomeVec,
-                                                             min_Um_Un, min_Vm_Vn, RURV,
-                                                             min_Um_Un, Sigma, Unew, Um, VTnew, sizeS);
+                    hcorepp::kernels::HCoreKernels<T>::SVD(Job::SomeVec, Job::SomeVec,
+                                                           min_Um_Un, min_Vm_Vn, RURV,
+                                                           min_Um_Un, Sigma, Unew, Um, VTnew, sizeS,
+                                                           aHelpers.GetOperationType());
                 }
                 delete rv_dataHolder;
                 delete rurv_dataHolder;

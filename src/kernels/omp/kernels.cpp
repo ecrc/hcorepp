@@ -157,9 +157,13 @@ namespace hcorepp {
 
         template<typename T>
         void
-        HCoreKernels<T>::Gesvd(common::Job aJobu, common::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
-              int64_t aLdU, T *apVT, int64_t aLdVt) {
-            lapack::gesvd((lapack::Job) aJobu, (lapack::Job) aJobvt, aM, aN, apA, aLdA, apS, apU, aLdU, apVT, aLdVt);
+        HCoreKernels<T>::SVD(common::Job aJobu, common::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
+                             int64_t aLdU, T *apVT, int64_t aLdVt, common::OperationType aSVDType) {
+            if (aSVDType == common::OperationType::LAPACK_GESVD) {
+                lapack::gesvd((lapack::Job) aJobu, (lapack::Job) aJobvt, aM, aN, apA, aLdA, apS, apU, aLdU, apVT, aLdVt);
+            } else {
+                lapack::gesdd((lapack::Job) aJobu, aM, aN, apA, aLdA, apS, apU, aLdU, apVT, aLdVt);
+            }
         }
 
         template<typename T>
