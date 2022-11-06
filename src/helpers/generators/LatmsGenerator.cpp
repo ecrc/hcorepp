@@ -35,9 +35,9 @@ namespace hcorepp {
                 int64_t min_m_n = std::min(aRowNumber, aColNumber);
 
                 auto eigen_values = (blas::real_type<T> *) malloc(min_m_n * sizeof(blas::real_type<T>));
-
+                double deno = (min_m_n - 1);
                 for (int64_t i = 0; i < min_m_n; ++i) {
-                    eigen_values[i] = std::pow(10, -1 * i);
+                    eigen_values[i] = (deno - i  + i * 1e-16) / deno;
                 }
                 T dmax = -1.0;
                 lapack_latms(

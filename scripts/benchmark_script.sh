@@ -13,18 +13,14 @@ if [[ $# -eq 0 ]] ; then
     exit 0
 fi
 
-PER_TILE_OPTIONS=(1 0)
-acc="1e-1,1e-4,1e-8,1e-12"
-
-for per_tile in ${PER_TILE_OPTIONS[@]}; do
+acc="1e-1,1e-4,1e-8,1e-12,1e-16"
   
-  export HCOREPP_VERBOSE=ON
-  TileCount=(1 2 4 8 12 16 20 24 28 32 36 40 44 48)
+export HCOREPP_VERBOSE=ON
+TileCount=(1 2 4 8 12 16 20 24 28 32 36 40 44 48)
 
-  cat /dev/null > benchmark_ts512_$per_tile.csv
+cat /dev/null > benchmark_ts512_0.csv
 
-  for tile_count in ${TileCount[@]}; do
-        $1 $tile_count $acc 512 $per_tile >> benchmark_ts512_$per_tile.csv
-        unset HCOREPP_VERBOSE
-  done 
+for tile_count in ${TileCount[@]}; do
+      $1 $tile_count $acc 512 0 >> benchmark_ts512_0.csv
+      unset HCOREPP_VERBOSE
 done

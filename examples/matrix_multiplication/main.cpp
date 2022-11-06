@@ -89,12 +89,12 @@ void tile_matrix_multiplication(TileMatrix<T> &aMatrixA,
         c_nt, c_mt, b_mt, aAlpha, aAOp, aBOp, aBeta, aParameters)
     for (int i = 0; i < c_nt; i++) {
         for (int j = 0; j < c_mt; j++) {
-            auto dense_c_tile = aMatrixC.GetTile(j, i);
+            auto c_tile = aMatrixC.GetTile(j, i);
             for (int k = 0; k < b_mt; k++) {
-                auto dense_a_tile = aMatrixA.GetTile(j, k);
-                auto dense_b_tile = aMatrixB.GetTile(k, i);
-                hcorepp::api::HCore<T>::Gemm(aAlpha, *dense_a_tile, aAOp, *dense_b_tile,
-                                             aBOp, aBeta, *dense_c_tile, aParameters);
+                auto a_tile = aMatrixA.GetTile(j, k);
+                auto b_tile = aMatrixB.GetTile(k, i);
+                hcorepp::api::HCore<T>::Gemm(aAlpha, *a_tile, aAOp, *b_tile,
+                                             aBOp, aBeta, *c_tile, aParameters);
             }
         }
     }
@@ -229,9 +229,10 @@ int main(int argc, char *argv[]) {
         timer.StartSnapshot();
         auto full_dense_c = c_dense.ToRawMatrix();
         full_dense_c.ReferenceDifference(full_c);
-        dense_error = full_dense_c.Norm() /
-                      ((a_norm + b_norm + c_norm) * std::max(full_dense_c.GetM(), full_dense_c.GetN()));
-        dense_error_normalized = dense_error / std::numeric_limits<double>::epsilon();
+        dense_error = full_dense_c.Norm();
+        dense_error_normalized = dense_error /
+                                 ((a_norm + b_norm + c_norm) * std::max(full_dense_c.GetM(), full_dense_c.GetN()) *
+                                  std::numeric_limits<double>::epsilon());
         timer.Snapshot("dense_error_calc");
         // Error checking.
         if (dense_error >= 10) {
@@ -271,10 +272,10 @@ int main(int argc, char *argv[]) {
         auto full_approximate_c = c_comp.ToRawMatrix();
         // Calculate compressed tile matrix reference error
         full_approximate_c.ReferenceDifference(full_c);
-        double comp_error = full_approximate_c.Norm() /
-                            ((a_norm + b_norm + c_norm) *
-                             std::max(full_approximate_c.GetM(), full_approximate_c.GetN()));
-        double comp_error_normalized = comp_error / accuracy;
+        double comp_error = full_approximate_c.Norm();
+        double comp_error_normalized = comp_error / ((a_norm + b_norm + c_norm) *
+                                                     std::max(full_approximate_c.GetM(), full_approximate_c.GetN()) *
+                                                     accuracy);
         timer.Snapshot("comp_error_calc");
         // Error checking.
         if (comp_error >= 10) {
