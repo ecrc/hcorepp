@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
  */
 
-#ifndef HCOREPP_API_HCOREPP_HPP
-#define HCOREPP_API_HCOREPP_HPP
+#ifndef HCOREPP_API_HCORE_HPP
+#define HCOREPP_API_HCORE_HPP
 
 #include <hcorepp/operators/interface/Tile.hpp>
 #include <hcorepp/operators/concrete/Dense.hpp>
@@ -62,4 +62,4 @@ namespace hcorepp {
 
 }
 
-#endif //HCOREPP_API_HCOREPP_HPP
+#endif //HCOREPP_API_HCORE_HPP

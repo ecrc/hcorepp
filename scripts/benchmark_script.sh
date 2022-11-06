@@ -14,7 +14,7 @@ if [[ $# -eq 0 ]] ; then
 fi
 
 PER_TILE_OPTIONS=(1 0)
-acc="1e-1,1e-4,1e-8,1e-16"
+acc="1e-1,1e-4,1e-8,1e-12"
 
 for per_tile in ${PER_TILE_OPTIONS[@]}; do
   
