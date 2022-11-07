@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
  * ***************************************************************************
- * *****      KAUST Extreme Computing and Research Center Property       *****
+ * *****      KAUST Extreme Computing Research Center Property           *****
  * ***************************************************************************
  *
  * All rights reserved.
@@ -14,7 +14,7 @@ namespace hcorepp {
     namespace operators {
         CompressionParameters::CompressionParameters(double aAccuracy, bool aUseTrmm, bool aUseUngqr,
                                      bool aTruncatedSvd, int64_t aFixedRank,
-                                     common::OperationType aOpType) {
+                                     common::CompressionType aOpType) {
             mUseTrmm = aUseTrmm;
             mUseUngqr = aUseUngqr;
             mTruncatedSvd = aTruncatedSvd;
@@ -43,7 +43,7 @@ namespace hcorepp {
             return mFixedRank;
         }
 
-        common::OperationType CompressionParameters::GetOperationType() const {
+        common::CompressionType CompressionParameters::GetOperationType() const {
             return mOpType;
         }
 

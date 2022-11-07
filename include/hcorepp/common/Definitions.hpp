@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
  * ***************************************************************************
- * *****      KAUST Extreme Computing and Research Center Property       *****
+ * *****      KAUST Extreme Computing Research Center Property           *****
  * ***************************************************************************
  *
  * All rights reserved.
@@ -86,7 +86,7 @@ namespace hcorepp {
          * @brief
          * Enum denoting some operation types that are supported as alternatives.
          */
-        enum OperationType {
+        enum CompressionType {
             LAPACK_GESVD,
             LAPACK_GESDD
         };

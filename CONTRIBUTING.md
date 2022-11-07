@@ -1,8 +1,8 @@
-Contributing to HCORE
+Contributing to HCORE++++
 --------------------------------------------------------------------------------
 
 - [Synopsis](#synopsis)
-- [Forking HCORE](#forking-hcore)
+- [Forking HCORE++](#forking-HCORE++)
 - [C++ coding style](#c-coding-style)
 - [Developing new features](#developing-new-features)
 - [Developing bug fixes](#developing-bug-fixes)
@@ -13,36 +13,34 @@ Synopsis
 --------------------------------------------------------------------------------
 
 This document is intended for developers who want to add new features or
-bugfixes to HCORE. It assumes you have some familiarity with git and GitHub. It
+bugfixes to HCORE++. It assumes you have some familiarity with git and GitHub. It
 will discuss what a good pull request looks like, and the tests that your
-pull request must pass before it can be merged into HCORE.
+pull request must pass before it can be merged into HCORE++.
 
 C++ coding style
 --------------------------------------------------------------------------------
 
-Changes to HCORE C/C++ code should conform to the
+Changes to HCORE++ C/C++ code should conform to the
 [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html) and
 the following HiCMA specific style details:
 
 - Naming convention
     - Global functions are snake_case.
-    - Member functions are lowerCamelCase.
+    - Member functions are UpperCamelCase.
     - Classes, enums, enum values, structs are UpperCamelCase.
     - Variables are snake_case.
     - Constants are snake_case.
     - Namespaces are lowercase.
-    - Member private variables have underscore suffix; Note that using leading
+    - Member private variables have an m suffix; Note that using leading
       underscores is illegal (they are reserved by C/C++).
 - Default indentation is 4 spaces, and wrapped parameters have 4 spaces indent.
 - In HCORE++, we have 4 namespaces, as follows:
-    - `hcore`: HCORE's top-level namespace.
-    - `hcore::internal`: Namespace used for HCORE internal implementation. It is
-      intended that application code would not call any internal HCORE
-      functions.
-    - `hcore::internal::specialization`: Namespace used for target backend
-      implementations.
-    - `hcore::test`: Namespace used for all HCORE test routines.
-    - `hcore::utest`: Namespace used for all HCORE unit test routines.
+    - `hcorepp::api`: HCORE++'s top-level namespace, it contains the API calls to the main operations of HCore++.
+    - `hcorepp::dataunits`: Namespace used for HCORE++ main memory unit used to contain some contiguous sub-matrix elements.
+    - `hcorepp::kernels`: Namespace used for target backend implementations of the various kernels used internally to fulfill the targeted operations.
+    - `hcorepp::cudakernels`: Namespace used for CUDA backend implementations of the various kernels used internally to fulfill the targeted operations.
+    - `hcorepp::operators`: Namespace used for all HCORE++ base data structures that the user should utilize and interact with, including the base tiles.
+    - `hcorepp::helpers`: Namespace used for all HCORE++ helper functionalities that might provide useful facilities in the examples and testing, but not critical for HCORE++ core operations.
 
 Use `clang-format` to check your C/C++ changes.
 
@@ -55,12 +53,12 @@ You can check the format of a C/C++ file with the following:
     $ clang-format <path/to/file.cc> --style=google > path/to/file_marked.cc
     $ diff <path/to/file.cc> path/to/file_marked.cc
 
-Forking HCORE
+Forking HCORE++
 --------------------------------------------------------------------------------
 
 If you aren't a HiCMA developer at KAUST, then you won't have permission to push
 new branches to the repository. First, you should create a fork. This will
-create a copy of the HCORE repository that you own, and will ensure you can push
+create a copy of the HCORE++ repository that you own, and will ensure you can push
 your changes up to GitHub and create pull requests.
 
 Developing new features
@@ -88,7 +86,7 @@ Developing bug fixes
 
 First, check if the change you want to make has been fixed in `main`. If so,
 we suggest you either start using the `main` branch, or temporarily apply the
-fix to whichever version of HCORE you are using.
+fix to whichever version of HCORE++ you are using.
 
 Assuming there is an unsolved bug, first make sure you have an up-to-date copy
 of the `main` branch:
@@ -110,8 +108,8 @@ Creating pull requests
 --------------------------------------------------------------------------------
 
 You can create a new pull request
-[here](https://github.com/ecrc/hcore/pulls).
-Ensure that your pull request base is the `main` branch of HCORE.
+[here](https://github.com/ecrc/HCORE++/pulls).
+Ensure that your pull request base is the `main` branch of HCORE++.
 
 Add a descriptive title explaining the bug you fixed or the feature you have
 added, and put a longer description of the changes you have made in the comment
@@ -119,16 +117,16 @@ box.
 
 Once your pull request has been created, it will be run through our automated
 tests and also be reviewed by HiCMA team members. Providing the branch passes
-both the tests and reviews, it will be merged into HCORE.
+both the tests and reviews, it will be merged into HCORE++.
 
 Tests
 --------------------------------------------------------------------------------
 
-HCORE uses Jenkins for continuous integration tests. Our tests are automatically
+HCORE++ uses Jenkins for continuous integration tests. Our tests are automatically
 run against every new pull request, and passing all tests is a requirement for
 merging your pull request. If you are developing a bugfix or a new feature,
-please add a test that checks the correctness of your new code. HCORE is used on
+please add a test that checks the correctness of your new code. HCORE++ is used on
 a wide variety of systems with a number of configurations, and adding new tests
 helps ensure that all features work as expected across these environments.
 
-HCORE's tests are all in the `test` directory and are split up by component.
+HCORE++'s tests are all in the `tests` directory and are split up by component.

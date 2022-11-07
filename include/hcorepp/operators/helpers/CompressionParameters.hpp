@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
  * ***************************************************************************
- * *****      KAUST Extreme Computing and Research Center Property       *****
+ * *****      KAUST Extreme Computing Research Center Property           *****
  * ***************************************************************************
  *
  * All rights reserved.
@@ -45,7 +45,7 @@ namespace hcorepp {
              */
             CompressionParameters(double aAccuracy, bool aUseTrmm = false, bool aUseUngqr = true,
                           bool aTruncatedSvd = false, int64_t aFixedRank = 0,
-                          common::OperationType aOpType = common::OperationType::LAPACK_GESDD);
+                          common::CompressionType aOpType = common::CompressionType::LAPACK_GESDD);
 
             /**
              * @brief
@@ -100,7 +100,7 @@ namespace hcorepp {
              * @return
              * The operation type to use if set, otherwise LAPACK_GESVD is returned by default
              */
-            common::OperationType
+            common::CompressionType
             GetOperationType() const;
 
             /**
@@ -124,7 +124,7 @@ namespace hcorepp {
             /// The fixed rank that is targeted by the SVD operation
             int64_t mFixedRank;
             /// The type of operation used for the SVD
-            common::OperationType mOpType;
+            common::CompressionType mOpType;
             /// Numerical error thershold
             double mAccuracy;
         };
