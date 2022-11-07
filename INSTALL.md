@@ -1,4 +1,4 @@
-HCORE++ Installation Notes
+HCore++ Installation Notes
 --------------------------------------------------------------------------------
 
 - [Synopsis](#synopsis)
@@ -10,7 +10,7 @@ HCORE++ Installation Notes
 Synopsis
 --------------------------------------------------------------------------------
 
-Use CMake to configure and compile the HCORE++ library and its tester, then
+Use CMake to configure and compile the HCore++ library and its tester, then
 install the headers and library.
 
     mkdir build && cd build
@@ -34,7 +34,7 @@ QuickStart
 --------------------------------------------------------------------------------
 
 The CMake script enforces an out-of-source build. Create a build directory under
-the HCORE++ root directory:
+the HCore++ root directory:
 
     cd /path/to/hcorepp
     mkdir build && cd build
@@ -42,7 +42,7 @@ the HCORE++ root directory:
     make
     make install
 
-If HCORE++ test suite is built, then HCORE++ tester can be run:
+If HCore++ test suite is built, then HCore++ tester can be run:
 
     hcorepp/build$ cd tests
     hcorepp/build/tests$ ./hcorepp-tests [-h|--help] [parameters]
@@ -50,12 +50,12 @@ If HCORE++ test suite is built, then HCORE++ tester can be run:
 Requirements
 --------------------------------------------------------------------------------
 
-HCORE++ requires BLAS++ (https://bitbucket.org/icl/blaspp) and LAPACK++
+HCore++ requires BLAS++ (https://bitbucket.org/icl/blaspp) and LAPACK++
 (https://bitbucket.org/icl/lapackpp).
 It inherits its dependencies from them, and they must be installed first via
-CMake, before running HCORE's CMake. Therefore, HCORE++ should find BLAS++ and
+CMake, before running HCore++'s CMake. Therefore, HCore++ should find BLAS++ and
 LAPACK++, if it is installed in a system default location (e.g., `/usr/local`),
-or their install prefix is the same. If HCORE++ can't find them, you can
+or their install prefix is the same. If HCore++ can't find them, you can
 point to their directory:
 
     cmake -DCMAKE_PREFIX_PATH=/path/to/install [options] ..
@@ -77,7 +77,7 @@ syntax (not as environment variables), such as:
 Options
 --------------------------------------------------------------------------------
 
-HCORE++ specific options include (all values are case insensitive):
+HCore++ specific options include (all values are case insensitive):
 
     USE_CUDA
         Whether to use CUDA, if available. One of:

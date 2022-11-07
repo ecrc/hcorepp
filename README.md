@@ -1,9 +1,9 @@
-The HCORE++ Library
+The HCore++ Library
 ===========================================================
-HCORE++ is convenient, performance-oriented C++ software API for tile low-rank matrix algebra. HCORE++ implements BLAS functionality in the form of tile routines; update one or a small number of individual tiles, generally sequentially on a single compute unit. Notably, an m-by-n matrix is a collection of individual mb-by-nb tiles. HCORE++ tiles are first C++ class objects, which are entities that can be individually allocated, destroyed, and passed to low-level tile routines, e.g., GEMM. HCORE++ tile routines rely on the tile low-rank compression, which replaces the dense operations with the equivalent low rank operations, to reduce the memory footprint and/or the time-to-solution.
+HCore++ is convenient, performance-oriented C++ software API for tile low-rank matrix algebra. HCore++ implements BLAS functionality in the form of tile routines; update one or a small number of individual tiles, generally sequentially on a single compute unit. Notably, an m-by-n matrix is a collection of individual mb-by-nb tiles. HCore++ tiles are first C++ class objects, which are entities that can be individually allocated, destroyed, and passed to low-level tile routines, e.g., GEMM. HCore++ tile routines rely on the tile low-rank compression, which replaces the dense operations with the equivalent low rank operations, to reduce the memory footprint and/or the time-to-solution.
 
 
-Features of HCORE++ 1.0.0
+Features of HCore++ 1.0.0
 -----------------------------
 * Matrix Compression
 * Matrix-Matrix Multiplication (Gemm)
@@ -22,8 +22,8 @@ Project Hierarchy
 
 * **```src```**\
   Folder containing all the source files of the system.
-  * api : Contains the high level drivers for the HCORE++ functionalities that are provided to library users
-  * operators : Contains the high level data structures for the HCORE++ library that the library users should create to interact with the library facilities, those are separated to the tiles concrete implementation, dense and compressed, as well as the compression parameters object
+  * api : Contains the high level drivers for the HCore++ functionalities that are provided to library users
+  * operators : Contains the high level data structures for the HCore++ library that the library users should create to interact with the library facilities, those are separated to the tiles concrete implementation, dense and compressed, as well as the compression parameters object
   * data-units : Contains the internally used data units that are used as the basic data unit containing a matrix of elements in contiguous memory.
   * kernels : Contains the backend implementations for all the kernels and memory operations used inside the library, any changes to technology support should be added there.
   * helpers : Contains helper facilities that are useful for examples, and testing. This includes quick wrappers to create multi-tile matrices, timers, and general wrappers for lapack functionalities.
@@ -55,7 +55,7 @@ Current Research
 
 External Dependencies
 ---------------------
-HCORE++ depends on the following libraries:
+HCore++ depends on the following libraries:
 * BLAS
 * LAPACK
 * BLAS++

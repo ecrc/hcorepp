@@ -28,7 +28,7 @@ using namespace hcorepp::helpers;
 
 /**
  * @brief
- * Do a full tile-matrix multiplication using HCORE++ Gemm
+ * Do a full tile-matrix multiplication using HCore++ Gemm
  *
  * @tparam T
  * The datatype of each element.
@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
         timer.Snapshot("dense_error_calc");
         // Error checking.
         if (dense_error >= 10) {
-            std::cout << "Example didn't pass, dense HCORE++ error > 10 " << std::endl;
+            std::cout << "Example didn't pass, dense HCore++ error > 10 " << std::endl;
         }
         // Get memory footprint in KB
         dense_memory_footprint = (a_dense.GetMemoryFootprint() + b_dense.GetMemoryFootprint()
@@ -279,7 +279,7 @@ int main(int argc, char *argv[]) {
         timer.Snapshot("comp_error_calc");
         // Error checking.
         if (comp_error >= 10) {
-            std::cout << "Example didn't pass, compressed HCORE++ error > 10 " << std::endl;
+            std::cout << "Example didn't pass, compressed HCore++ error > 10 " << std::endl;
         }
         // Get memory footprint in KB
         size_t compressed_memory_footprint = (a_comp.GetMemoryFootprint() + b_comp.GetMemoryFootprint()
