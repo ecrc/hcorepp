@@ -38,12 +38,14 @@ namespace hcorepp {
                 // Exponential decay --> y = a * b^i
                 // first element i=0 --> 1   1 = a * b^0  a = 1
                 // last  element i=n --> eps eps/a = b^n  b = root_n(eps)
-                auto active_n = (min_m_n - 1) / 3.0;
-                int active_n_floor = active_n;
+                auto active_n = 80.0;
+                int active_n_floor = 80.0;
                 // Compound decay parameters
-                // If i < active_n --> first decay from 1 to 1e-11
-                // If i >= active_n --> second decay from 1e-11 to eps
-                auto sep = 1e-11;
+                // If i < active_n --> first decay from 1 to eps * 10
+                // If i >= active_n --> second decay from eps * 10 to eps
+                // This is due to the notice of the real data in figure 10
+                // in the following paper https://repository.kaust.edu.sa/bitstream/handle/10754/625590/tlr-chol.pdf?sequence=1
+                auto sep = std::numeric_limits<T>::epsilon() * 10;
                 auto b_1 = pow(sep, 1.0 / active_n);
                 auto a_2 = sep;
                 auto b_2 = pow(std::numeric_limits<T>::epsilon() / a_2, 1.0 / (min_m_n - 1 - active_n_floor));
