@@ -18,9 +18,9 @@ acc="1e-1,1e-2,1e-4,1e-6,1e-8,1e-10"
 export HCOREPP_VERBOSE=ON
 TileCount=(1 2 4 8 12 16 20 24 28 32 36 40 44 48)
 
-cat /dev/null > benchmark_ts512_0.csv
+cat /dev/null > benchmark_ts512_1.csv
 
 for tile_count in ${TileCount[@]}; do
-      $1 $tile_count $acc 512 0 >> benchmark_ts512_0.csv
+      $1 $tile_count $acc 512 1 >> benchmark_ts512_1.csv
       unset HCOREPP_VERBOSE
 done
