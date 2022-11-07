@@ -77,10 +77,8 @@ void tile_matrix_multiplication(TileMatrix<T> &aMatrixA,
     auto c_mt = aMatrixC.GetRowTileCount();
     auto b_mt = aMatrixB.GetRowTileCount();
 #ifdef BLAS_HAVE_MKL
-    auto thread_number = mkl_get_max_threads();
-    if (thread_number < c_mt * c_nt) {
-        mkl_set_num_threads(1);
-    }
+    double thread_number = mkl_get_max_threads();
+    mkl_set_num_threads(std::ceil(thread_number / (c_mt * c_nt )));
 #endif
     if (!aSnapshotName.empty()) {
         aTimer.StartSnapshot();
@@ -102,9 +100,7 @@ void tile_matrix_multiplication(TileMatrix<T> &aMatrixA,
         aTimer.Snapshot(aSnapshotName);
     }
 #ifdef BLAS_HAVE_MKL
-    if (thread_number < c_mt * c_nt) {
-        mkl_set_num_threads(thread_number);
-    }
+    mkl_set_num_threads(thread_number);
 #endif
 }
 
