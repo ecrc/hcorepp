@@ -35,9 +35,24 @@ namespace hcorepp {
                 int64_t min_m_n = std::min(aRowNumber, aColNumber);
 
                 auto eigen_values = (blas::real_type<T> *) malloc(min_m_n * sizeof(blas::real_type<T>));
-                auto delta = 32.0 / (min_m_n - 1);
+                // Exponential decay --> y = a * b^i
+                // first element i=0 --> 1   1 = a * b^0  a = 1
+                // last  element i=n --> eps eps/a = b^n  b = root_n(eps)
+                auto active_n = (min_m_n - 1) / 3.0;
+                int active_n_floor = active_n;
+                // Compound decay parameters
+                // If i < active_n --> first decay from 1 to 1e-11
+                // If i >= active_n --> second decay from 1e-11 to eps
+                auto sep = 1e-11;
+                auto b_1 = pow(sep, 1.0 / active_n);
+                auto a_2 = sep;
+                auto b_2 = pow(std::numeric_limits<T>::epsilon() / a_2, 1.0 / (min_m_n - 1 - active_n_floor));
                 for (int64_t i = 0; i < min_m_n; ++i) {
-                    eigen_values[i] = std::pow(10, -i * delta);
+                    if (i < active_n_floor) {
+                        eigen_values[i] = pow(b_1, i);
+                    } else {
+                        eigen_values[i] = a_2 * pow(b_2, i - active_n_floor);
+                    }
                 }
                 T dmax = -1.0;
                 lapack_latms(

@@ -230,12 +230,11 @@ int main(int argc, char *argv[]) {
         auto full_dense_c = c_dense.ToRawMatrix();
         full_dense_c.ReferenceDifference(full_c);
         dense_error = full_dense_c.Norm();
-        dense_error_normalized = dense_error /
-                                 ((a_norm + b_norm + c_norm) * std::max(full_dense_c.GetM(), full_dense_c.GetN()) *
-                                  std::numeric_limits<double>::epsilon());
+        dense_error_normalized = dense_error / (std::numeric_limits<double>::epsilon()
+                                                * c_dense.GetRowTileCount() * c_dense.GetColTileCount());
         timer.Snapshot("dense_error_calc");
         // Error checking.
-        if (dense_error >= 10) {
+        if (dense_error_normalized >= 10) {
             std::cout << "Example didn't pass, dense HCore++ error > 10 " << std::endl;
         }
         // Get memory footprint in KB
@@ -273,12 +272,10 @@ int main(int argc, char *argv[]) {
         // Calculate compressed tile matrix reference error
         full_approximate_c.ReferenceDifference(full_c);
         double comp_error = full_approximate_c.Norm();
-        double comp_error_normalized = comp_error / ((a_norm + b_norm + c_norm) *
-                                                     std::max(full_approximate_c.GetM(), full_approximate_c.GetN()) *
-                                                     accuracy);
+        double comp_error_normalized = comp_error / (accuracy * c_comp.GetRowTileCount() * c_comp.GetColTileCount());
         timer.Snapshot("comp_error_calc");
         // Error checking.
-        if (comp_error >= 10) {
+        if (comp_error_normalized >= 10) {
             std::cout << "Example didn't pass, compressed HCore++ error > 10 " << std::endl;
         }
         // Get memory footprint in KB
