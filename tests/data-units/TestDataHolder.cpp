@@ -76,8 +76,10 @@ void TEST_DATA_HOLDER() {
             new_data_array[i] = i * 2;
         }
 
-        data_holder.CopyDataArray(0, new_data_array, new_rows * new_cols);
-
+        hcorepp::kernels::RunContext context;
+        hcorepp::memory::Memcpy<T>(&data_holder.GetData()[0], new_data_array, new_rows * new_cols,
+                                   context, hcorepp::memory::MemoryTransfer::DEVICE_TO_DEVICE);
+        context.Sync();
         REQUIRE(data_holder.GetNumOfRows() == new_rows);
         REQUIRE(data_holder.GetNumOfCols() == new_cols);
 

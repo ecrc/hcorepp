@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
     // Norm for error calculations
     blas::real_type<double> a_norm = full_a.Norm();
     blas::real_type<double> b_norm = full_b.Norm();
-    blas::real_type<double> c_norm = full_c.Norm();
+    blas::real_type<double> c_init_norm = initial_c.Norm();
     size_t dense_memory_footprint;
     double dense_error;
     double dense_error_normalized;
@@ -270,8 +270,9 @@ int main(int argc, char *argv[]) {
         auto full_dense_c = c_dense.ToRawMatrix();
         full_dense_c.ReferenceDifference(full_c);
         dense_error = full_dense_c.Norm();
-        dense_error_normalized = dense_error / (std::numeric_limits<double>::epsilon()
-                                                * c_dense.GetRowTileCount() * c_dense.GetColTileCount());
+        dense_error_normalized = dense_error / ((a_norm + b_norm + c_init_norm) *
+                                                std::numeric_limits<double>::epsilon() *
+                                                std::min(initial_c.GetN(), initial_c.GetM()));
         timer.Snapshot("dense_error_calc");
         // Error checking.
         if (dense_error_normalized >= 10) {
@@ -312,7 +313,8 @@ int main(int argc, char *argv[]) {
         // Calculate compressed tile matrix reference error
         full_approximate_c.ReferenceDifference(full_c);
         double comp_error = full_approximate_c.Norm();
-        double comp_error_normalized = comp_error / (accuracy * c_comp.GetRowTileCount() * c_comp.GetColTileCount());
+        double comp_error_normalized = comp_error / ((a_norm + b_norm + c_init_norm) * accuracy *
+                                                     std::min(initial_c.GetN(), initial_c.GetM()));
         timer.Snapshot("comp_error_calc");
         // Error checking.
         if (comp_error_normalized >= 10) {

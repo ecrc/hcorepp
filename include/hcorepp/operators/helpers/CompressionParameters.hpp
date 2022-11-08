@@ -128,7 +128,7 @@ namespace hcorepp {
             /// Numerical error thershold
             double mAccuracy;
         };
-    }
-}
+    }//namespace operators
+}//namespace hcorepp
 
 #endif //HCOREPP_OPERATORS_HELPERS_COMPRESSION_PARAMETERS_HPP

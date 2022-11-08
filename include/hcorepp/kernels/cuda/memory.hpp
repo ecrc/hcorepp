@@ -13,6 +13,7 @@
 
 #include "error_checking.h"
 
+
 namespace hcorepp {
     namespace memory {
 
@@ -33,10 +34,15 @@ namespace hcorepp {
         template<typename T>
         void Memcpy(T *apDestination, const T *apSrcDataArray, int64_t aNumOfElements,
                     MemoryTransfer aTransferType) {
-            GPU_ERROR_CHECK(cudaDeviceSynchronize());
             GPU_ERROR_CHECK(cudaMemcpy(apDestination, apSrcDataArray, aNumOfElements * sizeof(T),
                                        cudaMemcpyDefault));
-            GPU_ERROR_CHECK(cudaDeviceSynchronize());
+        }
+
+        template<typename T>
+        void Memcpy(T *apDestination, const T *apSrcDataArray, int64_t aNumOfElements,
+                    hcorepp::kernels::RunContext &aContext, MemoryTransfer aTransferType) {
+            GPU_ERROR_CHECK(cudaMemcpyAsync(apDestination, apSrcDataArray, aNumOfElements * sizeof(T),
+                                       cudaMemcpyDefault, aContext.GetStream()));
         }
 
         template<typename T>

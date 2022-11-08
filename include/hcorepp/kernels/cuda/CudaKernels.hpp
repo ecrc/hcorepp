@@ -15,6 +15,7 @@
 #include "blas/util.hh"
 #include <hcorepp/common/Definitions.hpp>
 #include <hcorepp/operators/helpers/CompressionParameters.hpp>
+#include <hcorepp/kernels/RunContext.hpp>
 
 namespace hcorepp {
     namespace cudakernels {
@@ -52,56 +53,59 @@ namespace hcorepp {
         template<typename T>
         class HCoreCudaKernels {
         public:
-            static void GenerateIdentityMatrix(int64_t aNumOfCols, T *apMatrix);
+            static void GenerateIdentityMatrix(int64_t aNumOfCols, T *apMatrix, kernels::RunContext &aContext);
 
 
-            static void MultiplyByAlpha(T *apArray, int64_t aRows, int64_t aCols, int64_t aM, int64_t aRank, T &aAlpha);
+            static void MultiplyByAlpha(T *apArray, int64_t aRows, int64_t aCols, int64_t aM, int64_t aRank,
+                                        T &aAlpha, kernels::RunContext &aContext);
 
 
-            static void Geqrf(int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apTau);
+            static void Geqrf(int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apTau, kernels::RunContext &aContext);
 
 
             static void
             ProcessVpointer(int64_t aN, int64_t aCRank, bool aGetUngqr, int64_t Vm, T &aBeta, T *apCV, int64_t aLdcV,
-                            T *V,
-                            int64_t aArank, const T *apBdata);
+                            T *V, int64_t aArank, const T *apBdata, kernels::RunContext &aContext);
 
 
             static void
-            CalculateUVptrConj(int64_t aRank, int64_t aVm, T *UVptr);
+            CalculateUVptrConj(int64_t aRank, int64_t aVm, T *UVptr, kernels::RunContext &aContext);
 
 
             static void CalculateVTnew(int64_t aRkNew, bool aUngqr, int64_t aMinVmVn, blas::real_type<T> *apSigma, T *apVTnew,
-                                int64_t aSizeS, int64_t aVm);
+                                       int64_t aSizeS, int64_t aVm, kernels::RunContext &aContext);
 
 
-            static void CalculateUVptr(int64_t aRank, int64_t aVm, T *UVptr, const T *Vnew);
+            static void CalculateUVptr(int64_t aRank, int64_t aVm, T *UVptr, const T *Vnew,
+                                       kernels::RunContext &aContext);
 
 
             static void CalculateNewRank(int64_t &aNewRank, bool aTruncatedSvd, blas::real_type<T> *apSigma, int64_t sizeS,
-                                  blas::real_type<T> accuracy);
+                                         blas::real_type<T> accuracy, kernels::RunContext &aContext);
 
 
             static void
             SVD(common::Job aJobu, common::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
-                  int64_t aLdU, T *apVT, int64_t aLdVt, common::CompressionType aSVDOperationType);
+                int64_t aLdU, T *apVT, int64_t aLdVt, common::CompressionType aSVDOperationType,
+                kernels::RunContext &aContext);
 
 
             static void
             Unmqr(common::SideMode aSide, common::BlasOperation aTrans, int64_t aM, int64_t aN, int64_t aK,
-                  T const *apA, int64_t aLdA, T const *apTau, T *apC, int64_t aLdC);
+                  T const *apA, int64_t aLdA, T const *apTau, T *apC, int64_t aLdC, kernels::RunContext &aContext);
 
 
             static void Laset(common::MatrixType aMatrixType, int64_t aM, int64_t aN, T aOffdiag, T aDiag,
-                       T *apA, int64_t aLdA);
+                              T *apA, int64_t aLdA, kernels::RunContext &aContext);
 
 
             static void
-            LaCpy(common::MatrixType aType, int64_t aM, int64_t aRank, T *apCU, int64_t aLD, T *apU, int64_t aUm);
+            LaCpy(common::MatrixType aType, int64_t aM, int64_t aRank, T *apCU, int64_t aLD, T *apU, int64_t aUm,
+                  kernels::RunContext &aContext);
 
 
             static void
-            ungqr(int64_t aM, int64_t aN, int64_t aK, T *apA, int64_t aLdA, T *apTau);
+            ungqr(int64_t aM, int64_t aN, int64_t aK, T *apA, int64_t aLdA, T *apTau, kernels::RunContext &aContext);
 
         private:
             /**

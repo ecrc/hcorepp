@@ -421,147 +421,142 @@ namespace hcorepp {
         }
 
         template<typename T>
-        void HCoreCudaKernels<T>::GenerateIdentityMatrix(int64_t aNumOfCols, T *apMatrix) {
+        void HCoreCudaKernels<T>::GenerateIdentityMatrix(int64_t aNumOfCols, T *apMatrix,
+                                                         kernels::RunContext &aContext) {
             dim3 dimBlock(THREADS_1D, 1);
             dim3 dimGrid((aNumOfCols + dimBlock.x - 1) / dimBlock.x);
 
-            GenerateIdentityMatrix_kernel<<<dimGrid, dimBlock>>>(aNumOfCols, apMatrix);
+            GenerateIdentityMatrix_kernel<<<dimGrid, dimBlock, 0, aContext.GetStream()>>>(aNumOfCols, apMatrix);
         }
 
         template<typename T>
         void HCoreCudaKernels<T>::MultiplyByAlpha(T *apArray, int64_t aRows, int64_t aCols, int64_t aM, int64_t aRank,
-                                                  T &aAlpha) {
+                                                  T &aAlpha, kernels::RunContext &aContext) {
             dim3 dimBlock(THREADS_1D, 1);
             dim3 dimGrid(((aRows * aCols) + dimBlock.x - 1) / dimBlock.x);
 
-            MultiplyByAlpha_kernel<<<dimGrid, dimBlock>>>(apArray, aRows, aCols, aM, aRank, aAlpha);
+            MultiplyByAlpha_kernel<<<dimGrid, dimBlock, 0, aContext.GetStream()>>>(apArray, aRows, aCols, aM, aRank,
+                                                                                   aAlpha);
         }
 
         template<typename T>
-        void HCoreCudaKernels<T>::Geqrf(int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apTau) {
+        void HCoreCudaKernels<T>::Geqrf(int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apTau,
+                                        kernels::RunContext &aContext) {
             /// https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSOLVER/Xgeqrf/cusolver_Xgeqrf_example.cu
-            cusolverDnHandle_t cusolverH = nullptr;
-            cudaStream_t stream = nullptr;
-
-            int info = 0;
-
-            int *d_info = nullptr;    /* error info */
             size_t d_lwork = 0;     /* size of workspace */
-            void *d_work = nullptr; /* device workspace */
             size_t h_lwork = 0;     /* size of workspace */
             void *h_work = nullptr; /* host workspace */
 
-            /* step 1: create cusolver handle, bind a stream */
-            cusolverDnCreate(&cusolverH);
-
-            cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking);
-            cusolverDnSetStream(cusolverH, stream);
-
-            /* step 2: copy A to device */
-            cudaMalloc(reinterpret_cast<void **>(&d_info), sizeof(int));
-
             /* step 3: query working space of geqrf */
-            cusolverDnXgeqrf_bufferSize(cusolverH, NULL, aM, aN, traits<T>::cuda_data_type, apA, aLdA,
+            cusolverDnXgeqrf_bufferSize(aContext.GetCusolverDnHandle(), NULL, aM, aN, traits<T>::cuda_data_type, apA,
+                                        aLdA,
                                         traits<T>::cuda_data_type, apTau, traits<T>::cuda_data_type, &d_lwork,
                                         &h_lwork);
-
-            cudaMalloc(reinterpret_cast<void **>(&d_work), sizeof(T) * d_lwork);
+            auto d_work = aContext.RequestWorkBuffer(sizeof(T) * d_lwork);
 
             /* step 4: QR factorization */
-            cusolverDnXgeqrf(cusolverH, NULL, aM, aN, traits<T>::cuda_data_type, apA, aLdA, traits<T>::cuda_data_type,
-                             apTau, traits<T>::cuda_data_type, d_work, d_lwork, h_work, h_lwork, d_info);
-
-
-            cudaMemcpyAsync(&info, d_info, sizeof(int), cudaMemcpyDeviceToHost, stream);
-
-            cudaStreamSynchronize(stream);
-
-            if (0 > info) {
-                std::printf("%d-th parameter is wrong \n", -info);
-                exit(1);
-            }
-
-            cudaStreamSynchronize(stream);
-
-            /* free resources */
-            cudaFree(d_info);
-            cudaFree(d_work);
-            cusolverDnDestroy(cusolverH);
-            cudaStreamDestroy(stream);
+            cusolverDnXgeqrf(aContext.GetCusolverDnHandle(), NULL, aM, aN, traits<T>::cuda_data_type, apA, aLdA,
+                             traits<T>::cuda_data_type,
+                             apTau, traits<T>::cuda_data_type, d_work, d_lwork, h_work, h_lwork,
+                             aContext.GetInfoPointer());
         }
 
         template<typename T>
         void
         HCoreCudaKernels<T>::ProcessVpointer(int64_t aN, int64_t aCRank, bool aGetUngqr, int64_t Vm, T &aBeta, T *apCV,
                                              int64_t aLdcV, T *V,
-                                             int64_t aArank, const T *apBdata) {
+                                             int64_t aArank, const T *apBdata, kernels::RunContext &aContext) {
 
             dim3 dimBlock(THREADS, THREADS);
             dim3 dimGrid((aN + dimBlock.x - 1) / dimBlock.x, (aCRank + dimBlock.y - 1) / dimBlock.y);
 
             if (aGetUngqr) {
-                ProcessVPointer_kernel_with_Ungqr<T><<<dimGrid, dimBlock>>>(aN, aCRank, Vm, aBeta, apCV, aLdcV,
-                                                                            V, aArank, apBdata);
+                ProcessVPointer_kernel_with_Ungqr<T><<<dimGrid, dimBlock, 0, aContext.GetStream()>>>(aN,
+                                                                                                     aCRank, Vm, aBeta,
+                                                                                                     apCV, aLdcV,
+                                                                                                     V, aArank,
+                                                                                                     apBdata);
             } else {
-                ProcessVPointer_kernel_without_Ungqr<T><<<dimGrid, dimBlock>>>(aN, aCRank, Vm, aBeta, apCV,
-                                                                               aLdcV, V, aArank, apBdata);
+                ProcessVPointer_kernel_without_Ungqr<T><<<dimGrid, dimBlock, 0, aContext.GetStream()>>>(aN,
+                                                                                                        aCRank, Vm,
+                                                                                                        aBeta, apCV,
+                                                                                                        aLdcV, V,
+                                                                                                        aArank,
+                                                                                                        apBdata);
             }
 
             dim3 dimBlock_(THREADS, THREADS);
             dim3 dimGrid_((aN + dimBlock.x - 1) / dimBlock.x, (aArank + dimBlock.y - 1) / dimBlock.y);
 
             if (aGetUngqr) {
-                ProcessVPointer_kernel_with_Ungqr_part2<T><<<dimGrid_, dimBlock_>>>(aN, aCRank, Vm, aBeta, apCV, aLdcV,
-                                                                                    V, aArank, apBdata);
+                ProcessVPointer_kernel_with_Ungqr_part2<T><<<dimGrid_, dimBlock_, 0, aContext.GetStream()>>>(aN, aCRank,
+                                                                                                             Vm, aBeta,
+                                                                                                             apCV,
+                                                                                                             aLdcV,
+                                                                                                             V, aArank,
+                                                                                                             apBdata);
             } else {
-                ProcessVPointer_kernel_without_Ungqr_part2<T><<<dimGrid_, dimBlock_>>>(aN, aCRank, Vm, aBeta, apCV,
-                                                                                       aLdcV, V, aArank, apBdata);
+                ProcessVPointer_kernel_without_Ungqr_part2<T><<<dimGrid_, dimBlock_, 0, aContext.GetStream()>>>(aN,
+                                                                                                                aCRank,
+                                                                                                                Vm,
+                                                                                                                aBeta,
+                                                                                                                apCV,
+                                                                                                                aLdcV,
+                                                                                                                V,
+                                                                                                                aArank,
+                                                                                                                apBdata);
             }
 
         }
 
         template<typename T>
         void
-        HCoreCudaKernels<T>::CalculateUVptrConj(int64_t aRank, int64_t aVm, T *UVptr) {
+        HCoreCudaKernels<T>::CalculateUVptrConj(int64_t aRank, int64_t aVm, T *UVptr, kernels::RunContext &aContext) {
             dim3 dimBlock(THREADS, THREADS);
             dim3 dimGrid((aRank + dimBlock.x - 1) / dimBlock.x, (aVm + dimBlock.y - 1) / dimBlock.y);
-            CalculateUVptrConj_kernel_<<<dimGrid, dimBlock>>>(aRank, aVm, UVptr);
+            CalculateUVptrConj_kernel_<<<dimGrid, dimBlock, 0, aContext.GetStream()>>>(aRank, aVm, UVptr);
         }
 
         template<typename T>
         void
         HCoreCudaKernels<T>::CalculateVTnew(int64_t aRkNew, bool aUngqr, int64_t aMinVmVn, blas::real_type<T> *apSigma,
                                             T *apVTnew,
-                                            int64_t aSizeS, int64_t aVm) {
+                                            int64_t aSizeS, int64_t aVm, kernels::RunContext &aContext) {
             dim3 dimBlock(THREADS, THREADS);
 
             if (aUngqr) {
                 dim3 dimGrid((aRkNew + dimBlock.x - 1) / dimBlock.x, (aMinVmVn + dimBlock.y - 1) / dimBlock.y);
-                CalculateVTnew_kernel_with_Ungqr<<<dimGrid, dimBlock>>>(aRkNew, aUngqr, aMinVmVn, apSigma, apVTnew,
-                                                                        aSizeS, aVm);
+                CalculateVTnew_kernel_with_Ungqr<<<dimGrid, dimBlock, 0, aContext.GetStream()>>>(aRkNew, aUngqr,
+                                                                                                 aMinVmVn, apSigma,
+                                                                                                 apVTnew,
+                                                                                                 aSizeS, aVm);
             } else {
                 dim3 dimGrid((aRkNew + dimBlock.x - 1) / dimBlock.x, (aVm + dimBlock.y - 1) / dimBlock.y);
-                CalculateVTnew_kernel_without_Ungqr<<<dimGrid, dimBlock>>>(aRkNew, aUngqr, aMinVmVn, apSigma, apVTnew,
-                                                                           aSizeS, aVm);
+                CalculateVTnew_kernel_without_Ungqr<<<dimGrid, dimBlock, 0, aContext.GetStream()>>>(aRkNew, aUngqr,
+                                                                                                    aMinVmVn, apSigma,
+                                                                                                    apVTnew,
+                                                                                                    aSizeS, aVm);
             }
         }
 
         template<typename T>
-        void HCoreCudaKernels<T>::CalculateUVptr(int64_t aRank, int64_t aVm, T *UVptr, const T *Vnew) {
+        void HCoreCudaKernels<T>::CalculateUVptr(int64_t aRank, int64_t aVm, T *UVptr, const T *Vnew,
+                                                 kernels::RunContext &aContext) {
             dim3 dimBlock(THREADS, THREADS);
 
             dim3 dimGrid((aRank + dimBlock.x - 1) / dimBlock.x, (aVm + dimBlock.y - 1) / dimBlock.y);
 
-            CalculateUVptr_kernel<<<dimGrid, dimBlock>>>(aRank, aVm, UVptr, Vnew);
+            CalculateUVptr_kernel<<<dimGrid, dimBlock, 0, aContext.GetStream()>>>(aRank, aVm, UVptr, Vnew);
         }
 
         template<typename T>
         void HCoreCudaKernels<T>::CalculateNewRank(int64_t &aNewRank, bool aTruncatedSvd, blas::real_type<T> *apSigma,
-                                                   int64_t sizeS,
-                                                   blas::real_type<T> accuracy) {
+                                                   int64_t sizeS, blas::real_type<T> accuracy,
+                                                   kernels::RunContext &aContext) {
             auto host_sigma = new blas::real_type<T>[sizeS];
-            hcorepp::memory::Memcpy<blas::real_type<T>>(host_sigma, apSigma, sizeS,
-                    memory::MemoryTransfer::DEVICE_TO_HOST);
+            hcorepp::memory::Memcpy<blas::real_type<T>>(host_sigma, apSigma, sizeS, aContext,
+                                                        memory::MemoryTransfer::DEVICE_TO_HOST);
+            aContext.Sync();
             //TODO do a proper reduction kernel and memcpy only rank
 //            aNewRank = sizeS;
 //
@@ -600,127 +595,52 @@ namespace hcorepp {
         void
         HCoreCudaKernels<T>::SVD(common::Job aJobu, common::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA,
                                  T *apS, T *apU,
-                                 int64_t aLdU, T *apVT, int64_t aLdVt, common::CompressionType aSVDOperationType) {
-
+                                 int64_t aLdU, T *apVT, int64_t aLdVt, common::CompressionType aSVDOperationType,
+                                 kernels::RunContext &aContext) {
             ///https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSOLVER/Xgesvd/cusolver_Xgesvd_example.cu
-
-            cusolverDnHandle_t cusolverH = NULL;
-            cudaStream_t stream = NULL;
-
-            int info = 0;
-
-            int *d_info = nullptr;    /* error info */
             size_t d_lwork = 0;     /* size of workspace */
-            T *d_work = nullptr; /* device workspace */
             size_t h_lwork = 0;     /* size of workspace */
             void *h_work = nullptr; /* host workspace */
-            T *d_rwork = nullptr;
-
-            /* step 1: create cusolver handle, bind a stream */
-            cusolverDnCreate(&cusolverH);
-
-            cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking);
-            cusolverDnSetStream(cusolverH, stream);
-
-            /* step 2: copy A to device */
-            cudaMalloc(reinterpret_cast<void **>(&d_info), sizeof(int));
-
             /* step 3: query working space of geqrf */
-            cusolverDnXgesvd_bufferSize(cusolverH, NULL, (signed char) aJobu, (signed char) aJobvt, aM, aN,
+            cusolverDnXgesvd_bufferSize(aContext.GetCusolverDnHandle(), NULL, (signed char) aJobu, (signed char) aJobvt,
+                                        aM, aN,
                                         traits<T>::cuda_data_type, apA, aLdA, traits<T>::cuda_data_type, apS,
                                         traits<T>::cuda_data_type, apU, aLdU, traits<T>::cuda_data_type, apVT, aLdVt,
                                         traits<T>::cuda_data_type, &d_lwork, &h_lwork);
-
-            cudaMalloc(reinterpret_cast<void **>(&d_work), sizeof(T) * d_lwork);
+            T *d_work = (T *) aContext.RequestWorkBuffer(sizeof(T) * d_lwork);
 
             /* step 4: compute SVD */
-            cusolverDnXgesvd(cusolverH, NULL, (signed char) aJobu, (signed char) aJobvt, aM, aN,
+            cusolverDnXgesvd(aContext.GetCusolverDnHandle(), NULL, (signed char) aJobu, (signed char) aJobvt, aM, aN,
                              traits<T>::cuda_data_type, apA, aLdA, traits<T>::cuda_data_type, apS,
                              traits<T>::cuda_data_type, apU, aLdU, traits<T>::cuda_data_type, apVT, aLdVt,
                              traits<T>::cuda_data_type, d_work, d_lwork,
-                             h_work, h_lwork, d_info);
-
-            cudaMemcpyAsync(&info, d_info, sizeof(int), cudaMemcpyDeviceToHost, stream);
-
-            cudaStreamSynchronize(stream);
-
-            if (0 > info) {
-                std::printf("%d-th parameter is wrong \n", -info);
-                exit(1);
-            }
-
-            cudaStreamSynchronize(stream);
-
-            /* free resources */
-            cudaFree(d_info);
-            cudaFree(d_work);
-            cusolverDnDestroy(cusolverH);
-            cudaStreamDestroy(stream);
+                             h_work, h_lwork, aContext.GetInfoPointer());
         }
 
         template<typename T>
         void
         HCoreCudaKernels<T>::Unmqr(common::SideMode aSide, common::BlasOperation aTrans, int64_t aM, int64_t aN,
                                    int64_t aK,
-                                   T const *apA, int64_t aLdA, T const *apTau, T *apC, int64_t aLdC) {
+                                   T const *apA, int64_t aLdA, T const *apTau, T *apC, int64_t aLdC,
+                                   kernels::RunContext &aContext) {
             ///https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSOLVER/ormqr/cusolver_ormqr_example.cu
-
-            cusolverDnHandle_t cusolverH = NULL;
-            cudaStream_t stream = NULL;
-
-            int info = 0;
-
-            int *d_info = nullptr;    /* error info */
             size_t d_lwork = 0;     /* size of workspace */
-            T *d_work = nullptr; /* device workspace */
-            size_t h_lwork = 0;     /* size of workspace */
-            void *h_work = nullptr; /* host workspace */
-            T *d_rwork = nullptr;
-
-            /* step 1: create cusolver handle, bind a stream */
-            cusolverDnCreate(&cusolverH);
-
-            cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking);
-            cusolverDnSetStream(cusolverH, stream);
-
-            /* step 2: copy A to device */
-            cudaMalloc(reinterpret_cast<void **>(&d_info), sizeof(int));
-
             /* step 3: query working space of geqrf */
 
-            cusolverDnDormqr_bufferSize(cusolverH, (cublasSideMode_t) aSide, (cublasOperation_t) aTrans, aM, aN, aM,
+            cusolverDnDormqr_bufferSize(aContext.GetCusolverDnHandle(), (cublasSideMode_t) aSide,
+                                        (cublasOperation_t) aTrans, aM, aN, aM,
                                         (const double *) apA, aLdA, (const double *) apTau, (const double *) apC, aLdC,
                                         (int *) &d_lwork);
-
-            cudaMalloc(reinterpret_cast<void **>(&d_work), sizeof(T) * d_lwork);
-
-            cusolverDnDormqr(cusolverH, (cublasSideMode_t) aSide, (cublasOperation_t) aTrans, aM, aN, aM,
+            T *d_work = (T *) aContext.RequestWorkBuffer(sizeof(T) * d_lwork);
+            cusolverDnDormqr(aContext.GetCusolverDnHandle(), (cublasSideMode_t) aSide, (cublasOperation_t) aTrans, aM,
+                             aN, aM,
                              (const double *) apA, aLdA, (const double *) apTau, (double *) apC, aLdC,
-                             (double *) d_work, d_lwork, d_info);
-
-            /* step 4: compute SVD */
-
-            cudaMemcpyAsync(&info, d_info, sizeof(int), cudaMemcpyDeviceToHost, stream);
-
-            cudaStreamSynchronize(stream);
-
-            if (0 > info) {
-                std::printf("%d-th parameter is wrong \n", -info);
-                exit(1);
-            }
-
-            cudaStreamSynchronize(stream);
-
-            /* free resources */
-            cudaFree(d_info);
-            cudaFree(d_work);
-            cusolverDnDestroy(cusolverH);
-            cudaStreamDestroy(stream);
+                             (double *) d_work, d_lwork, aContext.GetInfoPointer());
         }
 
         template<typename T>
         void HCoreCudaKernels<T>::Laset(common::MatrixType aMatrixType, int64_t aM, int64_t aN, T aOffdiag, T aDiag,
-                                        T *apA, int64_t aLdA) {
+                                        T *apA, int64_t aLdA, kernels::RunContext &aContext) {
 
 #define dA(i_, j_) (dA + (i_) + (j_)*ldda)
 
@@ -761,10 +681,12 @@ namespace hcorepp {
                         nn = (j == super_grid.y - 1 ? aN % super_NB : super_NB);
                         grid.y = ceil(nn / THREADS);
                         if (i == j) {  // diagonal super block
-                            zlaset_lower_kernel<<< grid, threads >>>(mm, nn, aOffdiag, aDiag,
-                                                                     &apA[i * super_NB, j * super_NB], aLdA);
+                            zlaset_lower_kernel<<< grid, threads, 0, aContext.GetStream() >>>(mm, nn, aOffdiag, aDiag,
+                                                                                              &apA[i * super_NB, j *
+                                                                                                                 super_NB],
+                                                                                              aLdA);
                         } else {           // off diagonal super block
-                            zlaset_full_kernel<<< grid, threads>>>
+                            zlaset_full_kernel<<< grid, threads, 0, aContext.GetStream()>>>
                                     (mm, nn, aOffdiag, aOffdiag, &apA[i * super_NB, j * super_NB], aLdA);
                         }
                     }
@@ -777,40 +699,35 @@ namespace hcorepp {
                         nn = (j == super_grid.y - 1 ? aN % super_NB : super_NB);
                         grid.y = ceil(nn / THREADS);
                         if (i == j) {  // diagonal super block
-                            zlaset_upper_kernel<<< grid, threads >>>(mm, nn, aOffdiag, aDiag,
-                                                                     &apA[i * super_NB, j * super_NB], aLdA);
+                            zlaset_upper_kernel<<< grid, threads, 0, aContext.GetStream() >>>(mm, nn, aOffdiag, aDiag,
+                                                                                              &apA[i * super_NB, j *
+                                                                                                                 super_NB],
+                                                                                              aLdA);
                         } else {           // off diagonal super block
-                            zlaset_full_kernel<<< grid, threads>>>(mm, nn, aOffdiag, aOffdiag,
-                                                                   &apA[i * super_NB, j * super_NB], aLdA);
+                            zlaset_full_kernel<<< grid, threads, 0, aContext.GetStream()>>>(mm, nn, aOffdiag, aOffdiag,
+                                                                                            &apA[i * super_NB, j *
+                                                                                                               super_NB],
+                                                                                            aLdA);
                         }
                     }
                 }
             } else {
-                // if continuous in memory & set to zero, cudaMemset is faster.
-                // TODO: use cudaMemset2D ?
-//                    (MAGMA_Z_REAL(a)==MAGMA_Z_REAL(b) && MAGMA_Z_IMAG(a)==MAGMA_Z_IMAG(b))
-                if (aM == aLdA)
-//                    &&MAGMA_Z_EQUAL( offdiag, MAGMA_Z_ZERO ) &&
-//                         MAGMA_Z_EQUAL( diag,    MAGMA_Z_ZERO ) )
-                {
-                    size_t size = aM * aN;
-                    cudaError_t err = cudaMemsetAsync(apA, 0, size * sizeof(T));
-                    assert(err == cudaSuccess);
-//                        MAGMA_UNUSED( err );
-                } else {
-                    for (unsigned int i = 0; i < super_grid.x; ++i) {
-                        mm = (i == super_grid.x - 1 ? aM % super_NB : super_NB);
-                        grid.x = ceil(mm / THREADS);
-                        for (unsigned int j = 0; j < super_grid.y; ++j) {  // full row
-                            nn = (j == super_grid.y - 1 ? aN % super_NB : super_NB);
-                            grid.y = ceil(nn / THREADS);
-                            if (i == j) {  // diagonal super block
-                                zlaset_full_kernel<<< grid, threads>>>(mm, nn, aOffdiag, aDiag,
-                                                                       &apA[i * super_NB, j * super_NB], aLdA);
-                            } else {           // off diagonal super block
-                                zlaset_full_kernel<<< grid, threads >>>(mm, nn, aOffdiag, aOffdiag,
-                                                                        &apA[i * super_NB, j * super_NB], aLdA);
-                            }
+                for (unsigned int i = 0; i < super_grid.x; ++i) {
+                    mm = (i == super_grid.x - 1 ? aM % super_NB : super_NB);
+                    grid.x = ceil(mm / THREADS);
+                    for (unsigned int j = 0; j < super_grid.y; ++j) {  // full row
+                        nn = (j == super_grid.y - 1 ? aN % super_NB : super_NB);
+                        grid.y = ceil(nn / THREADS);
+                        if (i == j) {  // diagonal super block
+                            zlaset_full_kernel<<< grid, threads, 0, aContext.GetStream()>>>(mm, nn, aOffdiag, aDiag,
+                                                                                            &apA[i * super_NB, j *
+                                                                                                               super_NB],
+                                                                                            aLdA);
+                        } else {           // off diagonal super block
+                            zlaset_full_kernel<<< grid, threads, 0, aContext.GetStream() >>>(mm, nn, aOffdiag, aOffdiag,
+                                                                                             &apA[i * super_NB, j *
+                                                                                                                super_NB],
+                                                                                             aLdA);
                         }
                     }
                 }
@@ -820,7 +737,7 @@ namespace hcorepp {
         template<typename T>
         void
         HCoreCudaKernels<T>::LaCpy(common::MatrixType aType, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apB,
-                                   int64_t aLdB) {
+                                   int64_t aLdB, kernels::RunContext &aContext) {
 #define dA(i_, j_) (dA + (i_) + (j_)*ldda)
 #define dB(i_, j_) (dB + (i_) + (j_)*lddb)
 
@@ -861,11 +778,11 @@ namespace hcorepp {
                         grid.y = ceil(nn / THREADS);
                         if (i == j) {  // diagonal super block
                             dim3 threads(THREADS, 1);
-                            zlacpy_lower_kernel<<< grid, threads>>>
+                            zlacpy_lower_kernel<<< grid, threads, 0, aContext.GetStream()>>>
                                     (mm, nn, &apA[i * super_NB, j * super_NB], aLdA, &apB[i * super_NB, j * super_NB],
                                      aLdB);
                         } else {           // off diagonal super block
-                            zlacpy_full_kernel <<< grid, threads >>>
+                            zlacpy_full_kernel <<< grid, threads, 0, aContext.GetStream() >>>
                                     (mm, nn, &apA[i * super_NB, j * super_NB], aLdA, &apB[i * super_NB, j * super_NB],
                                      aLdB);
                         }
@@ -879,11 +796,11 @@ namespace hcorepp {
                         nn = (j == super_grid.y - 1 ? aN % super_NB : super_NB);
                         grid.y = (nn + THREADS - 1) / THREADS;
                         if (i == j) {  // diagonal super block
-                            zlacpy_upper_kernel<<< grid, threads>>>
+                            zlacpy_upper_kernel<<< grid, threads, 0, aContext.GetStream()>>>
                                     (mm, nn, &apA[i * super_NB, j * super_NB], aLdA, &apB[i * super_NB, j * super_NB],
                                      aLdB);
                         } else {           // off diagonal super block
-                            zlacpy_full_kernel <<< grid, threads >>>
+                            zlacpy_full_kernel <<< grid, threads, 0, aContext.GetStream() >>>
                                     (mm, nn, &apA[i * super_NB, j * super_NB], aLdA, &apB[i * super_NB, j * super_NB],
                                      aLdB);
                         }
@@ -891,7 +808,7 @@ namespace hcorepp {
                 }
             } else {
                 if (aLdA == aLdB) {
-                    cudaMemcpyAsync(apB, apA, aM * aN * sizeof(T), cudaMemcpyDeviceToDevice);
+                    cudaMemcpyAsync(apB, apA, aM * aN * sizeof(T), cudaMemcpyDeviceToDevice, aContext.GetStream());
                 } else {
                     for (unsigned int i = 0; i < super_grid.x; ++i) {
                         mm = (i == super_grid.x - 1 ? aM % super_NB : super_NB);
@@ -899,7 +816,7 @@ namespace hcorepp {
                         for (unsigned int j = 0; j < super_grid.y; ++j) {  // full row
                             nn = (j == super_grid.y - 1 ? aN % super_NB : super_NB);
                             grid.y = (nn + THREADS - 1) / THREADS;
-                            zlacpy_full_kernel <<< grid, threads >>>
+                            zlacpy_full_kernel <<< grid, threads, 0, aContext.GetStream() >>>
                                     (mm, nn, &apA[i * super_NB, j * super_NB], aLdA, &apB[i * super_NB, j * super_NB],
                                      aLdB);
                         }
@@ -910,43 +827,27 @@ namespace hcorepp {
 
         template<typename T>
         void
-        HCoreCudaKernels<T>::ungqr(int64_t aM, int64_t aN, int64_t aK, T *apA, int64_t aLdA, T *apTau) {
+        HCoreCudaKernels<T>::ungqr(int64_t aM, int64_t aN, int64_t aK, T *apA, int64_t aLdA, T *apTau,
+                                   kernels::RunContext &aContext) {
             ///https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSOLVER/orgqr/cusolver_orgqr_example.cu
-
-            cusolverDnHandle_t cusolverH = nullptr;
-            cudaStream_t stream = nullptr;
-
-            int info = 0;
-            int *d_info = nullptr;
-            T *d_work = nullptr;
-
             int lwork_orgqr = 0;
             int lwork = 0;
-
-            /* step 1: create cusolver handle, bind a stream */
-            cusolverDnCreate(&cusolverH);
-
-            cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking);
-            cusolverDnSetStream(cusolverH, stream);
-
-            /* step 2: copy A to device */
-            cudaMalloc(reinterpret_cast<void **>(&d_info), sizeof(int));
 
             /* step 3: query working space of geqrf and orgqr */
             if constexpr(is_complex<T>()) {
                 if constexpr(is_complex_float<T>()) {
-                    cusolverDnCorgqr_bufferSize(cusolverH, aM, aN, aK, apA, aLdA, apTau,
+                    cusolverDnCorgqr_bufferSize(aContext.GetCusolverDnHandle(), aM, aN, aK, apA, aLdA, apTau,
                                                 (int *) (&lwork_orgqr));
                 } else {
-                    cusolverDnZorgqr_bufferSize(cusolverH, aM, aN, aK, apA, aLdA, apTau,
+                    cusolverDnZorgqr_bufferSize(aContext.GetCusolverDnHandle(), aM, aN, aK, apA, aLdA, apTau,
                                                 (int *) (&lwork_orgqr));
                 }
             } else {
                 if constexpr(is_double<T>()) {
-                    cusolverDnDorgqr_bufferSize(cusolverH, aM, aN, aK, apA, aLdA, apTau,
+                    cusolverDnDorgqr_bufferSize(aContext.GetCusolverDnHandle(), aM, aN, aK, apA, aLdA, apTau,
                                                 (int *) (&lwork_orgqr));
                 } else {
-                    cusolverDnSorgqr_bufferSize(cusolverH, aM, aN, aK, apA, aLdA, apTau,
+                    cusolverDnSorgqr_bufferSize(aContext.GetCusolverDnHandle(), aM, aN, aK, apA, aLdA, apTau,
                                                 (int *) (&lwork_orgqr));
                 }
             }
@@ -954,38 +855,26 @@ namespace hcorepp {
 
             lwork = lwork_orgqr;
 
-            cudaMalloc(reinterpret_cast<void **>(&d_work), sizeof(T) * lwork);
-
+            T *d_work = (T *)aContext.RequestWorkBuffer(sizeof(T) * lwork);
+            int *d_info = aContext.GetInfoPointer();
             /* step 5: compute Q */
             if constexpr(is_complex<T>()) {
                 if constexpr(is_complex_float<T>()) {
-                    cusolverDnCorgqr(cusolverH, aM, aN, aK, apA, aLdA, apTau, d_work, lwork, d_info);
+                    cusolverDnCorgqr(aContext.GetCusolverDnHandle(), aM, aN, aK, apA, aLdA, apTau, d_work, lwork,
+                                     d_info);
                 } else {
-                    cusolverDnZorgqr(cusolverH, aM, aN, aK, apA, aLdA, apTau, d_work, lwork, d_info);
+                    cusolverDnZorgqr(aContext.GetCusolverDnHandle(), aM, aN, aK, apA, aLdA, apTau, d_work, lwork,
+                                     d_info);
                 }
             } else {
                 if constexpr(is_double<T>()) {
-                    cusolverDnDorgqr(cusolverH, aM, aN, aK, apA, aLdA, apTau, d_work, lwork, d_info);
+                    cusolverDnDorgqr(aContext.GetCusolverDnHandle(), aM, aN, aK, apA, aLdA, apTau, d_work, lwork,
+                                     d_info);
                 } else {
-                    cusolverDnSorgqr(cusolverH, aM, aN, aK, apA, aLdA, apTau, d_work, lwork, d_info);
+                    cusolverDnSorgqr(aContext.GetCusolverDnHandle(), aM, aN, aK, apA, aLdA, apTau, d_work, lwork,
+                                     d_info);
                 }
             }
-
-            /* check if QR is good or not */
-            cudaMemcpyAsync(&info, d_info, sizeof(int), cudaMemcpyDeviceToHost, stream);
-
-            cudaStreamSynchronize(stream);
-
-            if (0 > info) {
-                std::printf("%d-th parameter is wrong \n", -info);
-                exit(1);
-            }
-
-            /* free resources */
-            cudaFree(d_info);
-            cudaFree(d_work);
-            cusolverDnDestroy(cusolverH);
-            cudaStreamDestroy(stream);
         }
 
         HCOREPP_INSTANTIATE_CLASS(HCoreCudaKernels)

@@ -128,10 +128,10 @@ void TEST_DENSE() {
 
         hcorepp::operators::CompressionParameters helpers(1e-9);
         int64_t ark = 1;
-
+        hcorepp::kernels::RunContext context;
         dense_tile_C.Gemm(alpha, dense_tile_A.GetTileSubMatrix(0).get(), blas::Op::NoTrans,
                           dense_tile_B.GetTileSubMatrix(0).get(), blas::Op::NoTrans, beta,
-                          lda, ark, helpers);
+                          lda, ark, helpers, context);
 
         REQUIRE(dense_tile_C.GetTileSubMatrix(0).get().GetNumOfRows() == c_m);
         REQUIRE(dense_tile_C.GetTileSubMatrix(0).get().GetNumOfCols() == c_n);

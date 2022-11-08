@@ -109,21 +109,6 @@ namespace hcorepp {
 
             /**
              * @brief
-             * Copy Data from source array to the current data holder array.
-             *
-             * @param aStIdx
-             * Target starting index in current array.
-             * @param aSrcDataArray
-             * Source array to copy from.
-             * @param aNumOfElements
-             * Num of elements to be copied from source array.
-             *
-             */
-            void
-            CopyDataArray(size_t aStIdx, T* aSrcDataArray, size_t aNumOfElements);
-
-            /**
-             * @brief
              * Resize the data holder to use new number of rows, cols and a leading dimension.
              * Function destroys previously allocated buffer and re-initializes them again.
              *

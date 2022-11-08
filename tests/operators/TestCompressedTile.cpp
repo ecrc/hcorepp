@@ -230,12 +230,13 @@ void TEST_Compressed() {
         REQUIRE(compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfCols() == cu_n);
         REQUIRE(compressed_tile_C.GetTileSubMatrix(1).get().GetNumOfRows() == cv_m);
         REQUIRE(compressed_tile_C.GetTileSubMatrix(1).get().GetNumOfCols() == cv_n);
-
+        RunContext context;
         hcorepp::operators::CompressionParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
         compressed_tile_C.Gemm(alpha, dense_tile_A.GetTileSubMatrix(0).get(), blas::Op::NoTrans,
                                dense_tile_B.GetTileSubMatrix(0).get(), blas::Op::NoTrans, beta,
                                dense_tile_A.GetTileSubMatrix(0).get().GetLeadingDim(),
-                               dense_tile_A.GetTileSubMatrix(0).get().GetNumOfCols(), helpers);
+                               dense_tile_A.GetTileSubMatrix(0).get().GetNumOfCols(), helpers,
+                               context);
 
         T *cu_output = compressed_tile_C.GetTileSubMatrix(0).get().GetData();
         T *cv_output = compressed_tile_C.GetTileSubMatrix(1).get().GetData();
@@ -355,9 +356,9 @@ void TEST_Compressed() {
                                    compressed_tile_A.GetTileSubMatrix(1).get().GetData(),
                                    av_size,
                                    hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
-
+        RunContext context;
         hcorepp::kernels::HCoreKernels<T>::FillIdentityMatrix(compressed_tile_A.GetTileSubMatrix(0).get().GetNumOfCols(),
-                                             compressed_tile_A.GetTileSubMatrix(0).get().GetData());
+                                             compressed_tile_A.GetTileSubMatrix(0).get().GetData(), context);
 
         T *host_data_array_au_identity_matrix = new T[au_size];
 

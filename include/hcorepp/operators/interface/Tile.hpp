@@ -17,6 +17,7 @@
 #include "blas.hh"
 #include <hcorepp/data-units/DataHolder.hpp>
 #include <hcorepp/operators/helpers/CompressionParameters.hpp>
+#include <hcorepp/kernels/RunContext.hpp>
 
 namespace hcorepp {
     namespace operators {
@@ -105,12 +106,13 @@ namespace hcorepp {
              * tile rank. (used only in compressed Gemm functionality.)
              * @param[in] aHelpers
              * SVD helpers object (used only in compressed Gemm functionality.)
-             *
+             * @param[in] aContext
+             * The runtime context to apply the operation on.
              */
             virtual void
             Gemm(T &aAlpha, dataunits::DataHolder<T> const &aTileA, blas::Op aTileAOp,
                  dataunits::DataHolder<T> const &aTileB, blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank,
-                 const CompressionParameters &aCompressionParameters) = 0;
+                 const CompressionParameters &aCompressionParameters, kernels::RunContext &aContext) = 0;
 
             /**
              * @brief
@@ -140,10 +142,12 @@ namespace hcorepp {
              * Leading dimension
              * @param aRank
              * New Linear algebra rank of the tile. rk >= 0.
-             *
+             * @param[in] aContext
+             * The runtime context to apply the operation on.
              */
             virtual void
-            ReadjustTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim, int64_t aRank) = 0;
+            ReadjustTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim, int64_t aRank,
+                         kernels::RunContext &aContext) = 0;
 
         protected:
             // Matrix physical layout -> column major or row major.

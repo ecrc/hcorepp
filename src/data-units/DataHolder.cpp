@@ -59,15 +59,6 @@ namespace hcorepp {
         }
 
         template<typename T>
-        void DataHolder<T>::CopyDataArray(size_t aStIdx, T *aSrcDataArray, size_t aNumOfElements) {
-            if (aNumOfElements > mNumOfRows * mNumOfCols || aSrcDataArray == nullptr) {
-                return;
-            }
-            hcorepp::memory::Memcpy<T>(&mpDataArray[aStIdx], aSrcDataArray, aNumOfElements,
-                                       memory::MemoryTransfer::DEVICE_TO_DEVICE);
-        }
-
-        template<typename T>
         void DataHolder<T>::Resize(size_t aRows, size_t aCols, size_t aLeadingDim) {
             mNumOfRows = aRows;
             mNumOfCols = aCols;

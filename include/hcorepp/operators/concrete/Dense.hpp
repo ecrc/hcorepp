@@ -123,51 +123,14 @@ namespace hcorepp {
             int64_t
             GetTileStride(size_t aIndex) const override;
 
-            /**
-             * @brief
-             * General matrix-matrix multiplication, C = alpha * op(A) * op(B) + beta * C.
-             *
-             * @param[in] aAlpha
-             * The scalar alpha.
-             * @param[in] aTileA
-             * The m-by-k tile.
-             * @param[in] aTileB
-             * The k-by-n tile.
-             * @param[in] aBeta
-             * The scalar beta.
-             * @param[in] aLdAu
-             * Tile A leading dimension. (used only in compressed Gemm functionality.)
-             * @param[in] aARank
-             * tile rank. (used only in compressed Gemm functionality.)
-             * @param[in] aHelpers
-             * SVD helpers object (used only in compressed Gemm functionality.)
-             *
-             */
             void
             Gemm(T &aAlpha, dataunits::DataHolder <T> const &aTileA, blas::Op aTileAOp,
                  dataunits::DataHolder <T> const &aTileB, blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank,
-                 const CompressionParameters &aCompressionParameters) override;
+                 const CompressionParameters &aCompressionParameters, kernels::RunContext &aContext) override;
 
-            /**
-             * @brief
-             * Readjust tile dimension according to new rank.
-             * (Not supported yet in Dense tiles).
-             *
-             * @param aNumOfRows
-             * New number of rows to use.
-             * @param aNumOfCols
-             * New number of cols to use.
-             * @param aPdata
-             * pointer to new data array to set tile data holders.
-             * @param aLeadingDim
-             * Leading dimension
-             * @param aRank
-             * New Linear algebra rank of the tile. rk >= 0.
-             *
-             */
             void
             ReadjustTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim,
-                         int64_t aRank) override;
+                         int64_t aRank, kernels::RunContext &aContext) override;
 
 
         private:

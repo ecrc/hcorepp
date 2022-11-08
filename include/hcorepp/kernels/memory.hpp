@@ -11,6 +11,8 @@
 #ifndef HCOREPP_KERNELS_MEMORY_H
 #define HCOREPP_KERNELS_MEMORY_H
 
+#include <hcorepp/kernels/RunContext.hpp>
+
 /**
  * @brief
  * File abstracting all memory operations from the underlying technology.
@@ -79,6 +81,33 @@ namespace hcorepp {
          */
         template<typename T>
         void Memcpy(T *apDestination, const T *apSrcDataArray, int64_t aNumOfElements,
+                    MemoryTransfer aTransferType = MemoryTransfer::DEVICE_TO_DEVICE);
+
+        /**
+         * @brief
+         * Copy memory from a source pointer to a target pointer according to the transfer type.
+         *
+         * @tparam T
+         * The type of the element the pointer are pointing to.
+         *
+         * @param[in] apDestination
+         * The destination pointer to copy data to.
+         *
+         * @param[in] apSrcDataArray
+         * The source pointer to copy data from.
+         *
+         * @param[in] aNumOfElements
+         * The number of elements to transfer between the two arrays.
+         *
+         * @param[in] aContext
+         * The run context for the memcpy operation.
+         *
+         * @param[in] aTransferType
+         * The transfer type telling the memcpy where each pointer resides(host or accelerator).
+         */
+        template<typename T>
+        void Memcpy(T *apDestination, const T *apSrcDataArray, int64_t aNumOfElements,
+                    hcorepp::kernels::RunContext &aContext,
                     MemoryTransfer aTransferType = MemoryTransfer::DEVICE_TO_DEVICE);
 
         /**

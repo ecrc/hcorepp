@@ -13,6 +13,7 @@
 
 using namespace hcorepp::dataunits;
 using namespace hcorepp::common;
+using namespace hcorepp::kernels;
 
 namespace hcorepp {
     namespace operators {
@@ -62,7 +63,7 @@ namespace hcorepp {
         template<typename T>
         void DenseTile<T>::Gemm(T &aAlpha, DataHolder<T> const &aTileA, blas::Op aTileAOp, DataHolder<T> const &aTileB,
                                 blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank,
-                                const CompressionParameters &aHelpers) {
+                                const CompressionParameters &aHelpers, RunContext &aContext) {
 
             /**
              * Assuming that C operation is blas::Op::NoTrans
@@ -74,9 +75,8 @@ namespace hcorepp {
                                       aAlpha, (const T *) aTileA.GetData(), aTileA.GetLeadingDim(),
                                       (const T *) aTileB.GetData(), aTileB.GetLeadingDim(),
                                       aBeta, this->GetTileSubMatrix(0).get().GetData(),
-                                      this->GetTileSubMatrix(0).get().GetLeadingDim());
-
-
+                                      this->GetTileSubMatrix(0).get().GetLeadingDim(),
+                                      aContext);
         }
 
         template<typename T>
@@ -97,7 +97,7 @@ namespace hcorepp {
         template<typename T>
         void
         DenseTile<T>::ReadjustTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim,
-                                   int64_t aRank) {
+                                   int64_t aRank, RunContext &aContext) {
 
         }
 

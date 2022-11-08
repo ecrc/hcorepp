@@ -9,10 +9,12 @@
  */
 
 #include <hcorepp/api/HCore.hpp>
+#include <hcorepp/kernels/RunContext.hpp>
 #include <functional>
 
 using namespace hcorepp::operators;
 using namespace hcorepp::dataunits;
+using namespace hcorepp::kernels;
 
 namespace hcorepp {
     namespace api {
@@ -20,6 +22,7 @@ namespace hcorepp {
         template<typename T>
         void HCore<T>::Gemm(T aAlpha, const Tile<T> &aA, const blas::Op &aAOp, const Tile<T> &aB, const blas::Op &aBOp,
                             T aBeta, Tile<T> &aC, const CompressionParameters &aCompressionParameters) {
+            RunContext context;
             int tile_a_size = aA.GetNumberOfMatrices();
             int tile_b_size = aB.GetNumberOfMatrices();
             int tile_c_size = aC.GetNumberOfMatrices();
@@ -79,7 +82,8 @@ namespace hcorepp {
                 auto tile = temp_tiles.back();
 
                 tile->Gemm(alpha_local, a_data, a_op, b_data, b_op, beta_local, a_data.get().GetLeadingDim(),
-                           std::min(b_data.get().GetNumOfRows(), b_data.get().GetNumOfCols()), aCompressionParameters);
+                           std::min(b_data.get().GetNumOfRows(), b_data.get().GetNumOfCols()), aCompressionParameters,
+                           context);
 
                 if (number_of_temporary_dense_gemms == 2) {
                     auto a_data_holder = (tile->GetTileSubMatrix(0));
@@ -120,7 +124,8 @@ namespace hcorepp {
                     // W += beta * Cu*Cv;
 
                     target->Gemm(aBeta, a_data, a_op, b_data, b_op, alpha_local, a_data.get().GetLeadingDim(),
-                                 std::min(b_data.get().GetNumOfRows(), b_data.get().GetNumOfCols()), aCompressionParameters);
+                                 std::min(b_data.get().GetNumOfRows(), b_data.get().GetNumOfCols()),
+                                 aCompressionParameters, context);
 
                     int num_of_rows = target->GetTileSubMatrix(0).get().GetNumOfRows();
                     int num_of_cols = target->GetTileSubMatrix(0).get().GetNumOfCols();
@@ -134,7 +139,7 @@ namespace hcorepp {
 
                     // todo :: Revisit the Handling of DDC case.
                     aC.ReadjustTile(num_of_rows, num_of_cols, target->GetTileSubMatrix(0).get().GetData(), num_of_rows,
-                                    c_rank);
+                                    c_rank, context);
 
                 } else {
                     auto a_data = a_data_holders[a_idx];
@@ -143,7 +148,7 @@ namespace hcorepp {
                     int64_t c_rank = a_data.get().GetNumOfCols();
 
                     aC.Gemm(aAlpha, a_data, a_operation, b_data, b_operation, aBeta, a_data.get().GetLeadingDim(),
-                            c_rank, aCompressionParameters);
+                            c_rank, aCompressionParameters, context);
                 }
             }
 
