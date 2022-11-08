@@ -1,11 +1,6 @@
 /**
- * Copyright (c) 2017-2022, King Abdullah University of Science and Technology
- * ***************************************************************************
- * *****      KAUST Extreme Computing Research Center Property           *****
- * ***************************************************************************
- *
- * All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause. See the accompanying LICENSE file.
+ * @copyright (c) 2022 King Abdullah University of Science and Technology (KAUST).
+ *                     All rights reserved.
  */
 
 #ifndef HCOREPP_OPERATORS_CONCRETE_DENSE_HPP
