@@ -35,6 +35,7 @@ namespace hcorepp {
         HCoreKernels<T>::MultiplyByAlpha(T *apArray, int64_t aRows, int64_t aCols, int64_t aM, int64_t aRank,
                                          T &aAlpha) {
             hcorepp::cudakernels::HCoreCudaKernels<T>::MultiplyByAlpha(apArray, aRows, aCols, aM, aRank, aAlpha);
+            GPU_ERROR_CHECK(cudaDeviceSynchronize());
         }
 
         template<typename T>
@@ -43,6 +44,7 @@ namespace hcorepp {
                                          int64_t aLdcV, T *V,
                                          int64_t aArank, const T *apBdata) {
             hcorepp::cudakernels::HCoreCudaKernels<T>::ProcessVpointer(aN, aCRank, aGetUngqr, Vm, aBeta, apCV, aLdcV, V, aArank, apBdata);
+            GPU_ERROR_CHECK(cudaDeviceSynchronize());
         }
 
         template<typename T>
@@ -50,11 +52,13 @@ namespace hcorepp {
                                                int64_t sizeS,
                                                blas::real_type<T> accuracy) {
             hcorepp::cudakernels::HCoreCudaKernels<T>::CalculateNewRank(aNewRank, aTruncatedSvd, apSigma, sizeS, accuracy);
+            GPU_ERROR_CHECK(cudaDeviceSynchronize());
         }
 
         template<typename T>
         void HCoreKernels<T>::CalculateUVptr(int64_t aRank, int64_t aVm, T *UVptr, const T *Vnew) {
             hcorepp::cudakernels::HCoreCudaKernels<T>::CalculateUVptr(aRank, aVm, UVptr, Vnew);
+            GPU_ERROR_CHECK(cudaDeviceSynchronize());
         }
 
         template<typename T>
@@ -63,18 +67,21 @@ namespace hcorepp {
                                         T *apVTnew,
                                         int64_t aSizeS, int64_t aVm) {
             hcorepp::cudakernels::HCoreCudaKernels<T>::CalculateVTnew(aRkNew, aUngqr, aMinVmVn, apSigma, apVTnew, aSizeS, aVm);
+            GPU_ERROR_CHECK(cudaDeviceSynchronize());
         }
 
         template<typename T>
         void
         HCoreKernels<T>::CalculateUVptrConj(int64_t aRank, int64_t aVm, T *UVptr) {
             hcorepp::cudakernels::HCoreCudaKernels<T>::CalculateUVptrConj(aRank, aVm, UVptr);
+            GPU_ERROR_CHECK(cudaDeviceSynchronize());
         }
 
         template<typename T>
         void
         HCoreKernels<T>::FillIdentityMatrix(int64_t aNumOfElements, T *apMatrix) {
             hcorepp::cudakernels::HCoreCudaKernels<T>::GenerateIdentityMatrix(aNumOfElements, apMatrix);
+            GPU_ERROR_CHECK(cudaDeviceSynchronize());
         }
 
         template<typename T>
@@ -82,17 +89,20 @@ namespace hcorepp {
         HCoreKernels<T>::LaCpy(common::MatrixType aType, int64_t aM, int64_t aRank, T *apCU, int64_t aLD, T *apU,
                                int64_t aUm) {
             hcorepp::cudakernels::HCoreCudaKernels<T>::LaCpy(aType, aM, aRank, apCU, aLD, apU, aUm);
+            GPU_ERROR_CHECK(cudaDeviceSynchronize());
         }
 
         template<typename T>
         void HCoreKernels<T>::Geqrf(int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apTau) {
             hcorepp::cudakernels::HCoreCudaKernels<T>::Geqrf(aM, aN, apA, aLdA, apTau);
+            GPU_ERROR_CHECK(cudaDeviceSynchronize());
         }
 
         template<typename T>
         void HCoreKernels<T>::Laset(common::MatrixType aMatrixType, int64_t aM, int64_t aN, T aOffdiag, T aDiag,
                                     T *apA, int64_t aLdA) {
             hcorepp::cudakernels::HCoreCudaKernels<T>::Laset(aMatrixType, aM, aN, aOffdiag, aDiag, apA, aLdA);
+            GPU_ERROR_CHECK(cudaDeviceSynchronize());
         }
 
         template<typename T>
@@ -112,6 +122,7 @@ namespace hcorepp {
                              int64_t aLdU, T *apVT, int64_t aLdVt, common::CompressionType aSVDOperation) {
             hcorepp::cudakernels::HCoreCudaKernels<T>::SVD(aJobu, aJobvt, aM, aN, apA, aLdA, apS, apU, aLdU,
                                                            apVT, aLdVt, aSVDOperation);
+            GPU_ERROR_CHECK(cudaDeviceSynchronize());
         }
 
         template<typename T>
@@ -120,6 +131,7 @@ namespace hcorepp {
                                T const *apA,
                                int64_t aLdA, T const *apTau, T *apC, int64_t aLdC) {
             hcorepp::cudakernels::HCoreCudaKernels<T>::Unmqr(aSide, aTrans, aM, aN, aK, apA, aLdA, apTau, apC, aLdC);
+            GPU_ERROR_CHECK(cudaDeviceSynchronize());
         }
 
         template<typename T>
@@ -141,6 +153,7 @@ namespace hcorepp {
         void
         HCoreKernels<T>::ungqr(int64_t aM, int64_t aN, int64_t aK, T *apA, int64_t aLdA, T *apTau) {
             hcorepp::cudakernels::HCoreCudaKernels<T>::ungqr(aM, aN, aK, apA, aLdA, apTau);
+            GPU_ERROR_CHECK(cudaDeviceSynchronize());
         }
 
         HCOREPP_INSTANTIATE_CLASS(HCoreKernels)

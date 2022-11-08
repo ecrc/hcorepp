@@ -17,6 +17,7 @@
 #include "blas/scal.hh"
 #include <cuComplex.h>
 #include <hcorepp/common/TypeCheck.hpp>
+#include <hcorepp/kernels/memory.hpp>
 
 #define THREADS 32
 #define THREADS_1D 1024
@@ -559,8 +560,8 @@ namespace hcorepp {
                                                    int64_t sizeS,
                                                    blas::real_type<T> accuracy) {
             auto host_sigma = new blas::real_type<T>[sizeS];
-            cudaMemcpy(host_sigma, apSigma, sizeof(blas::real_type<T>) * sizeS,
-                       cudaMemcpyDeviceToHost);
+            hcorepp::memory::Memcpy<blas::real_type<T>>(host_sigma, apSigma, sizeS,
+                    memory::MemoryTransfer::DEVICE_TO_HOST);
             //TODO do a proper reduction kernel and memcpy only rank
 //            aNewRank = sizeS;
 //
