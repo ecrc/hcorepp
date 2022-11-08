@@ -19,6 +19,7 @@
 #include <hcorepp/common/TypeCheck.hpp>
 
 #define THREADS 32
+#define THREADS_1D 1024
 const int max_blocks = 65535;
 
 namespace hcorepp {
@@ -420,15 +421,16 @@ namespace hcorepp {
 
         template<typename T>
         void HCoreCudaKernels<T>::GenerateIdentityMatrix(int64_t aNumOfCols, T *apMatrix) {
-            dim3 dimBlock(THREADS, 1);
+            dim3 dimBlock(THREADS_1D, 1);
             dim3 dimGrid((aNumOfCols + dimBlock.x - 1) / dimBlock.x);
 
             GenerateIdentityMatrix_kernel<<<dimGrid, dimBlock>>>(aNumOfCols, apMatrix);
         }
 
         template<typename T>
-        void HCoreCudaKernels<T>::MultiplyByAlpha(T *apArray, int64_t aRows, int64_t aCols, int64_t aM, int64_t aRank, T &aAlpha) {
-            dim3 dimBlock(THREADS, 1);
+        void HCoreCudaKernels<T>::MultiplyByAlpha(T *apArray, int64_t aRows, int64_t aCols, int64_t aM, int64_t aRank,
+                                                  T &aAlpha) {
+            dim3 dimBlock(THREADS_1D, 1);
             dim3 dimGrid(((aRows * aCols) + dimBlock.x - 1) / dimBlock.x);
 
             MultiplyByAlpha_kernel<<<dimGrid, dimBlock>>>(apArray, aRows, aCols, aM, aRank, aAlpha);
@@ -489,8 +491,9 @@ namespace hcorepp {
 
         template<typename T>
         void
-        HCoreCudaKernels<T>::ProcessVpointer(int64_t aN, int64_t aCRank, bool aGetUngqr, int64_t Vm, T &aBeta, T *apCV, int64_t aLdcV, T *V,
-                        int64_t aArank, const T *apBdata) {
+        HCoreCudaKernels<T>::ProcessVpointer(int64_t aN, int64_t aCRank, bool aGetUngqr, int64_t Vm, T &aBeta, T *apCV,
+                                             int64_t aLdcV, T *V,
+                                             int64_t aArank, const T *apBdata) {
 
             dim3 dimBlock(THREADS, THREADS);
             dim3 dimGrid((aN + dimBlock.x - 1) / dimBlock.x, (aCRank + dimBlock.y - 1) / dimBlock.y);
@@ -526,8 +529,9 @@ namespace hcorepp {
 
         template<typename T>
         void
-        HCoreCudaKernels<T>::CalculateVTnew(int64_t aRkNew, bool aUngqr, int64_t aMinVmVn, blas::real_type<T> *apSigma, T *apVTnew,
-                       int64_t aSizeS, int64_t aVm) {
+        HCoreCudaKernels<T>::CalculateVTnew(int64_t aRkNew, bool aUngqr, int64_t aMinVmVn, blas::real_type<T> *apSigma,
+                                            T *apVTnew,
+                                            int64_t aSizeS, int64_t aVm) {
             dim3 dimBlock(THREADS, THREADS);
 
             if (aUngqr) {
@@ -551,25 +555,50 @@ namespace hcorepp {
         }
 
         template<typename T>
-        void HCoreCudaKernels<T>::CalculateNewRank(int64_t &aNewRank, bool aTruncatedSvd, blas::real_type<T> *apSigma, int64_t sizeS,
-                              blas::real_type<T> accuracy) {
+        void HCoreCudaKernels<T>::CalculateNewRank(int64_t &aNewRank, bool aTruncatedSvd, blas::real_type<T> *apSigma,
+                                                   int64_t sizeS,
+                                                   blas::real_type<T> accuracy) {
+            auto host_sigma = new blas::real_type<T>[sizeS];
+            cudaMemcpy(host_sigma, apSigma, sizeof(blas::real_type<T>) * sizeS,
+                       cudaMemcpyDeviceToHost);
+            //TODO do a proper reduction kernel and memcpy only rank
+//            aNewRank = sizeS;
+//
+//            dim3 dimBlock(THREADS);
+//
+//            dim3 dimGrid((sizeS + dimBlock.x - 1) / dimBlock.x);
+//
+//            if (aTruncatedSvd) {
+//                CalculateNewRank_kernel_withSVD<T><<<dimGrid, dimBlock>>>(aNewRank, apSigma, sizeS, accuracy);
+//            } else {
+//                CalculateNewRank_kernel_withoutSVD<T><<<dimGrid, dimBlock>>>(aNewRank, apSigma, sizeS, accuracy);
+//            }
             aNewRank = sizeS;
-
-            dim3 dimBlock(THREADS);
-
-            dim3 dimGrid((sizeS + dimBlock.x - 1) / dimBlock.x);
-
             if (aTruncatedSvd) {
-                CalculateNewRank_kernel_withSVD<T><<<dimGrid, dimBlock>>>(aNewRank, apSigma, sizeS, accuracy);
+                blas::real_type<T> Sigma_0 = host_sigma[0];
+                for (int64_t i = 1; i < sizeS; i++) {
+                    if (host_sigma[i] < accuracy * Sigma_0) {
+                        Sigma_0 = host_sigma[i];
+                        aNewRank = i;
+                        break;
+                    }
+                }
             } else {
-                CalculateNewRank_kernel_withoutSVD<T><<<dimGrid, dimBlock>>>(aNewRank, apSigma, sizeS, accuracy);
+                for (int64_t i = 1; i < sizeS; i++) {
+                    if (host_sigma[i] < accuracy) {
+                        aNewRank = i;
+                        break;
+                    }
+                }
             }
+            delete[] host_sigma;
 
         }
 
         template<typename T>
         void
-        HCoreCudaKernels<T>::SVD(common::Job aJobu, common::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
+        HCoreCudaKernels<T>::SVD(common::Job aJobu, common::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA,
+                                 T *apS, T *apU,
                                  int64_t aLdU, T *apVT, int64_t aLdVt, common::CompressionType aSVDOperationType) {
 
             ///https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSOLVER/Xgesvd/cusolver_Xgesvd_example.cu
@@ -630,8 +659,9 @@ namespace hcorepp {
 
         template<typename T>
         void
-        HCoreCudaKernels<T>::Unmqr(common::SideMode aSide, common::BlasOperation aTrans, int64_t aM, int64_t aN, int64_t aK,
-              T const *apA, int64_t aLdA, T const *apTau, T *apC, int64_t aLdC) {
+        HCoreCudaKernels<T>::Unmqr(common::SideMode aSide, common::BlasOperation aTrans, int64_t aM, int64_t aN,
+                                   int64_t aK,
+                                   T const *apA, int64_t aLdA, T const *apTau, T *apC, int64_t aLdC) {
             ///https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSOLVER/ormqr/cusolver_ormqr_example.cu
 
             cusolverDnHandle_t cusolverH = NULL;
@@ -689,7 +719,7 @@ namespace hcorepp {
 
         template<typename T>
         void HCoreCudaKernels<T>::Laset(common::MatrixType aMatrixType, int64_t aM, int64_t aN, T aOffdiag, T aDiag,
-                   T *apA, int64_t aLdA) {
+                                        T *apA, int64_t aLdA) {
 
 #define dA(i_, j_) (dA + (i_) + (j_)*ldda)
 
@@ -788,7 +818,8 @@ namespace hcorepp {
 
         template<typename T>
         void
-        HCoreCudaKernels<T>::LaCpy(common::MatrixType aType, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apB, int64_t aLdB) {
+        HCoreCudaKernels<T>::LaCpy(common::MatrixType aType, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apB,
+                                   int64_t aLdB) {
 #define dA(i_, j_) (dA + (i_) + (j_)*ldda)
 #define dB(i_, j_) (dB + (i_) + (j_)*lddb)
 

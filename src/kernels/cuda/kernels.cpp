@@ -14,6 +14,7 @@
 #include <cstring>
 #include <cublas_v2.h>
 #include "hcorepp/kernels/cuda/CudaKernels.hpp"
+#include "hcorepp/kernels/cuda/error_checking.h"
 
 namespace hcorepp {
     namespace kernels {
@@ -23,9 +24,8 @@ namespace hcorepp {
                                    int64_t aK,
                                    T &aAlpha, T const *apA, int64_t aLdA, T const *apB, int64_t aLdB, T &aBeta, T *apC,
                                    int64_t aLdC) {
-            int device = 0;
-            int batch_size = 1000;  // todo: use default batch_size
-            blas::Queue queue(device, batch_size);
+            GPU_ERROR_CHECK(cudaDeviceSynchronize());
+            blas::Queue queue;
             blas::gemm(aLayout, aTransA, aTransB, aM, aN, aK, aAlpha, apA, aLdA, apB, aLdB, aBeta, apC, aLdC, queue);
             queue.sync();
         }
@@ -99,7 +99,10 @@ namespace hcorepp {
         void HCoreKernels<T>::Trmm(blas::Layout aLayout, blas::Side aSide, blas::Uplo aUplo, blas::Op aTrans,
                                    blas::Diag aDiag,
                                    int64_t aM, int64_t aN, T aAlpha, T const *apA, int64_t aLdA, T *apB, int64_t aLdB) {
-            blas::trmm(aLayout, aSide, aUplo, aTrans, aDiag, aM, aN, aAlpha, apA, aLdA, apB, aLdB);
+            GPU_ERROR_CHECK(cudaDeviceSynchronize());
+            blas::Queue queue;
+            blas::trmm(aLayout, aSide, aUplo, aTrans, aDiag, aM, aN, aAlpha, apA, aLdA, apB, aLdB, queue);
+            queue.sync();
         }
 
         template<typename T>

@@ -14,10 +14,17 @@
 #include <hcorepp/helpers/Timer.hpp>
 #include <hcorepp/helpers/generators/concrete/LatmsGenerator.hpp>
 #include <hcorepp/helpers/generators/concrete/TileLatmsGenerator.hpp>
+#include <hcorepp/kernels/memory.hpp>
 
 #ifdef BLAS_HAVE_MKL
 
 #include <mkl.h>
+
+#endif
+
+#ifdef BLAS_HAVE_CUBLAS
+
+#include <omp.h>
 
 #endif
 
@@ -78,7 +85,11 @@ void tile_matrix_multiplication(TileMatrix<T> &aMatrixA,
     auto b_mt = aMatrixB.GetRowTileCount();
 #ifdef BLAS_HAVE_MKL
     double thread_number = mkl_get_max_threads();
-    mkl_set_num_threads(std::ceil(thread_number / (c_mt * c_nt )));
+    mkl_set_num_threads(std::ceil(thread_number / (c_mt * c_nt)));
+#endif
+#ifdef BLAS_HAVE_CUBLAS
+    auto omp_thread_number = omp_get_num_threads();
+    omp_set_num_threads(c_mt * c_nt);
 #endif
     if (!aSnapshotName.empty()) {
         aTimer.StartSnapshot();
@@ -97,10 +108,16 @@ void tile_matrix_multiplication(TileMatrix<T> &aMatrixA,
         }
     }
     if (!aSnapshotName.empty()) {
+#ifdef BLAS_HAVE_CUBLAS
+        cudaDeviceSynchronize();
+#endif
         aTimer.Snapshot(aSnapshotName);
     }
 #ifdef BLAS_HAVE_MKL
     mkl_set_num_threads(thread_number);
+#endif
+#ifdef BLAS_HAVE_CUBLAS
+    omp_set_num_threads(omp_thread_number);
 #endif
 }
 
@@ -186,12 +203,39 @@ int main(int argc, char *argv[]) {
                    warm_b.GetM(), beta, warm_c.GetData(), warm_c.GetM());
     }
     // Solve reference solution
+    // TODO cleaner wrapper for the device benchmarking.
+#ifdef BLAS_HAVE_CUBLAS
+    auto a_device = hcorepp::memory::AllocateArray<double>(full_a.GetM() * full_a.GetN());
+    auto b_device = hcorepp::memory::AllocateArray<double>(full_b.GetM() * full_b.GetN());
+    auto c_device = hcorepp::memory::AllocateArray<double>(full_c.GetM() * full_c.GetN());
+    hcorepp::memory::Memcpy<double>(a_device, full_a.GetData(),
+                                    full_a.GetM() * full_a.GetN(),
+                                    hcorepp::memory::MemoryTransfer::HOST_TO_DEVICE);
+    hcorepp::memory::Memcpy<double>(b_device, full_b.GetData(), full_b.GetM() * full_b.GetN(),
+                                    hcorepp::memory::MemoryTransfer::HOST_TO_DEVICE);
+    hcorepp::memory::Memcpy<double>(c_device, full_c.GetData(), full_c.GetM() * full_c.GetN(),
+                                    hcorepp::memory::MemoryTransfer::HOST_TO_DEVICE);
+    blas::Queue queue;
+    timer.StartSnapshot();
+    blas::gemm(blas::Layout::ColMajor, trans_a, trans_b, full_c.GetM(),
+               full_c.GetN(), full_a.GetN(), alpha, a_device,
+               full_a.GetM(), b_device,
+               full_b.GetM(), beta, c_device, full_c.GetM(), queue);
+    queue.sync();
+    timer.Snapshot("ref_gemm");
+    hcorepp::memory::Memcpy<double>(full_c.GetData(), c_device, full_c.GetM() * full_c.GetN(),
+                                    hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+    hcorepp::memory::DestroyArray(a_device);
+    hcorepp::memory::DestroyArray(b_device);
+    hcorepp::memory::DestroyArray(c_device);
+#else
     timer.StartSnapshot();
     blas::gemm(blas::Layout::ColMajor, trans_a, trans_b, full_c.GetM(),
                full_c.GetN(), full_a.GetN(), alpha, full_a.GetData(),
                full_a.GetM(), full_b.GetData(),
                full_b.GetM(), beta, full_c.GetData(), full_c.GetM());
     timer.Snapshot("ref_gemm");
+#endif
     // Get memory footprint in KB
     size_t ref_memory_footprint = (full_a.GetMemoryFootprint() + full_b.GetMemoryFootprint()
                                    + full_c.GetMemoryFootprint()) / 1024;

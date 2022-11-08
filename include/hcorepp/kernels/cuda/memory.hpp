@@ -36,6 +36,7 @@ namespace hcorepp {
             GPU_ERROR_CHECK(cudaDeviceSynchronize());
             GPU_ERROR_CHECK(cudaMemcpy(apDestination, apSrcDataArray, aNumOfElements * sizeof(T),
                                        cudaMemcpyDefault));
+            GPU_ERROR_CHECK(cudaDeviceSynchronize());
         }
 
         template<typename T>
