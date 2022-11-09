@@ -1,4 +1,4 @@
-HCORE Installation Notes
+HCore++ Installation Notes
 --------------------------------------------------------------------------------
 
 - [Synopsis](#synopsis)
@@ -10,7 +10,7 @@ HCORE Installation Notes
 Synopsis
 --------------------------------------------------------------------------------
 
-Use CMake to configure and compile the HCORE library and its tester, then
+Use CMake to configure and compile the HCore++ library and its tester, then
 install the headers and library.
 
     mkdir build && cd build
@@ -34,28 +34,28 @@ QuickStart
 --------------------------------------------------------------------------------
 
 The CMake script enforces an out-of-source build. Create a build directory under
-the HCORE root directory:
+the HCore++ root directory:
 
-    cd /path/to/hcore
+    cd /path/to/hcorepp
     mkdir build && cd build
     cmake [-DCMAKE_INSTALL_PREFIX=/path/to/install] [options] ..
     make
     make install
 
-If HCORE test suite (test/tester) is built, then HCORE tester can be run:
+If HCore++ test suite is built, then HCore++ tester can be run:
 
-    hcore/build$ cd test
-    hcore/build/test$ ./tester [-h|--help] [parameters] routine
+    hcorepp/build$ cd tests
+    hcorepp/build/tests$ ./hcorepp-tests [-h|--help] [parameters]
 
 Requirements
 --------------------------------------------------------------------------------
 
-HCORE requires BLAS++ (https://bitbucket.org/icl/blaspp) and LAPACK++
+HCore++ requires BLAS++ (https://bitbucket.org/icl/blaspp) and LAPACK++
 (https://bitbucket.org/icl/lapackpp).
 It inherits its dependencies from them, and they must be installed first via
-CMake, before running HCORE's CMake. Therefore, HCORE should find BLAS++ and
+CMake, before running HCore++'s CMake. Therefore, HCore++ should find BLAS++ and
 LAPACK++, if it is installed in a system default location (e.g., `/usr/local`),
-or their install prefix is the same. If HCORE can't find them, you can
+or their install prefix is the same. If HCore++ can't find them, you can
 point to their directory:
 
     cmake -DCMAKE_PREFIX_PATH=/path/to/install [options] ..
@@ -74,37 +74,32 @@ syntax (not as environment variables), such as:
 
     cmake -Dblas=mkl -DLAPACK_LIBRARIES='-lopenblas' ..
 
-HCORE uses the TestSweeper library (https://bitbucket.org/icl/testsweeper) to
-run its tests. If CMake doesn't find TestSweeper, it will be
-downloaded and compiled. To use a different TestSweeper build that was
-not installed, you can point to its directory.
-
-    cmake -Dtestsweeper_DIR=/path/to/testsweeper/build [options] ..
-
 Options
 --------------------------------------------------------------------------------
 
-HCORE specific options include (all values are case insensitive):
+HCore++ specific options include (all values are case insensitive):
 
-    use_openmp
-        Whether to use OpenMP, if available. One of:
+    USE_CUDA
+        Whether to use CUDA, if available. One of:
+        yes  
+        no   (default)
+
+    HCOREPP_BUILD_TESTS
+        Whether to build test suite. One of:
         yes  (default)
         no
 
-    build_tests
-        Whether to build test suite (test/tester).
-        Requires TestSweeper. One of:
+    HCOREPP_BUILD_EXAMPLES
+        Whether to build examples suite. One of:
         yes  (default)
         no
 
-    color
-        Whether to use ANSI colors in output. One of:
+    HCOREPP_BUILD_DOCS
+        Whether to build documentation. One of:
         yes  (default)
         no
 
-    LAPACK_LATMS_LIBRARIES
-        Specify the LAPACK LATMS libraries, overriding the built-in search.
-
+    
 Besides the environment variables and options listed above, additional
 standard CMake options include:
 
@@ -140,7 +135,7 @@ With CMake, options are specified on the command line using
 `-Doption=value` syntax (not as environment variables), such as:
 
     # in build directory
-    cmake -Dblas=openblas -Dbuild_tests=no -DCMAKE_INSTALL_PREFIX=/usr/local ..
+    cmake -Dblas=openblas -DHCOREPP_BUILD_TESTS=no -DCMAKE_INSTALL_PREFIX=/usr/local ..
 
 Alternatively, use the `ccmake` text-based interface or the CMake app GUI.
 
