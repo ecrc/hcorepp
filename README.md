@@ -3,7 +3,7 @@ The HCore++ Library
 HCore++ is convenient, performance-oriented C++ software API for tile low-rank matrix algebra. HCore++ implements BLAS functionality in the form of tile routines; update one or a small number of individual tiles, generally sequentially on a single compute unit. Notably, an m-by-n matrix is a collection of individual mb-by-nb tiles. HCore++ tiles are first C++ class objects, which are entities that can be individually allocated, destroyed, and passed to low-level tile routines, e.g., GEMM. HCore++ tile routines rely on the tile low-rank compression, which replaces the dense operations with the equivalent low rank operations, to reduce the memory footprint and/or the time-to-solution.
 
 
-Features of HCore++ 1.0.0
+Features of HCore++ 1.1.0
 -----------------------------
 * Matrix Compression
 * Matrix-Matrix Multiplication (Gemm)
