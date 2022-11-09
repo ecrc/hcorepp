@@ -1,4 +1,0 @@
-set(LIBS
-        gfortran
-        ${LIBS}
-        )
