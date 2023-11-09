@@ -48,59 +48,79 @@ namespace hcorepp {
         template<typename T>
         class HCoreCudaKernels {
         public:
-            static void GenerateIdentityMatrix(int64_t aNumOfCols, T *apMatrix, kernels::RunContext &aContext);
+            static void GenerateIdentityMatrix(size_t aNumOfCols, T *apMatrix, const kernels::RunContext &aContext);
 
 
-            static void MultiplyByAlpha(T *apArray, int64_t aRows, int64_t aCols, int64_t aM, int64_t aRank,
-                                        T &aAlpha, kernels::RunContext &aContext);
-
-
-            static void Geqrf(int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apTau, kernels::RunContext &aContext);
+            static void MultiplyByAlpha(T *apArray, size_t aRows, size_t aCols, size_t aM, size_t aRank,
+                                        T &aAlpha, const kernels::RunContext &aContext);
 
 
             static void
-            ProcessVpointer(int64_t aN, int64_t aCRank, bool aGetUngqr, int64_t Vm, T &aBeta, T *apCV, int64_t aLdcV,
-                            T *V, int64_t aArank, const T *apBdata, kernels::RunContext &aContext);
+            Geqrf(size_t aM, size_t aN, T *apA, size_t aLdA, T *apTau, T *aWorkspace, size_t aWorkspace_size,
+                  size_t aHostSize, const kernels::RunContext &aContext);
 
 
             static void
-            CalculateUVptrConj(int64_t aRank, int64_t aVm, T *UVptr, kernels::RunContext &aContext);
-
-
-            static void CalculateVTnew(int64_t aRkNew, bool aUngqr, int64_t aMinVmVn, blas::real_type<T> *apSigma, T *apVTnew,
-                                       int64_t aSizeS, int64_t aVm, kernels::RunContext &aContext);
-
-
-            static void CalculateUVptr(int64_t aRank, int64_t aVm, T *UVptr, const T *Vnew,
-                                       kernels::RunContext &aContext);
-
-
-            static void CalculateNewRank(int64_t &aNewRank, bool aTruncatedSvd, blas::real_type<T> *apSigma, int64_t sizeS,
-                                         blas::real_type<T> accuracy, kernels::RunContext &aContext);
+            ProcessVpointer(size_t aN, size_t aCRank, bool aGetUngqr, size_t Vm, T &aBeta, T *apCV, size_t aLdcV,
+                            T *V, size_t aArank, const T *apBdata, const kernels::RunContext &aContext,
+                            bool aCholesky = false);
 
 
             static void
-            SVD(common::Job aJobu, common::Job aJobvt, int64_t aM, int64_t aN, T *apA, int64_t aLdA, T *apS, T *apU,
-                int64_t aLdU, T *apVT, int64_t aLdVt, common::CompressionType aSVDOperationType,
-                kernels::RunContext &aContext);
+            CalculateUVptrConj(size_t aRank, size_t aVm, T *UVptr, const kernels::RunContext &aContext);
+
+            static void
+            CalculateVTnew(size_t aRkNew, bool aUngqr, size_t aMinVmVn, blas::real_type<T> *apSigma, T *apVTnew,
+                           size_t aSizeS, size_t aVm, const kernels::RunContext &aContext);
+
+
+            static void CalculateUVptr(size_t aRank, size_t aVm, T *UVptr, const T *Vnew,
+                                       const kernels::RunContext &aContext);
+
+            static void
+            CalculateNewRank(size_t &aNewRank, bool aTruncatedSvd, blas::real_type<T> *apSigma, size_t sizeS,
+                             blas::real_type<T> accuracy, const kernels::RunContext &aContext);
 
 
             static void
-            Unmqr(common::SideMode aSide, common::BlasOperation aTrans, int64_t aM, int64_t aN, int64_t aK,
-                  T const *apA, int64_t aLdA, T const *apTau, T *apC, int64_t aLdC, kernels::RunContext &aContext);
-
-
-            static void Laset(common::MatrixType aMatrixType, int64_t aM, int64_t aN, T aOffdiag, T aDiag,
-                              T *apA, int64_t aLdA, kernels::RunContext &aContext);
+            SVD(common::Job aJobu, common::Job aJobvt, size_t aM, size_t aN, T *apA, size_t aLdA, T *apS, T *apU,
+                size_t aLdU, T *apVT, size_t aLdVt, common::CompressionType aSVDOperationType,
+                T *aWorkspace, size_t aWorkspace_size, size_t aHostSize, const kernels::RunContext &aContext);
 
 
             static void
-            LaCpy(common::MatrixType aType, int64_t aM, int64_t aRank, T *apCU, int64_t aLD, T *apU, int64_t aUm,
-                  kernels::RunContext &aContext);
+            Unmqr(common::SideMode aSide, common::BlasOperation aTrans, size_t aM, size_t aN, size_t aK,
+                  T const *apA, size_t aLdA, T const *apTau, T *apC, size_t aLdC,
+                  T *aWorkspace, size_t aWorkspace_size, const kernels::RunContext &aContext);
+
+            static void Laset(common::MatrixType aMatrixType, size_t aM, size_t aN, T aOffdiag, T aDiag,
+                              T *apA, size_t aLdA, const kernels::RunContext &aContext);
 
 
             static void
-            ungqr(int64_t aM, int64_t aN, int64_t aK, T *apA, int64_t aLdA, T *apTau, kernels::RunContext &aContext);
+            LaCpy(common::MatrixType aType, size_t aM, size_t aRank, T *apCU, size_t aLD, T *apU, size_t aUm,
+                  const kernels::RunContext &aContext);
+
+            static void
+            ungqr(size_t aM, size_t aN, size_t aK, T *apA, size_t aLdA, T *apTau,
+                  T *aWorkspace, size_t aWorkspace_size, const kernels::RunContext &aContext);
+
+            static void
+            potrf(blas::Uplo aUplo, T *aWorkspace, size_t aWorkspaceSize, size_t aHostSize,
+                  size_t aMatrixOrder, T *apMatrix, size_t aLeadingDim,
+                  const kernels::RunContext &aContext);
+
+            static void
+            FillMatrixTriangle(blas::Uplo aUplo, size_t aRows, T *apMatrix, blas::Layout aLayout,
+                               size_t aValue, const kernels::RunContext &aContext);
+
+            static void
+            SymmetrizeMatrix(blas::Uplo aUplo, size_t aRows, T *apMatrix, blas::Layout aLayout,
+                             const kernels::RunContext &aContext);
+
+            static void
+            TransposeMatrix(size_t aOuterLoopRange, size_t aInnerLoopRange, const T *aA, size_t aLeadingDimA,
+                            T *aOut, size_t aLeadingDimOut, const kernels::RunContext &aContext);
 
         private:
             /**

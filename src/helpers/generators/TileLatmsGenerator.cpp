@@ -16,7 +16,7 @@ namespace hcorepp {
 
             template<typename T>
             TileLatmsGenerator<T>::TileLatmsGenerator(const int64_t *apSeed, int64_t aMode,
-                                                      blas::real_type<T> aCond, int64_t aTileSize) : mSeed{0, 0, 0, 0},
+                                                      blas::real_type<T> aCond, size_t aTileSize) : mSeed{0, 0, 0, 0},
                                                                                                      mMode(aMode),
                                                                                                      mCond(aCond),
                                                                                                      mTileSize(
@@ -29,7 +29,7 @@ namespace hcorepp {
 
             template<typename T>
             void
-            TileLatmsGenerator<T>::GenerateValues(int64_t aRowNumber, int64_t aColNumber, int64_t aLeadingDimension,
+            TileLatmsGenerator<T>::GenerateValues(size_t aRowNumber, size_t aColNumber, size_t aLeadingDimension,
                                                   T *apData) const {
                 auto tile_size = mTileSize;
                 if (tile_size <= 0) {
@@ -46,12 +46,12 @@ namespace hcorepp {
                     nt += 1;
                 }
 #pragma omp parallel for collapse(2) default(none) shared(nt, mt, aColNumber, aRowNumber, tile_size, apData)
-                for (int i = 0; i < nt; i++) {
-                    for (int j = 0; j < mt; j++) {
+                for (size_t i = 0; i < nt; i++) {
+                    for (size_t j = 0; j < mt; j++) {
                         auto tile_cols = std::min(tile_size, aColNumber - i * tile_size);
                         auto tile_rows = std::min(tile_size, aRowNumber - j * tile_size);
                         auto tile_data = new T[tile_rows * tile_cols];
-                        int64_t min_m_n = std::min(tile_rows, tile_cols);
+                        size_t min_m_n = std::min(tile_rows, tile_cols);
 
                         auto eigen_values = (blas::real_type<T> *) malloc(min_m_n * sizeof(blas::real_type<T>));
                         // Exponential decay --> y = a * b^i
@@ -68,7 +68,7 @@ namespace hcorepp {
                         auto b_1 = pow(sep, 1.0 / active_n);
                         auto a_2 = sep;
                         auto b_2 = pow(std::numeric_limits<T>::epsilon() / a_2, 1.0 / (min_m_n - 1 - active_n_floor));
-                        for (int64_t i = 0; i < min_m_n; ++i) {
+                        for (size_t i = 0; i < min_m_n; ++i) {
                             if (i < active_n_floor) {
                                 eigen_values[i] = pow(b_1, i);
                             } else {
@@ -83,8 +83,8 @@ namespace hcorepp {
                         free(eigen_values);
                         auto st_idx = i * tile_size * aRowNumber + j * tile_size;
                         auto org_data = &apData[st_idx];
-                        for (int jj = 0; jj < tile_cols; jj++) {
-                            for (int ii = 0; ii < tile_rows; ii++) {
+                        for (size_t jj = 0; jj < tile_cols; jj++) {
+                            for (size_t ii = 0; ii < tile_rows; ii++) {
                                 org_data[ii + jj * aRowNumber] = tile_data[ii + jj * tile_rows];
                             }
                         }

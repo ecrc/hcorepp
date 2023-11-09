@@ -33,8 +33,12 @@ namespace hcorepp {
              *
              * @param[in] aColumnTileSize
              * The number of columns in each tile.
+             *
+             * @param[in] aContext
+             * The run context to utilize for the tiles.
              */
-            TileMatrix(const RawMatrix <T> &aRawMatrix, int64_t aRowTileSize, int64_t aColumnTileSize);
+            TileMatrix(const RawMatrix <T> &aRawMatrix, size_t aRowTileSize, size_t aColumnTileSize,
+                       kernels::RunContext &aContext);
 
             /**
              * @brief
@@ -51,9 +55,12 @@ namespace hcorepp {
              *
              * @param[in] aParameters
              * The parameters used for the compression.
+             *
+             * @param[in] aContext
+             * The run context to utilize for the tiles.
              */
-            TileMatrix(const RawMatrix <T> &aRawMatrix, int64_t aRowTileSize, int64_t aColumnTileSize,
-                       const operators::CompressionParameters &aParameters);
+            TileMatrix(const RawMatrix <T> &aRawMatrix, size_t aRowTileSize, size_t aColumnTileSize,
+                       const operators::CompressionParameters &aParameters, kernels::RunContext &aContext);
 
             /**
              * @brief
@@ -68,7 +75,7 @@ namespace hcorepp {
              * @return
              * A reference to the corresponding tile object.
              */
-            operators::Tile <T> *GetTile(int64_t aRowIndex, int64_t aColIndex) {
+            operators::Tile <T> *GetTile(size_t aRowIndex, size_t aColIndex) {
                 return this->mMatrixTiles[aColIndex][aRowIndex];
             }
 
@@ -79,7 +86,7 @@ namespace hcorepp {
              * @return
              * The count of tiles in the row direction.
              */
-            int64_t GetRowTileCount() const {
+            size_t GetRowTileCount() const {
                 return this->mRowTileCount;
             }
 
@@ -90,7 +97,7 @@ namespace hcorepp {
              * @return
              * The count of tiles in the column direction.
              */
-            int64_t GetColTileCount() const {
+            size_t GetColTileCount() const {
                 return this->mColTileCount;
             }
 
@@ -101,7 +108,7 @@ namespace hcorepp {
              * @return
              * The size of each tile in the row direction.
              */
-            int64_t GetRowTileSize() const {
+            size_t GetRowTileSize() const {
                 return this->mRowTileSize;
             }
 
@@ -112,7 +119,7 @@ namespace hcorepp {
              * @return
              * The size of each tile in the column direction.
              */
-            int64_t GetColTileSize() const {
+            size_t GetColTileSize() const {
                 return this->mColTileSize;
             }
 
@@ -123,7 +130,7 @@ namespace hcorepp {
              * @return
              * The total number of elements of the matrix in row direction.
              */
-            int64_t GetM() const {
+            size_t GetM() const {
                 return this->mM;
             }
 
@@ -134,7 +141,7 @@ namespace hcorepp {
              * @return
              * The total number of elements of the matrix in column direction.
              */
-            int64_t GetN() const {
+            size_t GetN() const {
                 return this->mN;
             }
 
@@ -145,7 +152,7 @@ namespace hcorepp {
              * @return
              * A raw matrix containing all the data inside the tile matrix.
              */
-            RawMatrix <T> ToRawMatrix();
+            RawMatrix <T> ToRawMatrix(kernels::RunContext &aContext);
 
             /**
              * @brief
@@ -166,17 +173,17 @@ namespace hcorepp {
             /// 2D vector of all the different tiles composing the matrix
             std::vector<std::vector<operators::Tile < T> *>> mMatrixTiles;
             /// Number of tiles inside the matrix in the row direction.
-            int64_t mRowTileCount;
+            size_t mRowTileCount;
             /// Number of tiles inside the matrix in the column direction.
-            int64_t mColTileCount;
+            size_t mColTileCount;
             /// Size of each tile in the row direction.
-            int64_t mRowTileSize;
+            size_t mRowTileSize;
             /// Size of each tile in the column direction.
-            int64_t mColTileSize;
+            size_t mColTileSize;
             /// Total size in row direction.
-            int64_t mM;
+            size_t mM;
             /// Total size in column direction.
-            int64_t mN;
+            size_t mN;
             /// The memory in bytes occupied by the tiles in the tile matrix.
             size_t mMemory;
         };

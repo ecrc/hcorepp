@@ -6,7 +6,7 @@
 #ifndef HCORE_HELPERS_GENERATORS_GENERATOR_HPP
 #define HCORE_HELPERS_GENERATORS_GENERATOR_HPP
 
-#include <cstdint>
+#include <blas/util.hh>
 
 namespace hcorepp {
     namespace helpers {
@@ -45,7 +45,7 @@ namespace hcorepp {
                  * The data pointer that will be filled with values, must be correctly allocated
                  * before passing it to this function.
                  */
-                virtual void GenerateValues(int64_t aRowNumber, int64_t aColNumber, int64_t aLeadingDimension,
+                virtual void GenerateValues(size_t aRowNumber, size_t aColNumber, size_t aLeadingDimension,
                                             T *apData) const = 0;
 
                 /**

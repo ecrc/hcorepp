@@ -49,7 +49,7 @@ namespace hcorepp {
              * @brief
              * Start the snapshot timing.
              */
-            void StartSnapshot();
+            void StartSnapshot(const std::string& aSnapshotName = "");
 
             /**
              * @brief

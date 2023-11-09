@@ -8,8 +8,12 @@
 
 #include <hcorepp/operators/interface/Tile.hpp>
 
-namespace hcorepp {
-    namespace operators {
+/** This definition specifies the maximum rank 'k-max' for all compressed tiles as a ratio of the tile's full_rank.
+ * This ratio will be used to derive the size of the data buffer holding the UV matrix,
+ * i,e Total size = (M * k-max) + (k-max * N) where k-max = max-rank-ratio * min(M,N) */
+#define MAX_RANK_RATIO 3
+
+namespace hcorepp::operators {
 
         /**
          * @brief
@@ -32,7 +36,36 @@ namespace hcorepp {
              * Compressed Tile default constructor
              *
              */
-            CompressedTile();
+            explicit CompressedTile() = default;
+
+            /**
+             * @brief
+             * Compressed Tile parameterized constructor taking an already compressed UV array.
+             *
+             * @param aNumOfRows
+             * NUm of tile rows, should be >=0
+             * @param aNumOfCols
+             * Num of tile cols, should be >=0
+             * @param apDataU
+             * Array U
+             * @param apDataV
+             * Array V
+             * @param aLeadingDim
+             * Data array leading dimension :
+             *              aLeadingDim >= aNumOfRows, if layout = blas::Layout::ColMajor, or
+             *              aLeadingDim >= aNumOfCols, if layout = blas::Layout::RowMajor.
+             * @param aRank
+             * Linear algebra rank of the tile. rk >= 0.
+             * @param aLayout
+             * The physical ordering of matrix elements in the data array buffer:
+             *              blas::Layout::ColMajor: column elements are 1-strided (default), or
+             *              blas::Layout::RowMajor: row elements are 1-strided.
+             *
+             * @param[in] aContext
+             * The context used to manage the data holder.
+             */
+            CompressedTile(size_t aNumOfRows, size_t aNumOfCols, T *apDataU, T *apDataV, size_t aLeadingDim,
+                           size_t aRank, blas::Layout aLayout, const hcorepp::kernels::RunContext &aContext);
 
             /**
              * @brief
@@ -43,22 +76,49 @@ namespace hcorepp {
              * @param aNumOfCols
              * Num of tile cols, should be >=0
              * @param apData
-             * Compressed data array of @aNumOfRows * @aNumOfCols matrix.
+             * Compressed data array of aNumOfRows * aNumOfCols matrix.
              * @param aLeadingDim
              * Data array leading dimension :
-             *              @aLeadingDim >= @aNumOfRows, if layout = blas::Layout::ColMajor, or
-             *              @aLeadingDim >= @aNumOfCols, if layout = blas::Layout::RowMajor.
+             *              aLeadingDim >= aNumOfRows, if layout = blas::Layout::ColMajor, or
+             *              aLeadingDim >= aNumOfCols, if layout = blas::Layout::RowMajor.
              * @param aRank
              * Linear algebra rank of the tile. rk >= 0.
-             * @param aAccuracy
-             * Numerical error threshold. accuracy >= 0.
+             * @param[in] aContext
+             * The context used to manage the data holder.
+             */
+            CompressedTile(size_t aNumOfRows, size_t aNumOfCols, T *apData, size_t aLeadingDim, size_t aRank,
+                           const hcorepp::kernels::RunContext &aContext) :
+                    CompressedTile(aNumOfRows, aNumOfCols, apData, aLeadingDim, aRank,
+                                   blas::Layout::ColMajor, aContext) {
+
+            }
+
+            /**
+             * @brief
+             * Compressed Tile parameterized constructor taking an already compressed UV array.
+             *
+             * @param aNumOfRows
+             * NUm of tile rows, should be >=0
+             * @param aNumOfCols
+             * Num of tile cols, should be >=0
+             * @param apData
+             * Compressed data array of aNumOfRows * aNumOfCols matrix.
+             * @param aLeadingDim
+             * Data array leading dimension :
+             *              aLeadingDim >= aNumOfRows, if layout = blas::Layout::ColMajor, or
+             *              aLeadingDim >= aNumOfCols, if layout = blas::Layout::RowMajor.
+             * @param aRank
+             * Linear algebra rank of the tile. rk >= 0.
              * @param aLayout
              * The physical ordering of matrix elements in the data array buffer:
              *              blas::Layout::ColMajor: column elements are 1-strided (default), or
              *              blas::Layout::RowMajor: row elements are 1-strided.
+             *
+             * @param[in] aContext
+             * The context used to manage the data holder.
              */
-            CompressedTile(int64_t aNumOfRows, int64_t aNumOfCols, T *apData, int64_t aLeadingDim, int64_t aRank,
-                           blas::Layout aLayout = blas::Layout::ColMajor);
+            CompressedTile(size_t aNumOfRows, size_t aNumOfCols, T *apData, size_t aLeadingDim, size_t aRank,
+                           blas::Layout aLayout, const hcorepp::kernels::RunContext &aContext);
 
             /**
              * @brief
@@ -82,9 +142,13 @@ namespace hcorepp {
              *
              * @param[in] aLayout
              * The matrix layout used.
+             *
+             * @param[in] aContext
+             * The context used to manage the data holder.
              */
-            CompressedTile(int64_t aNumOfRows, int64_t aNumOfCols, T *apData, int64_t aLeadingDim,
-                           const CompressionParameters &aParameters, blas::Layout aLayout = blas::Layout::ColMajor);
+            CompressedTile(size_t aNumOfRows, size_t aNumOfCols, T *apData, size_t aLeadingDim,
+                           const CompressionParameters &aParameters, blas::Layout aLayout,
+                           const hcorepp::kernels::RunContext &aContext);
 
 
             /**
@@ -102,6 +166,12 @@ namespace hcorepp {
              */
             ~CompressedTile();
 
+            T*
+            GetUMatrix() const;
+
+            T*
+            GetVMatrix() const;
+
             /**
              * @brief
              * Get data holder object describing specific tile subMatrix.
@@ -112,80 +182,14 @@ namespace hcorepp {
              * @return
              * DataHolder object describing the Tile sub matrix.
              */
-            std::reference_wrapper<dataunits::DataHolder < T>>
-            GetTileSubMatrix(
-            size_t aIndex
-            )
-            override;
-
-            /**
-             * @brief
-             * Get data holder object describing specific tile subMatrix.
-             *
-             * @param aIndex
-             * Matrix index (0 or 1).
-             *
-             * @return
-             * const DataHolder object describing the Tile sub matrix.
-             */
-            const std::reference_wrapper<dataunits::DataHolder < T>>
-            GetTileSubMatrix(
-            size_t aIndex
-            )
-            const override;
-
-            /**
-             * @brief
-             * Get number of matrices describing the tile.
-             *
-             * @return
-             * Number of matrices describing the tile (should be two).
-             */
-            size_t
-            GetNumberOfMatrices() const override;
+            T*
+            GetTileSubMatrix(size_t aIndex) const override;
 
             void
-            Gemm(T &aAlpha, dataunits::DataHolder <T> const &aTileA, blas::Op aTileAOp,
-                 dataunits::DataHolder <T> const &aTileB, blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank,
-                 const CompressionParameters &aCompressionParameters, kernels::RunContext &aContext) override;
-
-            /**
-             * @brief
-             * Set Rank of the tile.
-             *
-             * @param[in] aMatrixRank
-             * Tile rank.
-             */
-            void
-            SetTileRank(int64_t &aMatrixRank);
-
-            /**
-             * @brief
-             * Get the rank of tile.
-             *
-             * @return
-             * Tile rank.
-             */
-            int64_t
-            GetTileRank() const;
-
-            /**
-             * Get Compressed Tile num of rows.
-             *
-             * @return
-             * Num of rows.
-             */
-            size_t
-            GetNumOfRows() const;
-
-            /**
-             * Get compressed tile num of cols.
-             *
-             * @return
-             * Num of cols.
-             */
-            size_t
-            GetNumOfCols() const;
+            Gemm(T &aAlpha, dataunits::DataHolder<T> const &aTileA, blas::Op aTileAOp,
+                 dataunits::DataHolder<T> const &aTileB, blas::Op aTileBOp, T &aBeta, size_t aLdAu, size_t aARank,
+                 const CompressionParameters &aCompressionParameters, const kernels::RunContext &aContext,
+                 size_t &aFlops, dataunits::MemoryUnit<T>& aMemoryUnit, bool aCholesky = false) override;
 
             /**
              * @brief
@@ -197,27 +201,62 @@ namespace hcorepp {
              * @return
              * Tile stride.
              */
-            int64_t
+            size_t
             GetTileStride(size_t aIndex) const override;
 
             void
-            ReadjustTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim,
-                         int64_t aRank, kernels::RunContext &aContext) override;
+            ReadjustTile(size_t aNumOfRows, size_t aNumOfCols, T *aPdata, size_t aLeadingDim,
+                         size_t aRank, const kernels::RunContext &aContext) override;
+
+            void
+            DeleteData();
+
+            std::pair<TileMetadata *, T*> UnPackTile(const kernels::RunContext &aContext) override;
+
+            void
+            PackTile(TileMetadata aMetadata, T* aDataArray,
+                     const kernels::RunContext &aContext) override;
+
+            TileType
+            GetTileType() override {
+                return COMPRESSED;
+            }
+
+            [[nodiscard]] bool
+            isDense() const override {
+                return false;
+            }
+
+            [[nodiscard]] bool
+            isCompressed() const override {
+                return true;
+            };
+
+            [[nodiscard]] int64_t
+            GetNumOfSubMatrices() const override{
+                return 2;
+            }
+
+            [[nodiscard]] size_t GetULeadingDim() const {
+                return mULeadingDim;
+            }
+
+            [[nodiscard]] size_t GetVLeadingDim() const {
+                return mVLeadingDim;
+            }
+
+            void
+            ReadjustTileRank(size_t aRank, const kernels::RunContext &aContext) override;
+
+            void UpdateMetadata(TileMetadata aMetadata) override;
 
         private:
-            /** Vector of data arrays */
-            std::vector<dataunits::DataHolder < T> *>
-            mDataArrays;
-            /** Linear Algebra Matrix rank*/
-            int64_t mMatrixRank;
-            /** number of rows */
-            size_t mNumOfRows;
-            /** number of cols */
-            size_t mNumOfCols;
-            static const int64_t FULL_RANK_ = -1;
+            /** U Matrix Leading Dimension */
+            size_t mULeadingDim;
+            /** V Matrix Leading Dimension */
+            size_t mVLeadingDim;
         };
 
-    }
 }
 
 #endif //HCOREPP_OPERATORS_CONCRETE_COMPRESSED_HPP

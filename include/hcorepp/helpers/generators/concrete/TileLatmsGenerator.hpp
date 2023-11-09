@@ -42,9 +42,9 @@ namespace hcorepp {
                  * instead of one LATMS call for the whole matrix.
                  */
                 TileLatmsGenerator(const int64_t apSeed[4], int64_t aMode,
-                               blas::real_type<T> aCond, int64_t aTileSize);
+                               blas::real_type<T> aCond, size_t aTileSize);
 
-                void GenerateValues(int64_t aRowNumber, int64_t aColNumber, int64_t aLeadingDimension,
+                void GenerateValues(size_t aRowNumber, size_t aColNumber, size_t aLeadingDimension,
                                     T *apData) const override;
 
                 /**
@@ -61,7 +61,7 @@ namespace hcorepp {
                 /// The conditional value used.
                 blas::real_type<T> mCond;
                 /// Generation tile size
-                int64_t mTileSize;
+                size_t mTileSize;
             };
 
         }//namespace generators

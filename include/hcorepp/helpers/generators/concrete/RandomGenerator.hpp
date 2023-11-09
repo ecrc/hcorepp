@@ -7,6 +7,7 @@
 #define HCORE_HELPERS_GENERATORS_RANDOM_GENERATOR_HPP
 
 #include <hcorepp/helpers/generators/Generator.hpp>
+#include <blas/util.hh>
 
 namespace hcorepp {
     namespace helpers {
@@ -27,7 +28,7 @@ namespace hcorepp {
                  */
                 RandomGenerator();
 
-                void GenerateValues(int64_t aRowNumber, int64_t aColNumber, int64_t aLeadingDimension,
+                void GenerateValues(size_t aRowNumber, size_t aColNumber, size_t aLeadingDimension,
                                     T *apData) const override;
 
                 /**

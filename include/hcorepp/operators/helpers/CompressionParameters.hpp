@@ -6,7 +6,7 @@
 #ifndef HCOREPP_OPERATORS_HELPERS_COMPRESSION_PARAMETERS_HPP
 #define HCOREPP_OPERATORS_HELPERS_COMPRESSION_PARAMETERS_HPP
 
-#include <cstdint>
+#include <blas/util.hh>
 #include <hcorepp/common/Definitions.hpp>
 
 namespace hcorepp {
@@ -37,10 +37,13 @@ namespace hcorepp {
              *
              * @param[in] aFixedRank
              * Truncation to fixed rank. fixed_rk >= 0.
+             *
+             * @param[in] aOpType
+             * CompressionType
              */
-            CompressionParameters(double aAccuracy, bool aUseTrmm = false, bool aUseUngqr = true,
-                          bool aTruncatedSvd = false, int64_t aFixedRank = 0,
-                          common::CompressionType aOpType = common::CompressionType::LAPACK_GESDD);
+            CompressionParameters(double aAccuracy = 1e-4, bool aUseTrmm = false, bool aUseUngqr = true,
+                                  bool aTruncatedSvd = false, size_t aFixedRank = 0,
+                                  common::CompressionType aOpType = common::CompressionType::LAPACK_GESDD);
 
             /**
              * @brief
@@ -85,7 +88,7 @@ namespace hcorepp {
              * @return
              * Fixed rank if set, otherwise 0 is returned.
              */
-            int64_t
+            size_t
             GetFixedRank() const;
 
             /**
@@ -117,7 +120,7 @@ namespace hcorepp {
             /// Flag indicating usage for truncated SVD operations
             bool mTruncatedSvd;
             /// The fixed rank that is targeted by the SVD operation
-            int64_t mFixedRank;
+            size_t mFixedRank;
             /// The type of operation used for the SVD
             common::CompressionType mOpType;
             /// Numerical error thershold

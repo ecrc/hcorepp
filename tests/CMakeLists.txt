@@ -1,13 +1,13 @@
-set(HCOREPP_TESTFILES ${CMAKE_CURRENT_SOURCE_DIR}/test_main.cpp)
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/helpers/include)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/helpers/src)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/helpers)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/data-units)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/api)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/operators)
-
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/kernels)
 enable_testing()
 
 add_executable(hcorepp-tests ${HCOREPP_TESTFILES})
-target_link_libraries(hcorepp-tests ${PROJECT_NAME})
+target_include_directories(${PROJECT_NAME} PRIVATE ${CATCH2_INCLUDE_DIRS})
+target_link_libraries(hcorepp-tests PRIVATE ${CATCH2_LIBRARIES} ${PROJECT_NAME} Catch2::Catch2WithMain)
+catch_discover_tests(hcorepp-tests)

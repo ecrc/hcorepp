@@ -7,6 +7,7 @@
 #define HCOREPP_KERNELS_CUDA_RUN_CONTEXT_HPP
 
 #include <blas.hh>
+#include <memory>
 #include <cusolverDn.h>
 
 namespace hcorepp {
@@ -15,26 +16,40 @@ namespace hcorepp {
         public:
             RunContext();
 
+            RunContext(const RunContext &aContext);
+
+            blas::Queue &GetBLASQueue() const;
+
+            cudaStream_t GetStream() const;
+
+            cusolverDnHandle_t GetCusolverDnHandle() const;
+
+            int *GetInfoPointer() const;
+
+            void *RequestWorkBuffer(size_t aBufferSize) const;
+
+            void Sync() const;
+
+            RunContext ForkChildContext();
+
             ~RunContext();
 
-            blas::Queue &GetBLASQueue();
-
-            cudaStream_t GetStream();
-
-            cusolverDnHandle_t GetCusolverDnHandle();
-
-            int *GetInfoPointer();
-
-            void *RequestWorkBuffer(size_t aBufferSize);
-
-            void Sync();
+            /**
+             * @brief
+             * Check if Context supports OMP Parallelization
+             */
+            bool SupportsOMP() const {
+                return false;
+            }
 
         private:
-            size_t mWorkBufferSize;
-            void *mpWorkBuffer;
+            mutable size_t mWorkBufferSize;
+            mutable void *mpWorkBuffer;
             int *mpInfo;
-            blas::Queue *mpQueue;
+            std::shared_ptr<blas::Queue> mpQueue;
             cusolverDnHandle_t mCuSolverHandle;
+            bool mCuSolverOwner;
+            mutable bool mWorkSpaceOwner;
         };
     }//namespace kernels
 }//namespace hcorepp

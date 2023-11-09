@@ -11,7 +11,7 @@ NC='\033[0m'
 PROJECT_SOURCE_DIR=$(dirname "$0")
 ABSOLUE_PATH=$(dirname $(realpath "$0"))
 
-while getopts ":tevhi:cd" opt; do
+while getopts ":tevhi:scdx" opt; do
   case $opt in
   t) ##### Building tests enabled #####
     echo -e "${GREEN}Building tests enabled${NC}"
@@ -29,13 +29,21 @@ while getopts ":tevhi:cd" opt; do
     echo -e "${YELLOW}printing make with details${NC}"
     VERBOSE=ON
     ;;
-  c)##### Using cuda enabled #####
+  c) ##### Using cuda enabled #####
     echo -e "${YELLOW}Cuda enabled ${NC}"
     USE_CUDA=ON
     ;;
-  d)##### Using debug mode to build #####
+  s) ##### Using sycl enabled #####
+    echo -e "${YELLOW}Sycl enabled ${NC}"
+    USE_SYCL=ON
+    ;;
+  d) ##### Using debug mode to build #####
     echo -e "${RED}Debug mode enabled ${NC}"
     BUILD_TYPE="DEBUG"
+    ;;
+  x) ##### Using Timer for debugging enabled #####
+    echo -e "${BLUE}Timer for Debugging enabled ${NC}"
+    HCOREPP_USE_TIMER=ON
     ;;
   \?) ##### using default settings #####
     echo -e "${RED}Building tests disabled${NC}"
@@ -48,6 +56,7 @@ while getopts ":tevhi:cd" opt; do
     INSTALL_PATH="/usr/local"
     VERBOSE=OFF
     USE_CUDA="OFF"
+    USE_SYCL="OFF"
     BUILD_TYPE="RELEASE"
     ;;
   :) ##### Error in an option #####
@@ -63,10 +72,14 @@ while getopts ":tevhi:cd" opt; do
     echo ""
     printf "%20s %s\n" "-c :" "to enable cuda support on"
     echo ""
+    printf "%20s %s\n" "-s :" "to enable Sycl support on"
+    echo ""
     printf "%20s %s\n" "-d :" "to build in debug mode"
     echo ""
     printf "%20s %s\n" "-i [path] :" "specify installation path"
     printf "%20s %s\n" "" "default = /usr/local"
+    echo ""
+    printf "%20s %s\n" "-x :" "to enable Timer for debugging on"
     echo ""
     exit 1
     ;;
@@ -93,9 +106,19 @@ if [ -z "$USE_CUDA" ]; then
   echo -e "${RED}Using CUDA disabled${NC}"
 fi
 
+if [ -z "$USE_SYCL" ]; then
+  USE_SYCL="OFF"
+  echo -e "${RED}Using SYCL disabled${NC}"
+fi
+
 if [ -z "$BUILD_TYPE" ]; then
   BUILD_TYPE="RELEASE"
   echo -e "${GREEN}Building in release mode${NC}"
+fi
+
+if [ -z "$HCOREPP_USE_TIMER" ]; then
+  HCOREPP_USE_TIMER="OFF"
+  echo -e "${RED}Using Timer for debugging disabled${NC}"
 fi
 
 rm -rf bin/
@@ -107,6 +130,7 @@ cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
   -DCMAKE_INSTALL_PREFIX=$INSTALL_PATH \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=$VERBOSE \
   -H"${PROJECT_SOURCE_DIR}" \
-  -B"${PROJECT_SOURCE_DIR}/bin"\
-  -DUSE_CUDA="$USE_CUDA"
-
+  -B"${PROJECT_SOURCE_DIR}/bin" \
+  -DUSE_CUDA="$USE_CUDA" \
+  -DUSE_SYCL="$USE_SYCL" \
+  -DHCOREPP_USE_TIMER=$HCOREPP_USE_TIMER

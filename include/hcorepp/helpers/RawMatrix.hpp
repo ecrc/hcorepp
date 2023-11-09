@@ -35,7 +35,7 @@ namespace hcorepp {
              * Generator used to fill elements of the matrix.
              *
              */
-            RawMatrix(int64_t aM, int64_t aN, const generators::Generator<T> &aGenerator);
+            RawMatrix(size_t aM, size_t aN, const generators::Generator<T> &aGenerator);
 
             /**
              * @brief
@@ -47,7 +47,22 @@ namespace hcorepp {
              * @param[in] aN
              * The number of columns.
              */
-            RawMatrix(int64_t aM, int64_t aN);
+            RawMatrix(size_t aM, size_t aN);
+
+            /**
+             * @brief
+             * Constructor for an uninitialized matrix.
+             *
+             * @param[in] aM
+             * The number of rows.
+             *
+             * @param[in] aN
+             * The number of columns.
+             *
+             * @param[in] apData
+             * Buffer to set as data
+             */
+            RawMatrix(int64_t aM, int64_t aN, T *apData);
 
             /**
              * @brief
@@ -56,8 +71,8 @@ namespace hcorepp {
              * @param[in] aMatrix
              * The raw matrix that should be moved.
              */
-            RawMatrix(RawMatrix &&aMatrix)  noexcept : mM(std::move(aMatrix.mM)),
-                                             mN(std::move(aMatrix.mN)) {
+            RawMatrix(RawMatrix &&aMatrix) noexcept: mM(std::move(aMatrix.mM)),
+                                                     mN(std::move(aMatrix.mN)) {
                 this->mpData = aMatrix.mpData;
                 aMatrix.mpData = nullptr;
             }
@@ -69,7 +84,7 @@ namespace hcorepp {
              * @return
              * An integer representing the number of rows.
              */
-            int64_t GetM() const {
+            size_t GetM() const {
                 return this->mM;
             }
 
@@ -80,7 +95,7 @@ namespace hcorepp {
              * @return
              * An integer representing the number of columns.
              */
-            int64_t GetN() const {
+            size_t GetN() const {
                 return this->mN;
             }
 
@@ -150,13 +165,18 @@ namespace hcorepp {
              */
             ~RawMatrix();
 
+            void
+            Print(std::ostream &aOutputStream);
+
+            T Normmest(T *work);
+
         private:
             /// Data pointer for the actual matrix data.
             T *mpData;
             /// The number of rows.
-            int64_t mM;
+            size_t mM;
             /// The number of cols.
-            int64_t mN;
+            size_t mN;
         };
     }//namespace helpers
 }//namespace hcorepp

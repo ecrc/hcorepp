@@ -1,5 +1,6 @@
 set(HCOREPP_TESTFILES
 
+        ${CMAKE_CURRENT_SOURCE_DIR}/TestTilePacker.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/TestDenseTile.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/TestCompressedTile.cpp
 

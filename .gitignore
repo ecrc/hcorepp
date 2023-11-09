@@ -38,3 +38,11 @@ build*
 *.app
 
 .idea/*
+<<<<<<< Updated upstream
+g
+=======
+
+#DOXYGEN
+docs/html/
+docs/latex/
+>>>>>>> Stashed changes

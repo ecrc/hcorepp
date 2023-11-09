@@ -12,7 +12,7 @@ namespace hcorepp {
             this->StartSnapshot();
         }
 
-        void Timer::StartSnapshot() {
+        void Timer::StartSnapshot(const std::string& aSnapshotName) {
             this->mLastSnapshotTime = std::chrono::high_resolution_clock::now();
         }
 

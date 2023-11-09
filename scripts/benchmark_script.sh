@@ -8,10 +8,10 @@ if [[ $# -eq 0 ]] ; then
     exit 0
 fi
 
-acc="1e-1,1e-2,1e-4,1e-6,1e-8,1e-10"
-  
+acc="1e-4,1e-6,1e-8,1e-10"
+
 export HCOREPP_VERBOSE=ON
-TileCount=(1 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30)
+TileCount=(1 4 8 12 16 20)
 
 cat /dev/null > benchmark_ts1024_1.csv
 

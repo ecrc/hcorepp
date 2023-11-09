@@ -4,7 +4,7 @@
  */
 
 #include <iostream>
-#include <libraries/catch/catch.hpp>
+#include <catch2/catch_all.hpp>
 #include <cstring>
 
 namespace hcorepp {
@@ -12,12 +12,12 @@ namespace hcorepp {
 
         template<typename T>
         void
-        rowMajorToColumnMajor(T *pInputArray, int64_t aNumOfCols, int64_t aNumOfRows, T *pOutputArray) {
-            int index = 0;
+        rowMajorToColumnMajor(T *pInputArray, size_t aNumOfCols, size_t aNumOfRows, T *pOutputArray) {
+            size_t index = 0;
 
-            for (int64_t i = 0; i < aNumOfRows; i++) {
-                for (int64_t j = 0; j < aNumOfCols; j++) {
-                    int64_t out_index = j * aNumOfRows + i;
+            for (size_t i = 0; i < aNumOfRows; i++) {
+                for (size_t j = 0; j < aNumOfCols; j++) {
+                    size_t out_index = j * aNumOfRows + i;
                     pOutputArray[out_index] = pInputArray[index];
                     index++;
                 }
@@ -26,20 +26,20 @@ namespace hcorepp {
 
         template
         void
-        rowMajorToColumnMajor(float *pInputArray, int64_t aNumOfCols, int64_t aNumOfRows, float *pOutputArray);
+        rowMajorToColumnMajor(float *pInputArray, size_t aNumOfCols, size_t aNumOfRows, float *pOutputArray);
 
         template
         void
-        rowMajorToColumnMajor(double *pInputArray, int64_t aNumOfCols, int64_t aNumOfRows, double *pOutputArray);
+        rowMajorToColumnMajor(double *pInputArray, size_t aNumOfCols, size_t aNumOfRows, double *pOutputArray);
 
         template<typename T>
         void
-        columnMajorToRowMajor(T *pInputArray, int64_t aNumOfCols, int64_t aNumOfRows, T *pOutputArray) {
+        columnMajorToRowMajor(T *pInputArray, size_t aNumOfCols, size_t aNumOfRows, T *pOutputArray) {
 
-            int index = 0;
-            for (int64_t i = 0; i < aNumOfCols; i++) {
-                for (int64_t j = 0; j < aNumOfRows; j++) {
-                    int64_t in_index = i + (j * aNumOfCols);
+            size_t index = 0;
+            for (size_t i = 0; i < aNumOfCols; i++) {
+                for (size_t j = 0; j < aNumOfRows; j++) {
+                    size_t in_index = i + (j * aNumOfCols);
                     pOutputArray[in_index] = pInputArray[index];
                     index++;
                 }
@@ -48,21 +48,21 @@ namespace hcorepp {
 
         template
         void
-        columnMajorToRowMajor(float *pInputArray, int64_t aNumOfCols, int64_t aNumOfRows, float *pOutputArray);
+        columnMajorToRowMajor(float *pInputArray, size_t aNumOfCols, size_t aNumOfRows, float *pOutputArray);
 
         template
         void
-        columnMajorToRowMajor(double *pInputArray, int64_t aNumOfCols, int64_t aNumOfRows, double *pOutputArray);
+        columnMajorToRowMajor(double *pInputArray, size_t aNumOfCols, size_t aNumOfRows, double *pOutputArray);
 
         template<typename T>
         void
-        printMatrix(T *pInput, int64_t aNumOfRows, int64_t aNumOfCols) {
+        printMatrix(T *pInput, size_t aNumOfRows, size_t aNumOfCols) {
 
-            int index = 0;
+            size_t index = 0;
 
-            for (int i = 0; i < aNumOfRows; i++) {
+            for (size_t i = 0; i < aNumOfRows; i++) {
                 std::cout << "{ ";
-                for (int j = 0; j < aNumOfCols; j++) {
+                for (size_t j = 0; j < aNumOfCols; j++) {
                     index = i * aNumOfCols + j;
                     std::cout << pInput[index] << ", ";
                 }
@@ -72,67 +72,84 @@ namespace hcorepp {
 
         template
         void
-        printMatrix(float *pInput, int64_t aNumOfRows, int64_t aNumOfCols);
+        printMatrix(float *pInput, size_t aNumOfRows, size_t aNumOfCols);
 
         template
         void
-        printMatrix(double *pInput, int64_t aNumOfRows, int64_t aNumOfCols);
+        printMatrix(double *pInput, size_t aNumOfRows, size_t aNumOfCols);
 
         template<typename T>
         void
-        validateOutput(T *pInput, int64_t aNumOfRows, int64_t aNumOfCols, T *pExpectedOutput) {
+        validateOutput(T *pInput, size_t aNumOfRows, size_t aNumOfCols, T *pExpectedOutput) {
 
-            for (int i = 0; i < aNumOfRows * aNumOfCols; i++) {
-                REQUIRE(pInput[i] == Approx(pExpectedOutput[i]).epsilon(1e-2));
+            for (size_t i = 0; i < aNumOfRows * aNumOfCols; i++) {
+                REQUIRE(pInput[i] == Catch::Approx(pExpectedOutput[i]).epsilon(1e-2));
+            }
+        }
+
+        template<typename T>
+        void
+        validateOutputLenient(T *pInput, size_t aNumOfRows, size_t aNumOfCols, T *pExpectedOutput) {
+
+            for (size_t i = 0; i < aNumOfRows * aNumOfCols; i++) {
+                REQUIRE(std::abs(pInput[i] - pExpectedOutput[i]) <= 1.5);
             }
         }
 
         template
         void
-        validateOutput(float *pInput, int64_t aNumOfRows, int64_t aNumOfCols, float *pExpectedOutput);
+        validateOutput(float *pInput, size_t aNumOfRows, size_t aNumOfCols, float *pExpectedOutput);
 
         template
         void
-        validateOutput(double *pInput, int64_t aNumOfRows, int64_t aNumOfCols, double *pExpectedOutput);
+        validateOutput(double *pInput, size_t aNumOfRows, size_t aNumOfCols, double *pExpectedOutput);
+
+        template
+        void
+        validateOutputLenient(float *pInput, size_t aNumOfRows, size_t aNumOfCols, float *pExpectedOutput);
+
+        template
+        void
+        validateOutputLenient(double *pInput, size_t aNumOfRows, size_t aNumOfCols, double *pExpectedOutput);
 
 
         template<typename T>
         void
-        validateCompressedOutput(T *pInputA, int64_t aNumOfRowsA, int64_t aNumOfColsA, T *pExpectedOutputA,
-                                 T *pInputB, int64_t aNumOfRowsB, int64_t aNumOfColsB, T *pExpectedOutputB) {
+        validateCompressedOutput(T *pInputA, size_t aNumOfRowsA, size_t aNumOfColsA, T *pExpectedOutputA,
+                                 T *pInputB, size_t aNumOfRowsB, size_t aNumOfColsB, T *pExpectedOutputB) {
             bool sign_reversed = false;
 
-            if (pInputA[0] == Approx(pExpectedOutputA[0]).epsilon(1e-2)) {
+            if (pInputA[0] == Catch::Approx(pExpectedOutputA[0]).epsilon(1e-2)) {
                 sign_reversed = false;
-            } else if (pInputA[0] == Approx(-pExpectedOutputA[0]).epsilon(1e-2)) {
+            } else if (pInputA[0] == Catch::Approx(-pExpectedOutputA[0]).epsilon(1e-2)) {
                 sign_reversed = true;
             }
 
-            for (int i = 0; i < aNumOfRowsA * aNumOfColsA; i++) {
+            for (size_t i = 0; i < aNumOfRowsA * aNumOfColsA; i++) {
                 if (sign_reversed) {
-                    REQUIRE(pInputA[i] == Approx(-pExpectedOutputA[i]).epsilon(1e-2));
+                    REQUIRE(pInputA[i] == Catch::Approx(-pExpectedOutputA[i]).epsilon(1e-2));
                 } else {
-                    REQUIRE(pInputA[i] == Approx(pExpectedOutputA[i]).epsilon(1e-2));
+                    REQUIRE(pInputA[i] == Catch::Approx(pExpectedOutputA[i]).epsilon(1e-2));
                 }
             }
 
-            for (int i = 0; i < aNumOfRowsB * aNumOfColsB; i++) {
+            for (size_t i = 0; i < aNumOfRowsB * aNumOfColsB; i++) {
                 if (sign_reversed) {
-                    REQUIRE(pInputB[i] == Approx(-pExpectedOutputB[i]).epsilon(1e-2));
+                    REQUIRE(pInputB[i] == Catch::Approx(-pExpectedOutputB[i]).epsilon(1e-2));
                 } else {
-                    REQUIRE(pInputB[i] == Approx(pExpectedOutputB[i]).epsilon(1e-2));
+                    REQUIRE(pInputB[i] == Catch::Approx(pExpectedOutputB[i]).epsilon(1e-2));
                 }
             }
         }
 
         template
         void
-        validateCompressedOutput(float *pInputA, int64_t aNumOfRowsA, int64_t aNumOfColsA, float *pExpectedOutputA,
-                                 float *pInputB, int64_t aNumOfRowsB, int64_t aNumOfColsB, float *pExpectedOutputB);
+        validateCompressedOutput(float *pInputA, size_t aNumOfRowsA, size_t aNumOfColsA, float *pExpectedOutputA,
+                                 float *pInputB, size_t aNumOfRowsB, size_t aNumOfColsB, float *pExpectedOutputB);
 
         template
         void
-        validateCompressedOutput(double *pInputA, int64_t aNumOfRowsA, int64_t aNumOfColsA, double *pExpectedOutputA,
-                                 double *pInputB, int64_t aNumOfRowsB, int64_t aNumOfColsB, double *pExpectedOutputB);
+        validateCompressedOutput(double *pInputA, size_t aNumOfRowsA, size_t aNumOfColsA, double *pExpectedOutputA,
+                                 double *pInputB, size_t aNumOfRowsB, size_t aNumOfColsB, double *pExpectedOutputB);
     }
 }

@@ -4,12 +4,13 @@
  */
 
 #include <hcorepp/operators/helpers/CompressionParameters.hpp>
+#include <cstddef>
 
 namespace hcorepp {
     namespace operators {
         CompressionParameters::CompressionParameters(double aAccuracy, bool aUseTrmm, bool aUseUngqr,
-                                     bool aTruncatedSvd, int64_t aFixedRank,
-                                     common::CompressionType aOpType) {
+                                                     bool aTruncatedSvd, size_t aFixedRank,
+                                                     common::CompressionType aOpType) {
             mUseTrmm = aUseTrmm;
             mUseUngqr = aUseUngqr;
             mTruncatedSvd = aTruncatedSvd;
@@ -34,7 +35,7 @@ namespace hcorepp {
             return mTruncatedSvd;
         }
 
-        int64_t CompressionParameters::GetFixedRank() const {
+        size_t CompressionParameters::GetFixedRank() const {
             return mFixedRank;
         }
 

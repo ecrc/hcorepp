@@ -20,10 +20,10 @@ namespace hcorepp {
             }
 
             template<typename T>
-            void RandomGenerator<T>::GenerateValues(int64_t aRowNumber, int64_t aColNumber, int64_t aLeadingDimension,
+            void RandomGenerator<T>::GenerateValues(size_t aRowNumber, size_t aColNumber, size_t aLeadingDimension,
                                                    T *apData) const {
-                for (int i = 0; i < aColNumber; i++) {
-                    for (int j = 0; j < aRowNumber; j++) {
+                for (size_t i = 0; i < aColNumber; i++) {
+                    for (size_t j = 0; j < aRowNumber; j++) {
                         apData[i * aLeadingDimension + j] = (float) rand() / RAND_MAX;
                     }
                 }

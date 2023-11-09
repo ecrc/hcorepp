@@ -104,7 +104,7 @@ pipeline {
                     cd bin
                     make docs
                     '''
-                 publishHTML( target: [allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'bin/docs/build/html', reportFiles: 'index.html', reportName: 'Doxygen Documentation', reportTitles: ''] )
+                 publishHTML( target: [allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'docs/html', reportFiles: 'index.html', reportName: 'Doxygen Documentation', reportTitles: ''] )
              }
         }
     }

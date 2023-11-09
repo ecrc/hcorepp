@@ -38,7 +38,7 @@ namespace hcorepp {
                 LatmsGenerator(const int64_t apSeed[4], int64_t aMode,
                                blas::real_type<T> aCond);
 
-                void GenerateValues(int64_t aRowNumber, int64_t aColNumber, int64_t aLeadingDimension,
+                void GenerateValues(size_t aRowNumber, size_t aColNumber, size_t aLeadingDimension,
                                     T *apData) const override;
 
                 /**

@@ -9,22 +9,31 @@ namespace hcorepp {
     namespace dataunits {
 
         template<typename T>
-        DataHolder<T>::DataHolder(size_t aRows, size_t aCols, size_t aLeadingDim, T *apData) {
+        DataHolder<T>::DataHolder(size_t aRows, size_t aCols, size_t aLeadingDim, T *apData,
+                                  const hcorepp::kernels::RunContext &aContext, bool aMemoryOwnership) : mRunContext(
+                aContext) {
+
             mNumOfRows = aRows;
             mNumOfCols = aCols;
             mLeadingDimension = aLeadingDim;
-            mpDataArray = hcorepp::memory::AllocateArray<T>(mNumOfRows * mNumOfCols);
-            if (apData == nullptr) {
-                hcorepp::memory::Memset<T>(mpDataArray, 0, mNumOfRows * mNumOfCols);
+            mMemoryOwnership = aMemoryOwnership;
+            if (!mMemoryOwnership && apData != nullptr) {
+                mpDataArray = apData;
             } else {
-                hcorepp::memory::Memcpy(mpDataArray, apData, mNumOfRows * mNumOfCols,
-                                        memory::MemoryTransfer::AUTOMATIC);
+                mpDataArray = hcorepp::memory::AllocateArray<T>(mNumOfRows * mNumOfCols, mRunContext);
+                if (apData == nullptr) {
+                    hcorepp::memory::Memset<T>(mpDataArray, 0, mNumOfRows * mNumOfCols, mRunContext);
+                } else {
+                    hcorepp::memory::Memcpy<T>(mpDataArray, apData, mNumOfRows * mNumOfCols,
+                                               mRunContext, memory::MemoryTransfer::AUTOMATIC, false);
+                }
             }
         }
 
         template<typename T>
         DataHolder<T>::~DataHolder() {
-            hcorepp::memory::DestroyArray<T>(mpDataArray);
+            if (mMemoryOwnership)
+                hcorepp::memory::DestroyArray<T>(mpDataArray, mRunContext);
         }
 
         template<typename T>
@@ -55,22 +64,37 @@ namespace hcorepp {
 
         template<typename T>
         void DataHolder<T>::Resize(size_t aRows, size_t aCols, size_t aLeadingDim) {
+            if (mNumOfRows * mNumOfCols == aRows * aCols) {
+                mNumOfRows = aRows;
+                mNumOfCols = aCols;
+                mLeadingDimension = aLeadingDim;
+
+                return;
+            }
             mNumOfRows = aRows;
             mNumOfCols = aCols;
             mLeadingDimension = aLeadingDim;
-            hcorepp::memory::DestroyArray(mpDataArray);
-            mpDataArray = hcorepp::memory::AllocateArray<T>(mNumOfRows * mNumOfCols);
-            hcorepp::memory::Memset<T>(mpDataArray, 0, mNumOfRows * mNumOfCols);
+            if (!mMemoryOwnership) {
+                return;
+            }
+            hcorepp::memory::DestroyArray(mpDataArray, mRunContext);
+            mpDataArray = hcorepp::memory::AllocateArray<T>(mNumOfRows * mNumOfCols, mRunContext);
+            hcorepp::memory::Memset<T>(mpDataArray, 0, mNumOfRows * mNumOfCols, mRunContext);
         }
 
         template<typename T>
-        void DataHolder<T>::Print(std::ostream &aOutStream) const {
+        void DataHolder<T>::Print(std::ostream &aOutStream) {
             T *temp_array = new T[mNumOfCols * mNumOfRows];
-            hcorepp::memory::Memcpy(temp_array, mpDataArray, mNumOfRows * mNumOfCols,
-                                    memory::MemoryTransfer::DEVICE_TO_HOST);
+            hcorepp::memory::Memcpy<T>(temp_array, mpDataArray, mNumOfRows * mNumOfCols,
+                                       mRunContext,
+                                       memory::MemoryTransfer::DEVICE_TO_HOST, true);
             aOutStream << "Data : " << std::endl;
-            for (int i = 0; i < mNumOfRows * mNumOfCols; i++) {
-                aOutStream << temp_array[i] << ", ";
+            aOutStream << "Rows : " << mNumOfRows << " Cols : " << mNumOfCols << std::endl;
+            for (size_t i = 0; i < mNumOfRows * mNumOfCols; i++) {
+                char str[10240];
+
+                sprintf(str, "%f, ", temp_array[i]);
+                aOutStream << str;
             }
             std::string limiter(20, '=');
             aOutStream << std::endl << limiter << std::endl;

@@ -15,7 +15,8 @@ namespace hcorepp {
     namespace helpers {
 
         template<typename T>
-        TileMatrix<T>::TileMatrix(const RawMatrix<T> &aRawMatrix, int64_t aRowTileSize, int64_t aColumnTileSize) :
+        TileMatrix<T>::TileMatrix(const RawMatrix<T> &aRawMatrix, size_t aRowTileSize, size_t aColumnTileSize,
+                                  kernels::RunContext &aContext) :
                 mColTileSize(aColumnTileSize), mRowTileSize(aRowTileSize), mRowTileCount(0), mColTileCount(0),
                 mM(aRawMatrix.GetM()), mN(aRawMatrix.GetN()) {
             // Get number of tiles in first-direction.
@@ -32,32 +33,70 @@ namespace hcorepp {
             mColTileCount = nt;
             mMemory = 0;
             this->mMatrixTiles.resize(nt, std::vector<operators::Tile<T> *>(mt, nullptr));
-#pragma omp parallel for collapse(2) default(none) shared(nt, mt, aColumnTileSize, aRowTileSize, aRawMatrix)
-            for (int i = 0; i < nt; i++) {
-                for (int j = 0; j < mt; j++) {
+            std::vector<T *> to_delete;
+            for (size_t i = 0; i < nt; i++) {
+                for (size_t j = 0; j < mt; j++) {
                     auto tile_cols = std::min(aColumnTileSize, aRawMatrix.GetN() - i * aColumnTileSize);
                     auto tile_rows = std::min(aRowTileSize, aRawMatrix.GetM() - j * aRowTileSize);
                     auto tile_data = new T[tile_rows * tile_cols];
-                    auto st_idx = i * aColumnTileSize * aRawMatrix.GetM() + j * aRowTileSize;
-                    auto org_data = &aRawMatrix.GetData()[st_idx];
-                    for (int jj = 0; jj < tile_cols; jj++) {
-                        for (int ii = 0; ii < tile_rows; ii++) {
-                            tile_data[ii + jj * tile_rows] = org_data[ii + jj * aRawMatrix.GetM()];
-                        }
-                    }
-                    this->mMatrixTiles[i][j] = new operators::DenseTile<T>(tile_rows, tile_cols,
-                                                                           tile_data, tile_rows,
-                                                                           blas::Layout::ColMajor);
-
-                    delete[] tile_data;
+                    to_delete.push_back(tile_data);
                 }
             }
-	    mMemory = aRawMatrix.GetM() * aRawMatrix.GetN() * sizeof(T);
+            if(aContext.SupportsOMP()) {
+#pragma omp parallel default(none) shared(nt, mt, aColumnTileSize, aRowTileSize, aRawMatrix, to_delete, aContext)
+                {
+#pragma omp  for collapse(2)
+                    for (size_t i = 0; i < nt; i++) {
+                        for (size_t j = 0; j < mt; j++) {
+                            auto tile_cols = std::min(aColumnTileSize, aRawMatrix.GetN() - i * aColumnTileSize);
+                            auto tile_rows = std::min(aRowTileSize, aRawMatrix.GetM() - j * aRowTileSize);
+                            auto st_idx = i * aColumnTileSize * aRawMatrix.GetM() + j * aRowTileSize;
+                            auto org_data = &aRawMatrix.GetData()[st_idx];
+                            auto tile_data = to_delete[i * mt + j];
+                            for (size_t jj = 0; jj < tile_cols; jj++) {
+                                for (size_t ii = 0; ii < tile_rows; ii++) {
+                                    tile_data[ii + jj * tile_rows] = org_data[ii + jj * aRawMatrix.GetM()];
+                                }
+                            }
+                            this->mMatrixTiles[i][j] = new operators::DenseTile<T>(tile_rows, tile_cols,
+                                                                                   tile_data, tile_rows,
+                                                                                   blas::Layout::ColMajor,
+                                                                                   aContext);
+                        }
+                    }
+                }
+            }
+            else {
+                for (size_t i = 0; i < nt; i++) {
+                    for (size_t j = 0; j < mt; j++) {
+                        auto tile_cols = std::min(aColumnTileSize, aRawMatrix.GetN() - i * aColumnTileSize);
+                        auto tile_rows = std::min(aRowTileSize, aRawMatrix.GetM() - j * aRowTileSize);
+                        auto st_idx = i * aColumnTileSize * aRawMatrix.GetM() + j * aRowTileSize;
+                        auto org_data = &aRawMatrix.GetData()[st_idx];
+                        auto tile_data = to_delete[i * mt + j];
+                        for (size_t jj = 0; jj < tile_cols; jj++) {
+                            for (size_t ii = 0; ii < tile_rows; ii++) {
+                                tile_data[ii + jj * tile_rows] = org_data[ii + jj * aRawMatrix.GetM()];
+                            }
+                        }
+                        this->mMatrixTiles[i][j] = new operators::DenseTile<T>(tile_rows, tile_cols,
+                                                                               tile_data, tile_rows,
+                                                                               blas::Layout::ColMajor,
+                                                                               aContext);
+                    }
+                }
+            }
+            aContext.Sync();
+            for (auto ptr : to_delete) {
+                delete[] ptr;
+            }
+            mMemory = aRawMatrix.GetM() * aRawMatrix.GetN() * sizeof(T);
         }
 
         template<typename T>
-        TileMatrix<T>::TileMatrix(const RawMatrix<T> &aRawMatrix, int64_t aRowTileSize, int64_t aColumnTileSize,
-                                  const operators::CompressionParameters &aParameters) :
+        TileMatrix<T>::TileMatrix(const RawMatrix<T> &aRawMatrix, size_t aRowTileSize, size_t aColumnTileSize,
+                                  const operators::CompressionParameters &aParameters,
+                                  kernels::RunContext &aContext) :
                 mColTileSize(aColumnTileSize), mRowTileSize(aRowTileSize), mRowTileCount(0), mColTileCount(0),
                 mM(aRawMatrix.GetM()), mN(aRawMatrix.GetN()) {
             // Get number of tiles in first-direction.
@@ -73,88 +112,134 @@ namespace hcorepp {
             mRowTileCount = mt;
             mColTileCount = nt;
             this->mMatrixTiles.resize(nt, std::vector<operators::Tile<T> *>(mt, nullptr));
-#pragma omp parallel for collapse(2) default(none) shared(nt, mt, aColumnTileSize, aRowTileSize, aRawMatrix, aParameters)
-            for (int i = 0; i < nt; i++) { 
-                for (int j = 0; j < mt; j++) {
+            std::vector<T *> to_delete;
+            for (size_t i = 0; i < nt; i++) {
+                for (size_t j = 0; j < mt; j++) {
                     auto tile_cols = std::min(aColumnTileSize, aRawMatrix.GetN() - i * aColumnTileSize);
                     auto tile_rows = std::min(aRowTileSize, aRawMatrix.GetM() - j * aRowTileSize);
                     auto tile_data = new T[tile_rows * tile_cols];
-                    auto st_idx = i * aColumnTileSize * aRawMatrix.GetM() + j * aRowTileSize;
-                    auto org_data = &aRawMatrix.GetData()[st_idx];
-                    for (int jj = 0; jj < tile_cols; jj++) {
-                        for (int ii = 0; ii < tile_rows; ii++) {
-                            tile_data[ii + jj * tile_rows] = org_data[ii + jj * aRawMatrix.GetM()];
-                        }
-                    }
-
-                    this->mMatrixTiles[i][j] = new operators::CompressedTile<T>(tile_rows, tile_cols,
-                                                                                tile_data, tile_rows,
-                                                                                aParameters,
-                                                                                blas::Layout::ColMajor);
-
-                    delete[] tile_data; 
+                    to_delete.push_back(tile_data);
                 }
             }
+            if(aContext.SupportsOMP()) {
+#pragma omp parallel default(none) shared(nt, mt, aColumnTileSize, aRowTileSize, aRawMatrix, aParameters, to_delete, aContext)
+                {
+#pragma omp for  collapse(2)
+                    for (size_t i = 0; i < nt; i++) {
+                        for (size_t j = 0; j < mt; j++) {
+                            auto tile_cols = std::min(aColumnTileSize, aRawMatrix.GetN() - i * aColumnTileSize);
+                            auto tile_rows = std::min(aRowTileSize, aRawMatrix.GetM() - j * aRowTileSize);
+                            auto tile_data = to_delete[i * mt + j];
+                            auto st_idx = i * aColumnTileSize * aRawMatrix.GetM() + j * aRowTileSize;
+                            auto org_data = &aRawMatrix.GetData()[st_idx];
+                            for (size_t jj = 0; jj < tile_cols; jj++) {
+                                for (size_t ii = 0; ii < tile_rows; ii++) {
+                                    tile_data[ii + jj * tile_rows] = org_data[ii + jj * aRawMatrix.GetM()];
+                                }
+                            }
+
+                            this->mMatrixTiles[i][j] = new operators::CompressedTile<T>(tile_rows, tile_cols,
+                                                                                        tile_data, tile_rows,
+                                                                                        aParameters,
+                                                                                        blas::Layout::ColMajor,
+                                                                                        aContext);
+                        }
+                    }
+                }
+            }
+            else {
+                for (size_t i = 0; i < nt; i++) {
+                    for (size_t j = 0; j < mt; j++) {
+                        auto tile_cols = std::min(aColumnTileSize, aRawMatrix.GetN() - i * aColumnTileSize);
+                        auto tile_rows = std::min(aRowTileSize, aRawMatrix.GetM() - j * aRowTileSize);
+                        auto tile_data = to_delete[i * mt + j];
+                        auto st_idx = i * aColumnTileSize * aRawMatrix.GetM() + j * aRowTileSize;
+                        auto org_data = &aRawMatrix.GetData()[st_idx];
+                        for (size_t jj = 0; jj < tile_cols; jj++) {
+                            for (size_t ii = 0; ii < tile_rows; ii++) {
+                                tile_data[ii + jj * tile_rows] = org_data[ii + jj * aRawMatrix.GetM()];
+                            }
+                        }
+
+                        this->mMatrixTiles[i][j] = new operators::CompressedTile<T>(tile_rows, tile_cols,
+                                                                                    tile_data, tile_rows,
+                                                                                    aParameters,
+                                                                                    blas::Layout::ColMajor,
+                                                                                    aContext);
+                    }
+                }
+            }
+            aContext.Sync();
+            for (auto ptr : to_delete) {
+                delete[] ptr;
+            }
             mMemory = 0;
-            for (int i = 0; i < nt; i++) { 
-                for (int j = 0; j < mt; j++) {
+            for (size_t i = 0; i < nt; i++) {
+                for (size_t j = 0; j < mt; j++) {
                     auto tile_cols = std::min(aColumnTileSize, aRawMatrix.GetN() - i * aColumnTileSize);
                     auto tile_rows = std::min(aRowTileSize, aRawMatrix.GetM() - j * aRowTileSize);
                     mMemory += ((tile_rows + tile_cols) *
-                            this->mMatrixTiles[i][j]->GetTileSubMatrix(1).get().GetNumOfRows() * sizeof(T));
+                            ((operators::CompressedTile<T>*)(this->mMatrixTiles[i][j]))->GetTileRank() * sizeof(T));
                 }
             }
         }
 
         template<typename T>
-        RawMatrix<T> TileMatrix<T>::ToRawMatrix() {
+        RawMatrix<T> TileMatrix<T>::ToRawMatrix(kernels::RunContext &aContext) {
             size_t full_array_index;
             size_t tile_index_r;
             size_t tile_index_c;
             size_t index_in_tile;
             RawMatrix<T> ret(this->mM, this->mN);
             auto data_ptr = ret.GetData();
-            for (int64_t cols = 0; cols < mN; cols += mColTileSize) {
-                for (int64_t rows = 0; rows < mM; rows += mRowTileSize) {
-                    int64_t tile_rows = std::min(mRowTileSize, mM - rows);
-                    int64_t tile_cols = std::min(mColTileSize, mN - cols);
+            for (size_t cols = 0; cols < mN; cols += mColTileSize) {
+                for (size_t rows = 0; rows < mM; rows += mRowTileSize) {
+                    size_t tile_rows = std::min(mRowTileSize, mM - rows);
+                    size_t tile_cols = std::min(mColTileSize, mN - cols);
                     tile_index_r = rows / mRowTileSize;
                     tile_index_c = cols / mColTileSize;
-                    auto tile = this->mMatrixTiles[tile_index_c][tile_index_r];
+                    auto &tile = this->mMatrixTiles[tile_index_c][tile_index_r];
                     T *temp;
-                    if (tile->GetNumberOfMatrices() == 1) {
-                        auto &sub_matrix = tile->GetTileSubMatrix(0).get();
-                        int n = sub_matrix.GetNumOfCols();
-                        int m = sub_matrix.GetNumOfRows();
+                    if (tile->isDense()) {
+                        dataunits::DataHolder<T>& sub_matrix = tile->GetDataHolder();
+                        size_t n = sub_matrix.GetNumOfCols();
+                        size_t m = sub_matrix.GetNumOfRows();
                         temp = new T[n * m];
                         hcorepp::memory::Memcpy<T>(temp, sub_matrix.GetData(), n * m,
+                                                   aContext,
                                                    hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+                        aContext.Sync();
                     } else {
-                        auto m = tile->GetTileSubMatrix(0).get().GetNumOfRows();
-                        auto n = tile->GetTileSubMatrix(1).get().GetNumOfCols();
-                        auto rank = tile->GetTileSubMatrix(0).get().GetNumOfCols();
-                        auto &sub0 = tile->GetTileSubMatrix(0).get();
-                        auto &sub1 = tile->GetTileSubMatrix(1).get();
-                        size_t num_elements = sub0.GetNumOfCols() * sub0.GetNumOfRows();
+                        auto m = tile->GetNumOfRows();
+                        auto n = tile->GetNumOfCols();
+                        auto rank = ((operators::CompressedTile<T>*)tile)->GetTileRank();
+                        auto *u = ((operators::CompressedTile<T>*)tile)->GetUMatrix();
+                        auto *v = ((operators::CompressedTile<T>*)tile)->GetVMatrix();
+                        auto uld = ((operators::CompressedTile<T>*)tile)->GetULeadingDim();
+                        auto vld = ((operators::CompressedTile<T>*)tile)->GetVLeadingDim();
+                        size_t num_elements = m * rank;
                         T *cu = new T[num_elements];
-                        hcorepp::memory::Memcpy<T>(cu, sub0.GetData(), num_elements,
+                        hcorepp::memory::Memcpy<T>(cu, u, num_elements,
+                                                   aContext,
                                                    hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
-                        num_elements = sub1.GetNumOfCols() * sub1.GetNumOfRows();
+                        num_elements = rank * n;
                         T *cv = new T[num_elements];
-                        hcorepp::memory::Memcpy<T>(cv, sub1.GetData(), num_elements,
+                        hcorepp::memory::Memcpy<T>(cv, v, num_elements,
+                                                   aContext,
                                                    hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+                        aContext.Sync();
                         temp = new T[n * m];
                         memset(temp, 0, m * n * sizeof(T));
 
                         blas::gemm(blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
                                    m, n, rank, 1.0, cu,
-                                   tile->GetTileSubMatrix(0).get().GetLeadingDim(), cv,
-                                   tile->GetTileSubMatrix(1).get().GetLeadingDim(), 0.0, temp, m);
+                                   uld, cv,
+                                   vld, 0.0, temp, m);
                         delete[] cu;
                         delete[] cv;
                     }
-                    for (int i = 0; i < tile_cols; i++) {
-                        for (int j = 0; j < tile_rows; j++) {
+                    for (size_t i = 0; i < tile_cols; i++) {
+                        for (size_t j = 0; j < tile_rows; j++) {
                             index_in_tile = i * tile_rows + j;
                             full_array_index = rows + j + ((cols + i) * mM);
                             data_ptr[full_array_index] = temp[index_in_tile];

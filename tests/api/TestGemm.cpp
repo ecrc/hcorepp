@@ -3,7 +3,7 @@
  *                     All rights reserved.
  */
 
-#include <libraries/catch/catch.hpp>
+#include <catch2/catch_all.hpp>
 #include <iostream>
 
 #include <hcorepp/api/HCore.hpp>
@@ -23,7 +23,7 @@ using namespace hcorepp::test_helpers;
 
 template<typename T>
 void TEST_GEMM() {
-
+    auto& context = hcorepp::kernels::ContextManager::GetInstance().GetContext();
     SECTION("Gemm test 1") {
         std::cout << "Test1: DDD \n =========================== \n";
 
@@ -59,25 +59,27 @@ void TEST_GEMM() {
         rowMajorToColumnMajor<T>((T *) matrix_A, n, m, a_input);
         rowMajorToColumnMajor<T>((T *) matrix_B, n, m, b_input);
 
-        DenseTile<T> dense_tile_A(m, n, (T *) a_input, lda, blas::Layout::ColMajor);
+        DenseTile<T> dense_tile_A(m, n, (T *) a_input, lda, blas::Layout::ColMajor, context);
 
-        DenseTile<T> dense_tile_B(m, n, (T *) b_input, ldb, blas::Layout::ColMajor);
+        DenseTile<T> dense_tile_B(m, n, (T *) b_input, ldb, blas::Layout::ColMajor, context);
 
-        DenseTile<T> dense_tile_C(m, n, (T *) nullptr, ldc, blas::Layout::ColMajor);
+        DenseTile<T> dense_tile_C(m, n, (T *) nullptr, ldc, blas::Layout::ColMajor, context);
 
+        size_t flops = 0;
+        MemoryHandler<T>& memoryHandler = MemoryHandler<T>::GetInstance();
         HCore<T>::Gemm(alpha, dense_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans,
-                       beta, dense_tile_C);
-        T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
+                       beta, dense_tile_C, context, flops, memoryHandler.GetMemoryUnit());
+        T *output = copy_output(dense_tile_C.GetDataHolder().get(), context);
+        context.Sync();
 
         columnMajorToRowMajor<T>(output, n, m, (T *) matrix_D);
 
-        //        std::cout << "C Output \n";
         validateOutput((T *) matrix_D, m, n, (T *) output_matrix);
-//        printMatrix(output, c_m, c_n);
 
         delete[] a_input;
         delete[] b_input;
         delete[] output;
+        memoryHandler.FreeAllocations();
 
     }
 
@@ -115,26 +117,29 @@ void TEST_GEMM() {
         rowMajorToColumnMajor<T>((T *) matrix_A, k, m, a_input);
         rowMajorToColumnMajor<T>((T *) matrix_B, n, k, b_input);
 
-        DenseTile<T> dense_tile_A(m, k, (T *) matrix_A, lda, blas::Layout::ColMajor);
+        DenseTile<T> dense_tile_A(m, k, (T *) matrix_A, lda, blas::Layout::ColMajor, context);
 
-        DenseTile<T> dense_tile_B(k, n, (T *) matrix_B, ldb, blas::Layout::ColMajor);
+        DenseTile<T> dense_tile_B(k, n, (T *) matrix_B, ldb, blas::Layout::ColMajor, context);
 
-        DenseTile<T> dense_tile_C(m, n, (T *) nullptr, ldc, blas::Layout::ColMajor);
+        DenseTile<T> dense_tile_C(m, n, (T *) nullptr, ldc, blas::Layout::ColMajor, context);
 
+        size_t flops = 0;
+        MemoryHandler<T>& memoryHandler = MemoryHandler<T>::GetInstance();
         HCore<T>::Gemm(alpha, dense_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans,
-                       beta, dense_tile_C);
+                       beta, dense_tile_C, context, flops, memoryHandler.GetMemoryUnit());
 
-        T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
+        T *output = copy_output(dense_tile_C.GetDataHolder().get(), context);
+        context.Sync();
 
         columnMajorToRowMajor<T>(output, n, m, (T *) matrix_D);
 
-        //        std::cout << "C Output \n";
         validateOutput((T *) matrix_D, m, n, (T *) output_matrix);
-//        printMatrix(output, c_m, c_n);
 
         delete[] a_input;
         delete[] b_input;
         delete[] output;
+        memoryHandler.FreeAllocations();
+
 
     }
 
@@ -173,26 +178,29 @@ void TEST_GEMM() {
         rowMajorToColumnMajor<T>((T *) matrix_A, a_n, a_m, a_input);
         rowMajorToColumnMajor<T>((T *) matrix_B, b_n, b_m, b_input);
 
-        DenseTile<T> dense_tile_A(a_m, a_n, a_input, lda, blas::Layout::ColMajor);
+        DenseTile<T> dense_tile_A(a_m, a_n, a_input, lda, blas::Layout::ColMajor, context);
 
-        DenseTile<T> dense_tile_B(b_m, b_n, b_input, ldb, blas::Layout::ColMajor);
+        DenseTile<T> dense_tile_B(b_m, b_n, b_input, ldb, blas::Layout::ColMajor, context);
 
-        DenseTile<T> dense_tile_C(m, n, nullptr, ldc, blas::Layout::ColMajor);
+        DenseTile<T> dense_tile_C(m, n, nullptr, ldc, blas::Layout::ColMajor, context);
 
+        size_t flops = 0;
+        MemoryHandler<T>& memoryHandler = MemoryHandler<T>::GetInstance();
         HCore<T>::Gemm(alpha, dense_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta,
-                       dense_tile_C);
+                       dense_tile_C, context, flops, memoryHandler.GetMemoryUnit());
 
-        T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
+        T *output = copy_output(dense_tile_C.GetDataHolder().get(), context);
+        context.Sync();
 
         columnMajorToRowMajor<T>(output, n, m, (T *) matrix_D);
 
-        //        std::cout << "C Output \n";
         validateOutput((T *) matrix_D, m, n, (T *) output_matrix);
-//        printMatrix(output, c_m, c_n);
 
         delete[] a_input;
         delete[] b_input;
         delete[] output;
+        memoryHandler.FreeAllocations();
+
     }
 
     SECTION("Gemm Test 4") {
@@ -250,29 +258,32 @@ void TEST_GEMM() {
         memcpy(&compressed_tile_a_data[au_size], av_input, av_size * sizeof(T));
 
         CompressedTile<T> compressed_tile_A(au_m, av_n, compressed_tile_a_data, ldau, rank,
-                                            blas::Layout::ColMajor);
+                                            blas::Layout::ColMajor, context);
 
-        DenseTile<T> dense_tile_B(b_m, b_n, (T *) b_input, ldb, blas::Layout::ColMajor);
+        DenseTile<T> dense_tile_B(b_m, b_n, (T *) b_input, ldb, blas::Layout::ColMajor, context);
 
-        DenseTile<T> dense_tile_C(c_m, c_n, nullptr, ldc, blas::Layout::ColMajor);
+        DenseTile<T> dense_tile_C(c_m, c_n, nullptr, ldc, blas::Layout::ColMajor, context);
 
-        hcorepp::operators::CompressionParameters helpers(1);
+        size_t flops = 0;
+        hcorepp::operators::CompressionParameters helpers;
+
+        MemoryHandler<T>& memoryHandler =  MemoryHandler<T>::GetInstance();
         HCore<T>::Gemm(alpha, compressed_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta, dense_tile_C,
-                       helpers);
-        T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
+                       context, flops, memoryHandler.GetMemoryUnit(), helpers);
+        T *output = copy_output(dense_tile_C.GetDataHolder().get(), context);
+        context.Sync();
 
         columnMajorToRowMajor<T>(output, c_n, c_m, (T *) matrix_D);
 
-        //        std::cout << "C Output \n";
         validateOutput((T *) matrix_D, c_m, c_n, (T *) output_matrix);
-//        printMatrix(output, c_m, c_n);
 
         delete[] au_input;
         delete[] av_input;
         delete[] b_input;
         delete[] output;
-
         free(compressed_tile_a_data);
+        memoryHandler.FreeAllocations();
+
     }
 
     SECTION("Gemm Test 5") {
@@ -330,26 +341,30 @@ void TEST_GEMM() {
         memcpy(compressed_tile_b_data, bu_input, bu_size * sizeof(T));
         memcpy(&compressed_tile_b_data[bu_size], bv_input, bv_size * sizeof(T));
 
-        CompressedTile<T> compressed_tile_B(bu_m, bv_n, compressed_tile_b_data, ldbu, rank);
-        DenseTile<T> dense_tile_A(a_m, a_n, (T *) a_input, lda);
-        DenseTile<T> dense_tile_C(c_m, c_n, nullptr, ldc);
+        CompressedTile<T> compressed_tile_B(bu_m, bv_n, compressed_tile_b_data, ldbu, rank, context);
+        DenseTile<T> dense_tile_A(a_m, a_n, (T *) a_input, lda, context);
+        DenseTile<T> dense_tile_C(c_m, c_n, nullptr, ldc, context);
 
-        hcorepp::operators::CompressionParameters helpers(1);
+        size_t flops = 0;
+        hcorepp::operators::CompressionParameters helpers;
+
+        MemoryHandler<T>& memoryHandler = MemoryHandler<T>::GetInstance();
         HCore<T>::Gemm(alpha, dense_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta, dense_tile_C,
-                       helpers);
-        T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
+                       context, flops, memoryHandler.GetMemoryUnit(), helpers);
+        T *output = copy_output(dense_tile_C.GetDataHolder().get(), context);
+        context.Sync();
 
         columnMajorToRowMajor<T>(output, c_n, c_m, (T *) matrix_D);
 
-        //        std::cout << "C Output \n";
         validateOutput((T *) matrix_D, c_m, c_n, (T *) output_matrix);
-//        printMatrix(output, c_m, c_n);
 
         delete[] a_input;
         delete[] bu_input;
         delete[] bv_input;
         delete[] output;
         free(compressed_tile_b_data);
+        memoryHandler.FreeAllocations();
+
     }
 
     SECTION("Gemm Test 6") {
@@ -421,21 +436,22 @@ void TEST_GEMM() {
         memcpy(compressed_tile_b_data, bu_input, bu_size * sizeof(T));
         memcpy(&compressed_tile_b_data[bu_size], bv_input, bv_size * sizeof(T));
 
-        CompressedTile<T> compressed_tile_A(au_m, av_n, compressed_tile_a_data, ldau, a_rank);
-        CompressedTile<T> compressed_tile_B(bu_m, bv_n, compressed_tile_b_data, ldbu, b_rank);
-        DenseTile<T> dense_tile_C(c_m, c_n, nullptr, ldc);
+        CompressedTile<T> compressed_tile_A(au_m, av_n, compressed_tile_a_data, ldau, a_rank, context);
+        CompressedTile<T> compressed_tile_B(bu_m, bv_n, compressed_tile_b_data, ldbu, b_rank, context);
+        DenseTile<T> dense_tile_C(c_m, c_n, nullptr, ldc, context);
 
-        hcorepp::operators::CompressionParameters helpers(1);
+        size_t flops = 0;
+        hcorepp::operators::CompressionParameters helpers;
+        MemoryHandler<T>& memoryHandler = MemoryHandler<T>::GetInstance();
         HCore<T>::Gemm(alpha, compressed_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta,
-                       dense_tile_C, helpers);
-        T *output = copy_output(dense_tile_C.GetTileSubMatrix(0).get());
+                       dense_tile_C, context, flops, memoryHandler.GetMemoryUnit(), helpers);
+        T *output = copy_output(dense_tile_C.GetDataHolder().get(), context);
+        context.Sync();
 
         columnMajorToRowMajor<T>(output, c_n, c_m, (T *) matrix_D);
 
 
-        //        std::cout << "C Output \n";
         validateOutput((T *) matrix_D, c_m, c_n, (T *) output_matrix);
-//        printMatrix(output, c_m, c_n);
 
 
         delete[] au_input;
@@ -445,6 +461,8 @@ void TEST_GEMM() {
         delete[] output;
         free(compressed_tile_a_data);
         free(compressed_tile_b_data);
+        memoryHandler.FreeAllocations();
+
     }
 
     SECTION("Gemm Test 7") {
@@ -531,23 +549,26 @@ void TEST_GEMM() {
         memcpy(compressed_tile_a_data, au_input, au_size * sizeof(T));
         memcpy(&compressed_tile_a_data[au_size], av_input, av_size * sizeof(T));
 
-        CompressedTile<T> compressed_tile_A(au_m, av_n, compressed_tile_a_data, ldau, a_rank);
+        CompressedTile<T> compressed_tile_A(au_m, av_n, compressed_tile_a_data, ldau, a_rank, context);
 
-        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldcu, c_rank);
+        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldcu, c_rank, context);
 
-        DenseTile<T> dense_tile_B(b_m, b_n, (T *) b_input, ldb);
+        DenseTile<T> dense_tile_B(b_m, b_n, (T *) b_input, ldb, context);
 
+        size_t flops = 0;
         hcorepp::operators::CompressionParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
+        MemoryHandler<T>& memoryHandler = MemoryHandler<T>::GetInstance();
         HCore<T>::Gemm(alpha, compressed_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta,
-                       compressed_tile_C, helpers);
+                       compressed_tile_C, context, flops, memoryHandler.GetMemoryUnit(), helpers);
 
-        T *cu_output = copy_output(compressed_tile_C.GetTileSubMatrix(0).get());
-        T *cv_output = copy_output(compressed_tile_C.GetTileSubMatrix(1).get());
+        T *cu_output = copy_output(compressed_tile_C.GetUMatrix(), cu_size, context);
+        T *cv_output = copy_output(compressed_tile_C.GetVMatrix(), cv_size, context);
+        context.Sync();
 
-        cu_m = compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfRows();
-        cu_n = compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfCols();
-        cv_m = compressed_tile_C.GetTileSubMatrix(1).get().GetNumOfRows();
-        cv_n = compressed_tile_C.GetTileSubMatrix(1).get().GetNumOfCols();
+        cu_m = compressed_tile_C.GetNumOfRows();
+        cu_n = compressed_tile_C.GetTileRank();
+        cv_m = compressed_tile_C.GetTileRank();
+        cv_n = compressed_tile_C.GetNumOfCols();
 
         T *cu_output_row = new T[cu_n * cu_m];
         T *cv_output_row = new T[cv_n * cv_m];
@@ -555,24 +576,13 @@ void TEST_GEMM() {
         columnMajorToRowMajor<T>(cu_output, cu_n, cu_m, (T *) cu_output_row);
         columnMajorToRowMajor<T>(cv_output, cv_n, cv_m, (T *) cv_output_row);
 
-//        std::cout << "CU Output \n";
-//        validateCompressedOutput(cu_output_row, cu_m, cu_n, (T *) matrix_CU,
-//                                 cv_output_row, cv_m, cv_n, (T *) matrix_CV);
-//        printMatrix(cu_output_row, cu_m, cu_n);
-
-//        std::cout << "CV Output \n";
-//        validateCompressedOutput(cv_output_row, cv_m, cv_n, (T *) matrix_CV);
-//        printMatrix(cv_output_row, cv_m, cv_n);
-
         T *cu_cv = new T[c_m * c_n];
 
         blas::gemm(blas::Layout::RowMajor, blas::Op::NoTrans, blas::Op::NoTrans,
                    c_m, c_n, cu_n, alpha, cu_output_row, cu_n, cv_output_row, cv_n,
                    0, cu_cv, c_n);
 
-        //        std::cout << "C Output \n";
         validateOutput(cu_cv, c_m, c_n, (T *) output_matrix);
-//        printMatrix(cu_cv, c_m, c_n);
 
         delete[] au_input;
         delete[] av_input;
@@ -587,8 +597,9 @@ void TEST_GEMM() {
         free(cu_input_C);
         free(cv_input_R);
         free(cv_input_C);
-
         free(compressed_tile_a_data);
+        memoryHandler.FreeAllocations();
+
     }
 
     SECTION("Gemm Test 8") {
@@ -680,22 +691,25 @@ void TEST_GEMM() {
         memcpy(compressed_tile_b_data, bu_input, bu_size * sizeof(T));
         memcpy(&compressed_tile_b_data[bu_size], bv_input, bv_size * sizeof(T));
 
-        CompressedTile<T> compressed_tile_B(bu_m, bv_n, compressed_tile_b_data, ldbu, b_rank);
+        CompressedTile<T> compressed_tile_B(bu_m, bv_n, compressed_tile_b_data, ldbu, b_rank, context);
 
-        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldc, c_rank);
+        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldc, c_rank, context);
 
-        DenseTile<T> dense_tile_A(a_m, a_n, (T *) a_input, lda);
+        DenseTile<T> dense_tile_A(a_m, a_n, (T *) a_input, lda, context);
 
+        size_t flops = 0;
         hcorepp::operators::CompressionParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
+        MemoryHandler<T>& memoryHandler = MemoryHandler<T>::GetInstance();
         HCore<T>::Gemm(alpha, dense_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta,
-                       compressed_tile_C, helpers);
-        T *cu_output = copy_output(compressed_tile_C.GetTileSubMatrix(0).get());
-        T *cv_output = copy_output(compressed_tile_C.GetTileSubMatrix(1).get());
+                       compressed_tile_C, context, flops, memoryHandler.GetMemoryUnit(), helpers);
+        T *cu_output = copy_output(compressed_tile_C.GetUMatrix(), cu_size, context);
+        T *cv_output = copy_output(compressed_tile_C.GetVMatrix(), cv_size, context);
+        context.Sync();
 
-        cu_m = compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfRows();
-        cu_n = compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfCols();
-        cv_m = compressed_tile_C.GetTileSubMatrix(1).get().GetNumOfRows();
-        cv_n = compressed_tile_C.GetTileSubMatrix(1).get().GetNumOfCols();
+        cu_m = compressed_tile_C.GetNumOfRows();
+        cu_n = compressed_tile_C.GetTileRank();
+        cv_m = compressed_tile_C.GetTileRank();
+        cv_n = compressed_tile_C.GetNumOfCols();
 
         T *cu_output_row = new T[cu_n * cu_m];
         T *cv_output_row = new T[cv_n * cv_m];
@@ -703,24 +717,13 @@ void TEST_GEMM() {
         columnMajorToRowMajor<T>(cu_output, cu_n, cu_m, (T *) cu_output_row);
         columnMajorToRowMajor<T>(cv_output, cv_n, cv_m, (T *) cv_output_row);
 
-//        std::cout << "CU Output \n";
-//        validateCompressedOutput(cu_output_row, cu_m, cu_n, (T *) matrix_CU,
-//                                 cv_output_row, cv_m, cv_n, (T *) matrix_CV);
-//        printMatrix(cu_output_row, cu_m, cu_n);
-
-//        std::cout << "CV Output \n";
-//        validateCompressedOutput(cv_output_row, cv_m, cv_n, (T *) matrix_CV);
-//        printMatrix(cv_output_row, cv_m, cv_n);
-
         T *cu_cv = new T[c_m * c_n];
 
         blas::gemm(blas::Layout::RowMajor, blas::Op::NoTrans, blas::Op::NoTrans,
                    c_m, c_n, cu_n, alpha, cu_output_row, cu_n, cv_output_row, cv_n,
                    0, cu_cv, c_n);
 
-        //        std::cout << "C Output \n";
         validateOutput(cu_cv, c_m, c_n, (T *) output_matrix);
-//        printMatrix(cu_cv, c_m, c_n);
 
         delete[] a_input;
         delete[] bu_input;
@@ -737,6 +740,8 @@ void TEST_GEMM() {
         free(cv_input_R);
         free(cu_input_C);
         free(cv_input_C);
+        memoryHandler.FreeAllocations();
+
 
     }
 
@@ -853,22 +858,25 @@ void TEST_GEMM() {
         memcpy(compressed_tile_b_data, bu_input, bu_size * sizeof(T));
         memcpy(&compressed_tile_b_data[bu_size], bv_input, bv_size * sizeof(T));
 
-        CompressedTile<T> compressed_tile_A(au_m, av_n, compressed_tile_a_data, ldau, a_rank);
+        CompressedTile<T> compressed_tile_A(au_m, av_n, compressed_tile_a_data, ldau, a_rank, context);
 
-        CompressedTile<T> compressed_tile_B(bu_m, bv_n, compressed_tile_b_data, ldbu, b_rank);
+        CompressedTile<T> compressed_tile_B(bu_m, bv_n, compressed_tile_b_data, ldbu, b_rank, context);
 
-        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldc, c_rank);
+        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldc, c_rank, context);
 
+        size_t flops = 0;
         hcorepp::operators::CompressionParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
+        MemoryHandler<T>& memoryHandler = MemoryHandler<T>::GetInstance();
         HCore<T>::Gemm(alpha, compressed_tile_A, blas::Op::NoTrans, compressed_tile_B, blas::Op::NoTrans, beta,
-                       compressed_tile_C, helpers);
-        T *cu_output = copy_output(compressed_tile_C.GetTileSubMatrix(0).get());
-        T *cv_output = copy_output(compressed_tile_C.GetTileSubMatrix(1).get());
+                       compressed_tile_C, context, flops, memoryHandler.GetMemoryUnit(), helpers);
+        T *cu_output = copy_output(compressed_tile_C.GetUMatrix(), cu_size, context);
+        T *cv_output = copy_output(compressed_tile_C.GetVMatrix(), cv_size, context);
+        context.Sync();
 
-        cu_m = compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfRows();
-        cu_n = compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfCols();
-        cv_m = compressed_tile_C.GetTileSubMatrix(1).get().GetNumOfRows();
-        cv_n = compressed_tile_C.GetTileSubMatrix(1).get().GetNumOfCols();
+        cu_m = compressed_tile_C.GetNumOfRows();
+        cu_n = compressed_tile_C.GetTileRank();
+        cv_m = compressed_tile_C.GetTileRank();
+        cv_n = compressed_tile_C.GetNumOfCols();
 
         T *cu_output_row = new T[cu_n * cu_m];
         T *cv_output_row = new T[cv_n * cv_m];
@@ -876,25 +884,13 @@ void TEST_GEMM() {
         columnMajorToRowMajor<T>(cu_output, cu_n, cu_m, (T *) cu_output_row);
         columnMajorToRowMajor<T>(cv_output, cv_n, cv_m, (T *) cv_output_row);
 
-//        std::cout << "CU Output \n";
-//        validateCompressedOutput(cu_output_row, cu_m, cu_n, (T *) matrix_CU,
-//                                 cv_output_row, cv_m, cv_n, (T *) matrix_CV);
-//        printMatrix(cu_output_row, cu_m, cu_n);
-
-//        std::cout << "CV Output \n";
-//        validateCompressedOutput(cv_output_row, cv_m, cv_n, (T *) matrix_CV);
-//        printMatrix(cv_output_row, cv_m, cv_n);
-
-
         T *cu_cv = new T[c_m * c_n];
 
         blas::gemm(blas::Layout::RowMajor, blas::Op::NoTrans, blas::Op::NoTrans,
                    c_m, c_n, cu_n, alpha, cu_output_row, cu_n, cv_output_row, cv_n,
                    0, cu_cv, c_n);
 
-//        std::cout << "C Output \n";
-//        validateOutput(cu_cv, c_m, c_n, (T *) output_matrix);
-//        printMatrix(cu_cv, c_m, c_n);
+        validateOutput(cu_cv, c_m, c_n, (T *) output_matrix);
 
         delete[] au_input;
         delete[] av_input;
@@ -913,6 +909,8 @@ void TEST_GEMM() {
         free(cv_input_R);
         free(cu_input_C);
         free(cv_input_C);
+        memoryHandler.FreeAllocations();
+
 
     }
 
@@ -956,14 +954,14 @@ void TEST_GEMM() {
         int64_t b_n = 4;
 
         int64_t cu_m = 5;
-        int64_t cu_n = 1;
-        int64_t cv_m = 1;
+        int64_t cu_n = 4;
+        int64_t cv_m = 4;
         int64_t cv_n = 4;
 
         int64_t c_m = 5;
         int64_t c_n = 4;
 
-        int64_t c_rank = 1;
+        int64_t c_rank = 4;
         int64_t lda = 5;
         int64_t ldb = 3;
         int64_t ldc = 5;
@@ -994,21 +992,24 @@ void TEST_GEMM() {
         memcpy(c_input, cu_input_C, cu_size * sizeof(T));
         memcpy(&c_input[cu_size], cv_input_C, cv_size * sizeof(T));
 
-        DenseTile<T> dense_tile_A(a_m, a_n, (T *) a_input, lda);
-        DenseTile<T> dense_tile_B(b_m, b_n, (T *) b_input, ldb);
+        DenseTile<T> dense_tile_A(a_m, a_n, (T *) a_input, lda, context);
+        DenseTile<T> dense_tile_B(b_m, b_n, (T *) b_input, ldb, context);
 
-        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldc, c_rank);
+        CompressedTile<T> compressed_tile_C(c_m, c_n, (T *) c_input, ldc, c_rank, context);
 
+        size_t flops = 0;
         hcorepp::operators::CompressionParameters helpers(std::numeric_limits<blas::real_type<T>>::epsilon());
+        MemoryHandler<T>& memoryHandler = MemoryHandler<T>::GetInstance();
         HCore<T>::Gemm(alpha, dense_tile_A, blas::Op::NoTrans, dense_tile_B, blas::Op::NoTrans, beta, compressed_tile_C,
-                       helpers);
-        T *cu_output = copy_output(compressed_tile_C.GetTileSubMatrix(0).get());
-        T *cv_output = copy_output(compressed_tile_C.GetTileSubMatrix(1).get());
+                       context, flops, memoryHandler.GetMemoryUnit(), helpers);
+        T *cu_output = copy_output(compressed_tile_C.GetUMatrix(), cu_size, context);
+        T *cv_output = copy_output(compressed_tile_C.GetVMatrix(), cv_size, context);
+        context.Sync();
 
-        cu_m = compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfRows();
-        cu_n = compressed_tile_C.GetTileSubMatrix(0).get().GetNumOfCols();
-        cv_m = compressed_tile_C.GetTileSubMatrix(1).get().GetNumOfRows();
-        cv_n = compressed_tile_C.GetTileSubMatrix(1).get().GetNumOfCols();
+        cu_m = compressed_tile_C.GetNumOfRows();
+        cu_n = compressed_tile_C.GetTileRank();
+        cv_m = compressed_tile_C.GetTileRank();
+        cv_n = compressed_tile_C.GetNumOfCols();
 
         T *cu_output_row = new T[cu_n * cu_m];
         T *cv_output_row = new T[cv_n * cv_m];
@@ -1016,24 +1017,13 @@ void TEST_GEMM() {
         columnMajorToRowMajor<T>(cu_output, cu_n, cu_m, (T *) cu_output_row);
         columnMajorToRowMajor<T>(cv_output, cv_n, cv_m, (T *) cv_output_row);
 
-//        std::cout << "CU Output \n";
-//        validateCompressedOutput(cu_output_row, cu_m, cu_n, (T *) matrix_CU,
-//                                 cv_output_row, cv_m, cv_n, (T *) matrix_CV);
-//        printMatrix(cu_output_row, cu_m, cu_n);
-
-//        std::cout << "CV Output \n";
-//        validateCompressedOutput(cv_output_row, cv_m, cv_n, (T *) matrix_CV);
-//        printMatrix(cv_output_row, cv_m, cv_n);
-
         T *cu_cv = new T[c_m * c_n];
 
         blas::gemm(blas::Layout::RowMajor, blas::Op::NoTrans, blas::Op::NoTrans,
                    c_m, c_n, cu_n, alpha, cu_output_row, cu_n, cv_output_row, cv_n,
                    0, cu_cv, c_n);
 
-//        std::cout << " C Output ==== \n";
         validateOutput(cu_cv, c_m, c_n, (T *) output_matrix);
-//        printMatrix(cu_cv, c_m, c_n);
 
         delete[] a_input;
         delete[] b_input;
@@ -1047,6 +1037,8 @@ void TEST_GEMM() {
         free(cu_input_C);
         free(cv_input_R);
         free(cv_input_C);
+        memoryHandler.FreeAllocations();
+
 
     }
 
@@ -1055,4 +1047,6 @@ void TEST_GEMM() {
 
 TEMPLATE_TEST_CASE("GemmTest", "[GEMM]", float, double) {
     TEST_GEMM<TestType>();
+    hcorepp::kernels::ContextManager::DestroyInstance();
+    hcorepp::dataunits::MemoryHandler<TestType>::DestroyInstance();
 }

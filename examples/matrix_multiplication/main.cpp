@@ -10,6 +10,7 @@
 #include <hcorepp/helpers/generators/concrete/LatmsGenerator.hpp>
 #include <hcorepp/helpers/generators/concrete/TileLatmsGenerator.hpp>
 #include <hcorepp/kernels/memory.hpp>
+#include <hcorepp/kernels/kernels.hpp>
 
 #ifdef BLAS_HAVE_MKL
 
@@ -62,6 +63,9 @@ using namespace hcorepp::helpers;
  * @param[in] aSnapshotName
  * The snapshot name to use.
  *
+ * @param[in] aContext
+ * The run context to execute the operations in.
+ *
  * @param[in] aParameters
  * The SVD parameters utilized.
  */
@@ -74,6 +78,7 @@ void tile_matrix_multiplication(TileMatrix<T> &aMatrixA,
                                 Timer &aTimer,
                                 T aAlpha, T aBeta,
                                 const std::string &aSnapshotName,
+                                hcorepp::kernels::RunContext &aContext,
                                 const CompressionParameters &aParameters = {1e-8}) {
     auto c_nt = aMatrixC.GetColTileCount();
     auto c_mt = aMatrixC.GetRowTileCount();
@@ -90,22 +95,21 @@ void tile_matrix_multiplication(TileMatrix<T> &aMatrixA,
         aTimer.StartSnapshot();
     }
 #pragma omp parallel for collapse(2) default(none) shared(aMatrixA, aMatrixB, aMatrixC, aSnapshotName, aTimer, \
-        c_nt, c_mt, b_mt, aAlpha, aAOp, aBOp, aBeta, aParameters)
+        c_nt, c_mt, b_mt, aAlpha, aAOp, aBOp, aBeta, aParameters, aContext)
     for (int i = 0; i < c_nt; i++) {
         for (int j = 0; j < c_mt; j++) {
+            auto thread_context = aContext.ForkChildContext();
             auto c_tile = aMatrixC.GetTile(j, i);
             for (int k = 0; k < b_mt; k++) {
                 auto a_tile = aMatrixA.GetTile(j, k);
                 auto b_tile = aMatrixB.GetTile(k, i);
                 hcorepp::api::HCore<T>::Gemm(aAlpha, *a_tile, aAOp, *b_tile,
-                                             aBOp, aBeta, *c_tile, aParameters);
+                                             aBOp, aBeta, *c_tile, thread_context, aParameters);
             }
         }
     }
+    aContext.Sync();
     if (!aSnapshotName.empty()) {
-#ifdef BLAS_HAVE_CUBLAS
-        cudaDeviceSynchronize();
-#endif
         aTimer.Snapshot(aSnapshotName);
     }
 #ifdef BLAS_HAVE_MKL
@@ -163,7 +167,23 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+#ifdef USE_SYCL
+    std::string sycl_device_name;
+    {
+        const char *val = std::getenv("HCOREPP_DEVICE");
+        if (val != nullptr) { // invalid to assign nullptr to std::string
+            sycl_device_name = val;
+        }
+    }
+    hcorepp::kernels::RunContext context(sycl_device_name);
+    if(print_header) {
+	context.Print();
+    }
+#else
+    hcorepp::kernels::RunContext context;
+#endif
     // matrix dimensions (number of tiles)
+
     int a_mt = matrix_tiles;
     int a_nt = matrix_tiles;
     int b_mt = a_nt;
@@ -198,39 +218,33 @@ int main(int argc, char *argv[]) {
                    warm_b.GetM(), beta, warm_c.GetData(), warm_c.GetM());
     }
     // Solve reference solution
-    // TODO cleaner wrapper for the device benchmarking.
-#ifdef BLAS_HAVE_CUBLAS
-    auto a_device = hcorepp::memory::AllocateArray<double>(full_a.GetM() * full_a.GetN());
-    auto b_device = hcorepp::memory::AllocateArray<double>(full_b.GetM() * full_b.GetN());
-    auto c_device = hcorepp::memory::AllocateArray<double>(full_c.GetM() * full_c.GetN());
-    hcorepp::memory::Memcpy<double>(a_device, full_a.GetData(),
-                                    full_a.GetM() * full_a.GetN(),
-                                    hcorepp::memory::MemoryTransfer::HOST_TO_DEVICE);
-    hcorepp::memory::Memcpy<double>(b_device, full_b.GetData(), full_b.GetM() * full_b.GetN(),
-                                    hcorepp::memory::MemoryTransfer::HOST_TO_DEVICE);
-    hcorepp::memory::Memcpy<double>(c_device, full_c.GetData(), full_c.GetM() * full_c.GetN(),
-                                    hcorepp::memory::MemoryTransfer::HOST_TO_DEVICE);
-    blas::Queue queue;
-    timer.StartSnapshot();
-    blas::gemm(blas::Layout::ColMajor, trans_a, trans_b, full_c.GetM(),
-               full_c.GetN(), full_a.GetN(), alpha, a_device,
-               full_a.GetM(), b_device,
-               full_b.GetM(), beta, c_device, full_c.GetM(), queue);
-    queue.sync();
-    timer.Snapshot("ref_gemm");
-    hcorepp::memory::Memcpy<double>(full_c.GetData(), c_device, full_c.GetM() * full_c.GetN(),
-                                    hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
-    hcorepp::memory::DestroyArray(a_device);
-    hcorepp::memory::DestroyArray(b_device);
-    hcorepp::memory::DestroyArray(c_device);
-#else
-    timer.StartSnapshot();
-    blas::gemm(blas::Layout::ColMajor, trans_a, trans_b, full_c.GetM(),
-               full_c.GetN(), full_a.GetN(), alpha, full_a.GetData(),
-               full_a.GetM(), full_b.GetData(),
-               full_b.GetM(), beta, full_c.GetData(), full_c.GetM());
-    timer.Snapshot("ref_gemm");
-#endif
+    {
+        auto a_device = hcorepp::memory::AllocateArray<double>(full_a.GetM() * full_a.GetN(), context);
+        auto b_device = hcorepp::memory::AllocateArray<double>(full_b.GetM() * full_b.GetN(), context);
+        auto c_device = hcorepp::memory::AllocateArray<double>(full_c.GetM() * full_c.GetN(), context);
+        hcorepp::memory::Memcpy<double>(a_device, full_a.GetData(),
+                                        full_a.GetM() * full_a.GetN(), context,
+                                        hcorepp::memory::MemoryTransfer::HOST_TO_DEVICE);
+        hcorepp::memory::Memcpy<double>(b_device, full_b.GetData(), full_b.GetM() * full_b.GetN(), context,
+                                        hcorepp::memory::MemoryTransfer::HOST_TO_DEVICE);
+        hcorepp::memory::Memcpy<double>(c_device, full_c.GetData(), full_c.GetM() * full_c.GetN(), context,
+                                        hcorepp::memory::MemoryTransfer::HOST_TO_DEVICE);
+        context.Sync();
+        timer.StartSnapshot();
+        hcorepp::kernels::HCoreKernels<double>::Gemm(blas::Layout::ColMajor, trans_a, trans_b, full_c.GetM(),
+                                                     full_c.GetN(), full_a.GetN(), alpha, a_device,
+                                                     full_a.GetM(), b_device,
+                                                     full_b.GetM(), beta, c_device, full_c.GetM(), context);
+        context.Sync();
+        timer.Snapshot("ref_gemm");
+        hcorepp::memory::Memcpy<double>(full_c.GetData(), c_device, full_c.GetM() * full_c.GetN(),
+                                        context,
+                                        hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+        context.Sync();
+        hcorepp::memory::DestroyArray(a_device, context);
+        hcorepp::memory::DestroyArray(b_device, context);
+        hcorepp::memory::DestroyArray(c_device, context);
+    }
     // Get memory footprint in KB
     size_t ref_memory_footprint = (full_a.GetMemoryFootprint() + full_b.GetMemoryFootprint()
                                    + full_c.GetMemoryFootprint()) / 1024;
@@ -243,26 +257,28 @@ int main(int argc, char *argv[]) {
     double dense_error_normalized;
     // Dense Warmup
     {
-        TileMatrix<double> a_dense(full_a, row_tile_size, column_tile_size);
-        TileMatrix<double> b_dense(full_b, row_tile_size, column_tile_size);
-        TileMatrix<double> c_dense(initial_c, row_tile_size, column_tile_size);
+        TileMatrix<double> a_dense(full_a, row_tile_size, column_tile_size, context);
+        TileMatrix<double> b_dense(full_b, row_tile_size, column_tile_size, context);
+        TileMatrix<double> c_dense(initial_c, row_tile_size, column_tile_size, context);
+        context.Sync();
         tile_matrix_multiplication(a_dense, trans_a, b_dense, trans_b, c_dense, timer, alpha,
-                                   beta, "");
+                                   beta, "", context);
     }
     // Dense Flow
     {
         timer.StartSnapshot();
         // Create dense tile matrix
-        TileMatrix<double> a_dense(full_a, row_tile_size, column_tile_size);
-        TileMatrix<double> b_dense(full_b, row_tile_size, column_tile_size);
-        TileMatrix<double> c_dense(initial_c, row_tile_size, column_tile_size);
+        TileMatrix<double> a_dense(full_a, row_tile_size, column_tile_size, context);
+        TileMatrix<double> b_dense(full_b, row_tile_size, column_tile_size, context);
+        TileMatrix<double> c_dense(initial_c, row_tile_size, column_tile_size, context);
+        context.Sync();
         timer.Snapshot("dense_creation");
         // Do matrix multiplication.
         tile_matrix_multiplication(a_dense, trans_a, b_dense, trans_b, c_dense, timer, alpha,
-                                   beta, "dense_gemm");
+                                   beta, "dense_gemm", context);
         // Retrieve results back from tile format for verification.
         timer.StartSnapshot();
-        auto full_dense_c = c_dense.ToRawMatrix();
+        auto full_dense_c = c_dense.ToRawMatrix(context);
         full_dense_c.ReferenceDifference(full_c);
         dense_error = full_dense_c.Norm();
         dense_error_normalized = dense_error / ((a_norm + b_norm + c_init_norm) *
@@ -283,11 +299,12 @@ int main(int argc, char *argv[]) {
         CompressionParameters svd_parameters(accuracy);
         // Compressed Warmup
         {
-            TileMatrix<double> a_comp(full_a, row_tile_size, column_tile_size, svd_parameters);
-            TileMatrix<double> b_comp(full_b, row_tile_size, column_tile_size, svd_parameters);
-            TileMatrix<double> c_comp(initial_c, row_tile_size, column_tile_size, svd_parameters);
+            TileMatrix<double> a_comp(full_a, row_tile_size, column_tile_size, svd_parameters, context);
+            TileMatrix<double> b_comp(full_b, row_tile_size, column_tile_size, svd_parameters, context);
+            TileMatrix<double> c_comp(initial_c, row_tile_size, column_tile_size, svd_parameters, context);
+            context.Sync();
             tile_matrix_multiplication(a_comp, trans_a, b_comp, trans_b, c_comp, timer, alpha,
-                                       beta, "", svd_parameters);
+                                       beta, "", context, svd_parameters);
         }
         //Reset all compression timers
         timer.ResetSnapshot("comp_creation");
@@ -295,16 +312,17 @@ int main(int argc, char *argv[]) {
         timer.ResetSnapshot("comp_error_calc");
         timer.StartSnapshot();
         // Create compressed tiles matrix
-        TileMatrix<double> a_comp(full_a, row_tile_size, column_tile_size, svd_parameters);
-        TileMatrix<double> b_comp(full_b, row_tile_size, column_tile_size, svd_parameters);
-        TileMatrix<double> c_comp(initial_c, row_tile_size, column_tile_size, svd_parameters);
+        TileMatrix<double> a_comp(full_a, row_tile_size, column_tile_size, svd_parameters, context);
+        TileMatrix<double> b_comp(full_b, row_tile_size, column_tile_size, svd_parameters, context);
+        TileMatrix<double> c_comp(initial_c, row_tile_size, column_tile_size, svd_parameters, context);
+        context.Sync();
         timer.Snapshot("comp_creation");
         // Do matrix multiplication.
         tile_matrix_multiplication(a_comp, trans_a, b_comp, trans_b, c_comp, timer, alpha,
-                                   beta, "comp_gemm", svd_parameters);
+                                   beta, "comp_gemm", context, svd_parameters);
         // Retrieve results back from tile format for verification.
         timer.StartSnapshot();
-        auto full_approximate_c = c_comp.ToRawMatrix();
+        auto full_approximate_c = c_comp.ToRawMatrix(context);
         // Calculate compressed tile matrix reference error
         full_approximate_c.ReferenceDifference(full_c);
         double comp_error = full_approximate_c.Norm();

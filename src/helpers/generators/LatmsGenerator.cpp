@@ -25,9 +25,9 @@ namespace hcorepp {
             }
 
             template<typename T>
-            void LatmsGenerator<T>::GenerateValues(int64_t aRowNumber, int64_t aColNumber, int64_t aLeadingDimension,
+            void LatmsGenerator<T>::GenerateValues(size_t aRowNumber, size_t aColNumber, size_t aLeadingDimension,
                                                    T *apData) const {
-                int64_t min_m_n = std::min(aRowNumber, aColNumber);
+                size_t min_m_n = std::min(aRowNumber, aColNumber);
 
                 auto eigen_values = (blas::real_type<T> *) malloc(min_m_n * sizeof(blas::real_type<T>));
                 // Exponential decay --> y = a * b^i
@@ -44,7 +44,7 @@ namespace hcorepp {
                 auto b_1 = pow(sep, 1.0 / active_n);
                 auto a_2 = sep;
                 auto b_2 = pow(std::numeric_limits<T>::epsilon() / a_2, 1.0 / (min_m_n - 1 - active_n_floor));
-                for (int64_t i = 0; i < min_m_n; ++i) {
+                for (size_t i = 0; i < min_m_n; ++i) {
                     if (i < active_n_floor) {
                         eigen_values[i] = pow(b_1, i);
                     } else {

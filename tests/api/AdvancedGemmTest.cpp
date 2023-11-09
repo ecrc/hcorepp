@@ -3,7 +3,7 @@
  *                     All rights reserved.
  */
 
-#include <libraries/catch/catch.hpp>
+#include <catch2/catch_all.hpp>
 #include <iostream>
 #include <hcorepp/api/HCore.hpp>
 #include <hcorepp/operators/concrete/Dense.hpp>
@@ -13,6 +13,7 @@
 #include <hcorepp/helpers/MatrixHelpers.hpp>
 #include <hcorepp/helpers/LapackWrappers.hpp>
 #include <hcorepp/test-helpers/testHelpers.hpp>
+#include <hcorepp/data-units/memory-handlers/MemoryHandler.hpp>
 
 using namespace std::chrono;
 using namespace hcorepp::operators;
@@ -21,7 +22,7 @@ using namespace hcorepp::test_helpers;
 
 template<typename T>
 void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
-
+    hcorepp::kernels::RunContext& context = hcorepp::kernels::ContextManager::GetInstance().GetContext();
     using real_t = blas::real_type<T>;
 
     blas::Op transA = blas::Op::NoTrans;
@@ -67,13 +68,15 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
     real_t Bnorm = lapack_lange(norm, Bm, Bn, Bdata, ldb);
     real_t Cnorm = lapack_lange(norm, Cm, Cn, Cdata, ldc);
 
-    DenseTile<T> A(Am, An, Adata, lda, blas::Layout::ColMajor);
-    DenseTile<T> B(Bm, Bn, Bdata, ldb, blas::Layout::ColMajor);
-    DenseTile<T> C(Cm, Cn, Cdata, ldc, blas::Layout::ColMajor);
+    DenseTile<T> A(Am, An, Adata, lda, blas::Layout::ColMajor, context);
+    DenseTile<T> B(Bm, Bn, Bdata, ldb, blas::Layout::ColMajor, context);
+    DenseTile<T> C(Cm, Cn, Cdata, ldc, blas::Layout::ColMajor, context);
+    context.Sync();
 
     int64_t ldcref = ((m + align - 1) / align) * align;
 
-    T *Cref = copy_output(C.GetTileSubMatrix(0).get());
+    T *Cref = nullptr;
+    Cref = copy_output(C.GetDataHolder().get(), context);
 
     int64_t Ark, Brk, Crk;
     Ark = 0;
@@ -88,22 +91,22 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
     CompressedTile<T> *CUV;
     if (Combination == CDD || Combination == CDC || Combination == CCD || Combination == CCC) {
         compress_dense_matrix(Am, An, Adata, lda, &AUVdata, Ark, accuracy);
-        AUV = new CompressedTile<T>(Am, An, AUVdata, lda, Ark, blas::Layout::ColMajor);
+        AUV = new CompressedTile<T>(Am, An, AUVdata, lda, Ark, blas::Layout::ColMajor, context);
+        context.Sync();
         free(AUVdata);
     }
     if (Combination == DCD || Combination == DCC || Combination == CCD || Combination == CCC) {
         compress_dense_matrix(Bm, Bn, Bdata, ldb, &BUVdata, Brk, accuracy);
 
-        BUV = new CompressedTile<T>(Bm, Bn, BUVdata, ldb, Brk, blas::Layout::ColMajor);
-
+        BUV = new CompressedTile<T>(Bm, Bn, BUVdata, ldb, Brk, blas::Layout::ColMajor, context);
+        context.Sync();
         free(BUVdata);
     }
     if (Combination == DDC || Combination == DCC || Combination == CDC || Combination == CCC) {
-
         compress_dense_matrix(Cm, Cn, Cdata, ldc, &CUVdata, Crk, accuracy);
 
-        CUV = new CompressedTile<T>(Cm, Cn, CUVdata, ldc, Crk, blas::Layout::ColMajor);
-
+        CUV = new CompressedTile<T>(Cm, Cn, CUVdata, ldc, Crk, blas::Layout::ColMajor, context);
+        context.Sync();
         free(CUVdata);
     }
 
@@ -111,39 +114,41 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
     std::chrono::time_point<std::chrono::system_clock> start, end;
 
     start = std::chrono::system_clock::now();
-
+    size_t flops_ = 0;
     hcorepp::operators::CompressionParameters helpers(accuracy);
+    hcorepp::dataunits::MemoryHandler<T>& memoryHandler = hcorepp::dataunits::MemoryHandler<T>::GetInstance();
+
     switch (Combination) {
         case DDD:
-            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, B, transB, beta, C, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, B, transB, beta, C, context, flops_, memoryHandler.GetMemoryUnit(), helpers);
             gflops = blas::Gflop<T>::gemm(m, n, k);
             break;
         case DDC:
-            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, B, transB, beta, *CUV, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, B, transB, beta, *CUV, context, flops_, memoryHandler.GetMemoryUnit(), helpers);
             gflops = blas::Gflop<T>::gemm(Cm, Cn, An) + blas::Gflop<T>::gemm(Cm, Cn, Crk);
             break;
         case DCD:
-            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, *BUV, transB, beta, C, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, *BUV, transB, beta, C, context, flops_, memoryHandler.GetMemoryUnit(), helpers);
             gflops = blas::Gflop<T>::gemm(Cm, Brk, An) + blas::Gflop<T>::gemm(Cm, Cn, Brk);
             break;
         case DCC:
-            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, *BUV, transB, beta, *CUV, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, *BUV, transB, beta, *CUV, context, flops_, memoryHandler.GetMemoryUnit(), helpers);
             // todo
             // gflops = blas::Gflop<T>::gemm(Cm, Brk, An) +
             //          internal::gemm;
             break;
         case CDD:
-            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, B, transB, beta, C, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, B, transB, beta, C, context, flops_, memoryHandler.GetMemoryUnit(), helpers);
             gflops = blas::Gflop<T>::gemm(Ark, Cn, An) + blas::Gflop<T>::gemm(Cm, Cn, Ark);
             break;
         case CDC:
-            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, B, transB, beta, *CUV, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, B, transB, beta, *CUV, context, flops_, memoryHandler.GetMemoryUnit(), helpers);
             // todo
             // gflops = blas::Gflop<T>::gemm(Ark, Cn, An) +
             //          internal::gemm;
             break;
         case CCD:
-            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, *BUV, transB, beta, C, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, *BUV, transB, beta, C, context, flops_, memoryHandler.GetMemoryUnit(), helpers);
             gflops = blas::Gflop<T>::gemm(Ark, Brk, An) +
                      (Ark <= Brk ? blas::Gflop<T>::gemm(Ark, Cn, Brk) +
                                    blas::Gflop<T>::gemm(Cm, Cn, Ark)
@@ -151,7 +156,7 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
                                    blas::Gflop<T>::gemm(Cm, Cn, Brk));
             break;
         case CCC:
-            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, *BUV, transB, beta, *CUV, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, *BUV, transB, beta, *CUV, context, flops_, memoryHandler.GetMemoryUnit(), helpers);
             // todo: for now use PASC paper, which assumes square matrices
             int64_t max_Ark_Brk_Crk = std::max({Ark, Brk, Crk});
             int64_t max_m_n_k = std::max({m, n, k});
@@ -167,7 +172,7 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
             //                        internal::gemm;
             break;
     }
-
+    context.Sync();
     end = std::chrono::system_clock::now();
 
     std::chrono::duration<double> elapsed_seconds = end - start;
@@ -178,8 +183,7 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
     double ref_flops;
     double error = 0;
     bool pass = false;
-    T *C_output;
-
+    T *C_output = nullptr;
     {
         std::chrono::time_point<std::chrono::system_clock> ref_time_start = std::chrono::system_clock::now();
         {
@@ -197,13 +201,17 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
         ref_flops = ref_gflops / ref_elapsed_time;
 
         if (Combination == DCC || Combination == CDC || Combination == CCC) {
+            auto cu_m_new = CUV->GetNumOfRows();
+            auto cu_n_new = CUV->GetTileRank();
+            auto cv_m_new = CUV->GetTileRank();
+            auto cv_n_new = CUV->GetNumOfCols();
 
-            auto cu = copy_output(CUV->GetTileSubMatrix(0).get());
-            auto cv = copy_output(CUV->GetTileSubMatrix(1).get());
+            auto cu = copy_output(CUV->GetUMatrix(), cu_m_new * cu_n_new, context);
+            auto cv = copy_output(CUV->GetVMatrix(), cv_m_new * cv_n_new, context);
             blas::gemm(blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
                        Cm, Cn, CUV->GetTileRank(), 1.0, cu,
-                       CUV->GetTileSubMatrix(0).get().GetLeadingDim(), cv,
-                       CUV->GetTileSubMatrix(1).get().GetLeadingDim(), 0.0, Cdata, ldc);
+                       CUV->GetULeadingDim(), cv,
+                       CUV->GetVLeadingDim(), 0.0, Cdata, ldc);
             delete[] cu;
             delete[] cv;
             C_output = new T[Cm * Cn];
@@ -212,24 +220,24 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
             diff(Cref, ldcref, C_output, Cm, Cn, ldc);
 
         } else if (Combination == DDC) {
-            auto cu_m_new = CUV->GetTileSubMatrix(0).get().GetNumOfRows();
-            auto cu_n_new = CUV->GetTileSubMatrix(0).get().GetNumOfCols();
-            auto cv_m_new = CUV->GetTileSubMatrix(1).get().GetNumOfRows();
-            auto cv_n_new = CUV->GetTileSubMatrix(1).get().GetNumOfCols();
+            auto cu_m_new = CUV->GetNumOfRows();
+            auto cu_n_new = CUV->GetTileRank();
+            auto cv_m_new = CUV->GetTileRank();
+            auto cv_n_new = CUV->GetNumOfCols();
 
             C_output = new T[cu_m_new * cu_n_new + cv_m_new * cv_n_new];
-            auto cu_raw = copy_output(CUV->GetTileSubMatrix(0).get());
+            auto cu_raw = copy_output(CUV->GetUMatrix(), cu_m_new * cu_n_new, context);
             memcpy((void *) C_output, (void *) cu_raw,
                    cu_m_new * cu_n_new * sizeof(T));
             delete[] cu_raw;
-            auto cv_raw = copy_output(CUV->GetTileSubMatrix(1).get());
+            auto cv_raw = copy_output(CUV->GetVMatrix(), cv_m_new * cv_n_new, context);
             memcpy((void *) &C_output[cu_m_new * cu_n_new], (void *) cv_raw,
                    cv_m_new * cv_n_new * sizeof(T));
             delete[] cv_raw;
             diff(Cref, ldcref, C_output, Cm, Cn, ldc);
 
         } else {
-            C_output = copy_output( C.GetTileSubMatrix(0).get());
+            C_output = copy_output(C.GetDataHolder().get(), context);
             diff(Cref, ldcref, C_output, Cm, Cn, ldc);
 
         }
@@ -241,7 +249,6 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
 
         error = lange / temp;
 
-//        std::cout << " error = " << error << " Temp = " << temp << " Lange = " << lange << std::endl;
         if (blas::is_complex<T>::value) {
             error /= 2 * sqrt(2);
         }
@@ -249,10 +256,10 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
         REQUIRE(pass);
     }
 
-    delete[]Cref;
-    delete[]Adata;
-    delete[]Bdata;
-    delete[]Cdata;
+    delete[] Cref;
+    delete[] Adata;
+    delete[] Bdata;
+    delete[] Cdata;
     delete[] C_output;
     if (Combination == CDD || Combination == CDC || Combination == CCD || Combination == CCC) {
         delete AUV;
@@ -267,6 +274,7 @@ void TEST_GEMM_ADVANCED(TILE_COMBINATION Combination, int64_t n_elements) {
            tile_combination_strings[Combination], typeid(T).name(),
            op2str(transA), op2str(transB), op2str(transC), m, n, k, alpha,
            beta, elapsed_time, gflops, ref_elapsed_time, ref_flops, error, Ark, Brk, Crk, ((pass) ? "Pass" : "Fail"));
+    memoryHandler.FreeAllocations();
 
 
 }
@@ -281,11 +289,13 @@ TEMPLATE_TEST_CASE("AdvancedGemmTest", "[ADVANCEDGEMMTESTING]", float, double) {
     std::vector<TILE_COMBINATION> combinations = {DDD, DDC, DCD, DCC, CDD, CDC, CCD, CCC};
 
     std::vector<int64_t> n_elements = {100, 200, 300, 400, 500};
-
     for (auto C: combinations) {
         for (auto N: n_elements) {
             TEST_GEMM_ADVANCED<TestType>(C, N);
         }
     }
     printf("%s\n", std::string(196, '=').c_str());
+    hcorepp::kernels::ContextManager::DestroyInstance();
+    hcorepp::dataunits::MemoryHandler<TestType>::DestroyInstance();
+
 }

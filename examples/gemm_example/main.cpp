@@ -63,16 +63,21 @@ void run(blas::Op aTransA, blas::Op aTransB, blas::Op aTransC, T aAlpha, T aBeta
     blas::real_type<T> Bnorm = lapack_lange(norm, Bm, Bn, Bdata, ldb);
     blas::real_type<T> Cnorm = lapack_lange(norm, Cm, Cn, Cdata, ldc);
 
-    DenseTile<T> A(Am, An, Adata, lda, blas::Layout::ColMajor);
-    DenseTile<T> B(Bm, Bn, Bdata, ldb, blas::Layout::ColMajor);
-    DenseTile<T> C(Cm, Cn, Cdata, ldc, blas::Layout::ColMajor);
+    auto& context = hcorepp::kernels::ContextManager::GetInstance().GetContext();
+
+    DenseTile<T> A(Am, An, Adata, lda, blas::Layout::ColMajor, context);
+    DenseTile<T> B(Bm, Bn, Bdata, ldb, blas::Layout::ColMajor, context);
+    DenseTile<T> C(Cm, Cn, Cdata, ldc, blas::Layout::ColMajor, context);
+    context.Sync();
 
     int64_t ldcref = ((m + align - 1) / align) * align;
 
     T *Cref = new T[ldcref * n];
 
-    hcorepp::memory::Memcpy<T>(Cref, C.GetTileSubMatrix(0).get().GetData(),
-                               Cm * Cn, hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+    hcorepp::memory::Memcpy<T>(Cref, C.GetTileSubMatrix(0),
+                               Cm * Cn, context,
+                               hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+    context.Sync();
 
     int64_t Ark, Brk, Crk;
     Ark = 0;
@@ -88,17 +93,20 @@ void run(blas::Op aTransA, blas::Op aTransB, blas::Op aTransC, T aAlpha, T aBeta
     CompressedTile<T> *CUV;
     if (aCombination == CDD || aCombination == CDC || aCombination == CCD || aCombination == CCC) {
         compress_dense_matrix(Am, An, Adata, lda, &AUVdata, Ark, accuracy);
-        AUV = new CompressedTile<T>(Am, An, AUVdata, lda, Ark, blas::Layout::ColMajor);
+        AUV = new CompressedTile<T>(Am, An, AUVdata, lda, Ark, blas::Layout::ColMajor, context);
+        context.Sync();
         free(AUVdata);
     }
     if (aCombination == DCD || aCombination == DCC || aCombination == CCD || aCombination == CCC) {
         compress_dense_matrix(Bm, Bn, Bdata, ldb, &BUVdata, Brk, accuracy);
-        BUV = new CompressedTile<T>(Bm, Bn, BUVdata, ldb, Brk, blas::Layout::ColMajor);
+        BUV = new CompressedTile<T>(Bm, Bn, BUVdata, ldb, Brk, blas::Layout::ColMajor, context);
+        context.Sync();
         free(BUVdata);
     }
     if (aCombination == DDC || aCombination == DCC || aCombination == CDC || aCombination == CCC) {
         compress_dense_matrix(Cm, Cn, Cdata, ldc, &CUVdata, Crk, accuracy);
-        CUV = new CompressedTile<T>(Cm, Cn, CUVdata, ldc, Crk, blas::Layout::ColMajor);
+        CUV = new CompressedTile<T>(Cm, Cn, CUVdata, ldc, Crk, blas::Layout::ColMajor, context);
+        context.Sync();
         free(CUVdata);
     }
 
@@ -107,38 +115,40 @@ void run(blas::Op aTransA, blas::Op aTransB, blas::Op aTransC, T aAlpha, T aBeta
 
     start = std::chrono::system_clock::now();
 
+    size_t flop_ = 0;
     hcorepp::operators::CompressionParameters helpers(accuracy);
+    hcorepp::dataunits::MemoryHandler<T>& memoryHandler = hcorepp::dataunits::MemoryHandler<T>::GetInstance();
     switch (aCombination) {
         case DDD:
-            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, B, transB, beta, C, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, B, transB, beta, C, context, flop_, memoryHandler.GetMemoryUnit(), helpers);
             gflops = blas::Gflop<T>::gemm(m, n, k);
             break;
         case DDC:
-            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, B, transB, beta, *CUV, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, B, transB, beta, *CUV, context, flop_, memoryHandler.GetMemoryUnit(), helpers);
             gflops = blas::Gflop<T>::gemm(Cm, Cn, An) + blas::Gflop<T>::gemm(Cm, Cn, Crk);
             break;
         case DCD:
-            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, *BUV, transB, beta, C, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, *BUV, transB, beta, C, context, flop_, memoryHandler.GetMemoryUnit(), helpers);
             gflops = blas::Gflop<T>::gemm(Cm, Brk, An) + blas::Gflop<T>::gemm(Cm, Cn, Brk);
             break;
         case DCC:
-            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, *BUV, transB, beta, *CUV, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, A, transA, *BUV, transB, beta, *CUV, context, flop_, memoryHandler.GetMemoryUnit(), helpers);
             // todo
             // gflops = blas::Gflop<T>::gemm(Cm, Brk, An) +
             //          internal::gemm;
             break;
         case CDD:
-            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, B, transB, beta, C, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, B, transB, beta, C, context, flop_, memoryHandler.GetMemoryUnit(), helpers);
             gflops = blas::Gflop<T>::gemm(Ark, Cn, An) + blas::Gflop<T>::gemm(Cm, Cn, Ark);
             break;
         case CDC:
-            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, B, transB, beta, *CUV, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, B, transB, beta, *CUV, context, flop_, memoryHandler.GetMemoryUnit(), helpers);
             // todo
             // gflops = blas::Gflop<T>::gemm(Ark, Cn, An) +
             //          internal::gemm;
             break;
         case CCD:
-            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, *BUV, transB, beta, C, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, *BUV, transB, beta, C, context, flop_, memoryHandler.GetMemoryUnit(), helpers);
             gflops = blas::Gflop<T>::gemm(Ark, Brk, An) +
                      (Ark <= Brk ? blas::Gflop<T>::gemm(Ark, Cn, Brk) +
                                    blas::Gflop<T>::gemm(Cm, Cn, Ark)
@@ -146,7 +156,7 @@ void run(blas::Op aTransA, blas::Op aTransB, blas::Op aTransC, T aAlpha, T aBeta
                                    blas::Gflop<T>::gemm(Cm, Cn, Brk));
             break;
         case CCC:
-            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, *BUV, transB, beta, *CUV, helpers);
+            hcorepp::api::HCore<T>::Gemm(alpha, *AUV, transA, *BUV, transB, beta, *CUV, context, flop_, memoryHandler.GetMemoryUnit(), helpers);
             // todo: for now use PASC paper, which assumes square matrices
             int64_t max_Ark_Brk_Crk = std::max({Ark, Brk, Crk});
             int64_t max_m_n_k = std::max({m, n, k});
@@ -162,7 +172,7 @@ void run(blas::Op aTransA, blas::Op aTransB, blas::Op aTransC, T aAlpha, T aBeta
             //                        internal::gemm;
             break;
     }
-
+    context.Sync();
     end = std::chrono::system_clock::now();
 
     std::chrono::duration<double> elapsed_seconds = end - start;
@@ -192,21 +202,22 @@ void run(blas::Op aTransA, blas::Op aTransB, blas::Op aTransC, T aAlpha, T aBeta
         ref_flops = ref_gflops / ref_elapsed_time;
 
         if (aCombination == DCC || aCombination == CDC || aCombination == CCC) {
-            size_t cu_size = CUV->GetTileSubMatrix(0).get().GetNumOfRows()
-                             * CUV->GetTileSubMatrix(0).get().GetNumOfCols();
-            size_t cv_size = CUV->GetTileSubMatrix(1).get().GetNumOfRows()
-                             * CUV->GetTileSubMatrix(1).get().GetNumOfCols();
+            size_t cu_size = CUV->GetNumOfRows()
+                             * CUV->GetTileRank();
+            size_t cv_size = CUV->GetTileRank()
+                             * CUV->GetNumOfCols();
             T *cu = new T[cu_size];
             T *cv = new T[cv_size];
-            hcorepp::memory::Memcpy<T>(cu, CUV->GetTileSubMatrix(0).get().GetData(),
-                                       cu_size, hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
-            hcorepp::memory::Memcpy<T>(cv, CUV->GetTileSubMatrix(1).get().GetData(),
-                                       cv_size, hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+            hcorepp::memory::Memcpy<T>(cu, CUV->GetUMatrix(),
+                                       cu_size, context, hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+            hcorepp::memory::Memcpy<T>(cv, CUV->GetVMatrix(),
+                                       cv_size, context, hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+            context.Sync();
 
             blas::gemm(blas::Layout::ColMajor, blas::Op::NoTrans, blas::Op::NoTrans,
                        Cm, Cn, CUV->GetTileRank(), 1.0, cu,
-                       CUV->GetTileSubMatrix(0).get().GetLeadingDim(), cv,
-                       CUV->GetTileSubMatrix(1).get().GetLeadingDim(), 0.0, Cdata, ldc);
+                       CUV->GetULeadingDim(), cv,
+                       CUV->GetVLeadingDim(), 0.0, Cdata, ldc);
             delete[] cu;
             delete[] cv;
             C_output = (T *) malloc(Cm * Cn * sizeof(T));
@@ -215,24 +226,30 @@ void run(blas::Op aTransA, blas::Op aTransB, blas::Op aTransC, T aAlpha, T aBeta
             diff(Cref, ldcref, C_output, Cm, Cn, ldc);
 
         } else if (aCombination == DDC) {
-            auto cu_m_new = CUV->GetTileSubMatrix(0).get().GetNumOfRows();
-            auto cu_n_new = CUV->GetTileSubMatrix(0).get().GetNumOfCols();
-            auto cv_m_new = CUV->GetTileSubMatrix(1).get().GetNumOfRows();
-            auto cv_n_new = CUV->GetTileSubMatrix(1).get().GetNumOfCols();
+            auto cu_m_new = CUV->GetNumOfRows();
+            auto cu_n_new = CUV->GetTileRank();
+            auto cv_m_new = CUV->GetTileRank();
+            auto cv_n_new = CUV->GetNumOfCols();
 
             C_output = (T *) malloc((cu_m_new * cu_n_new + cv_m_new * cv_n_new) * sizeof(T));
-            hcorepp::memory::Memcpy<T>(C_output, CUV->GetTileSubMatrix(0).get().GetData(),
-                                       cu_m_new * cu_n_new, hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+            hcorepp::memory::Memcpy<T>(C_output, CUV->GetUMatrix(),
+                                       cu_m_new * cu_n_new, context,
+                                       hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
 
-            hcorepp::memory::Memcpy<T>(&C_output[cu_m_new * cu_n_new], CUV->GetTileSubMatrix(1).get().GetData(),
-                                       cv_m_new * cv_n_new, hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+            hcorepp::memory::Memcpy<T>(&C_output[cu_m_new * cu_n_new],
+                                       CUV->GetVMatrix(),
+                                       cv_m_new * cv_n_new, context,
+                                       hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+            context.Sync();
 
             diff(Cref, ldcref, C_output, Cm, Cn, ldc);
 
         } else {
             C_output = (T *) malloc(Cm * Cn * sizeof(T));
-            hcorepp::memory::Memcpy<T>(C_output, C.GetTileSubMatrix(0).get().GetData(),
-                                       Cm * Cn, hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+            hcorepp::memory::Memcpy<T>(C_output, C.GetTileSubMatrix(0),
+                                       Cm * Cn, context,
+                                       hcorepp::memory::MemoryTransfer::DEVICE_TO_HOST);
+            context.Sync();
             diff(Cref, ldcref, C_output, Cm, Cn, ldc);
 
         }

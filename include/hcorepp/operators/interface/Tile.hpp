@@ -11,11 +11,45 @@
 #include <cstdint>
 #include "blas.hh"
 #include <hcorepp/data-units/DataHolder.hpp>
+#include <hcorepp/data-units/memory-handlers/MemoryHandler.hpp>
 #include <hcorepp/operators/helpers/CompressionParameters.hpp>
 #include <hcorepp/kernels/RunContext.hpp>
 
 namespace hcorepp {
     namespace operators {
+
+        enum TileType {
+            DENSE,
+            COMPRESSED
+        };
+
+        /**
+         * Tile metadata struct wrapping all tile related metadata to be used by any higher level library, mainly to
+         * facilitate communication between processes through runtime libraries (starpu,...)
+         */
+        struct TileMetadata {
+            /** number of rows */
+            size_t mNumOfRows;
+            /** number of cols */
+            size_t mNumOfCols;
+            /** matrix rank */
+            size_t mMatrixRank;
+            /** matrix rank */
+            size_t mMaxRank;
+            /** leading dimension */
+            size_t mLeadingDimension;
+            /** data layout */
+            blas::Layout mLayout;
+            /** enum for tile type */
+            TileType mType;
+
+            TileMetadata(size_t aRows, size_t aCols, size_t aMatrixRank, size_t aMaxRank, size_t aLeadingDim,
+                         blas::Layout aLayout, TileType aType) : mNumOfRows(aRows), mNumOfCols(aCols),
+                                                              mMatrixRank(aMatrixRank), mMaxRank(aMaxRank), mLeadingDimension(aLeadingDim),
+                                                              mLayout(aLayout), mType(aType) {
+
+            }
+        };
 
         template<typename T>
         class Tile {
@@ -39,6 +73,43 @@ namespace hcorepp {
             }
 
             /**
+             * Get Tile num of rows.
+             *
+             * @return
+             * Num of rows.
+             */
+            [[nodiscard]] size_t
+            GetNumOfRows() const {
+                return mNumOfRows;
+            }
+
+            [[nodiscard]] size_t
+            GetNumOfRows() {
+                return mNumOfRows;
+            }
+
+            /**
+             * Get tile num of cols.
+             *
+             * @return
+             * Num of cols.
+             */
+            [[nodiscard]] size_t
+            GetNumOfCols() const {
+                return mNumOfCols;
+            }
+
+            [[nodiscard]] size_t
+            GetNumOfCols() {
+                return mNumOfCols;
+            }
+
+            std::reference_wrapper<dataunits::DataHolder<T>>
+            GetDataHolder() const {
+                return *mpDataArray;
+            }
+
+            /**
              * @brief
              * Get data holder object describing specific tile subMatrix.
              *
@@ -50,34 +121,8 @@ namespace hcorepp {
              * @return
              * DataHolder object describing the Tile sub matrix.
              */
-            virtual std::reference_wrapper<dataunits::DataHolder<T>>
-            GetTileSubMatrix(size_t aIndex) = 0;
-
-            /**
-             * @brief
-             * Get data holder object describing specific tile subMatrix.
-             *
-             * Matrix index :
-             *              0 in case of Dense tile.
-             *              0 or 1 in case of Compressed tiles.
-             *
-             * @return
-             * const DataHolder object describing the Tile sub matrix.
-             */
-            virtual const std::reference_wrapper<dataunits::DataHolder<T>>
+            virtual T*
             GetTileSubMatrix(size_t aIndex) const = 0;
-
-            /**
-             * @brief
-             * Get number of matrices describing the tile.
-             *
-             * @return
-             * Number of matrices describing the tile:
-             *             1 in Dense tile cases.
-             *             2 in Compressed tile cases.
-             */
-            virtual size_t
-            GetNumberOfMatrices() const = 0;
 
             /**
              * @brief
@@ -99,32 +144,41 @@ namespace hcorepp {
              * Tile A leading dimension. (used only in compressed Gemm functionality.)
              * @param[in] aARank
              * tile rank. (used only in compressed Gemm functionality.)
-             * @param[in] aHelpers
+             * @param[in] aCompressionParameters
              * SVD helpers object (used only in compressed Gemm functionality.)
              * @param[in] aContext
              * The runtime context to apply the operation on.
+             * @param[in] aFlops
+             * Flops required by operation
+             * @param[in] aMemoryUnit
+             * Memory Unit Responsible for allocations
+             * @param[in] aCholesky
+             * Flag to determine whether gemm is performed as part of the Cholesky flow or not
+             * @return
+             *
              */
             virtual void
             Gemm(T &aAlpha, dataunits::DataHolder<T> const &aTileA, blas::Op aTileAOp,
-                 dataunits::DataHolder<T> const &aTileB, blas::Op aTileBOp, T &aBeta, int64_t aLdAu, int64_t aARank,
-                 const CompressionParameters &aCompressionParameters, kernels::RunContext &aContext) = 0;
+                 dataunits::DataHolder<T> const &aTileB, blas::Op aTileBOp, T &aBeta, size_t aLdAu, size_t aARank,
+                 const CompressionParameters &aCompressionParameters, const kernels::RunContext &aContext,
+                 size_t &aFlops, dataunits::MemoryUnit<T> &aMemoryUnit, bool aCholesky = false) = 0;
 
             /**
              * @brief
-             * Get stride of a specific tile data holder.
+             * Get stride of a specific tile submatrix.
              *
              * @param aIndex
-             * Index of the dataHolder.
+             * Index of the submatrix.
              *
              * @return
              * Tile stride.
              */
-            virtual int64_t
+            [[nodiscard]] virtual size_t
             GetTileStride(size_t aIndex) const = 0;
 
             /**
              * @brief
-             * Readjust tile dimension according to new rank. (currently implemented in the compressed Tile concnrete
+             * Readjust tile dimension according to new rank. (currently implemented in the compressed Tile concrete
              * implementation only.)
              *
              * @param aNumOfRows
@@ -139,16 +193,104 @@ namespace hcorepp {
              * New Linear algebra rank of the tile. rk >= 0.
              * @param[in] aContext
              * The runtime context to apply the operation on.
+             * @return
              */
             virtual void
-            ReadjustTile(int64_t aNumOfRows, int64_t aNumOfCols, T *aPdata, int64_t aLeadingDim, int64_t aRank,
-                         kernels::RunContext &aContext) = 0;
+            ReadjustTile(size_t aNumOfRows, size_t aNumOfCols, T *aPdata, size_t aLeadingDim, size_t aRank,
+                         const kernels::RunContext &aContext) = 0;
+
+            /**
+             * @brief
+             * Unpack tile function extracting the tile metadata and the actual data arrays.
+             * The data arrays are allocated on heap and are the responsibility of the user to delete them.
+             *
+             * @param[in] aContext
+             * The runtime context
+             *
+             * @return
+             * pair of tile metadata and data array.
+             */
+            virtual std::pair<TileMetadata *, T *>
+            UnPackTile(const kernels::RunContext &aContext) = 0;
+
+            /**
+             * @brief
+             * Pack tile through constructing dense or compressed tile based on the data arrays and metadata sent.
+             *
+             * @param[in] aMetadata
+             * Tile metadata
+             * @param[in] aData
+             * data arrays
+             * @param aContext
+             * The runtime context.
+             *
+             * @return
+             * Tile created - The tile is allocated on heap so its the responsibility of the user to delete it.
+             */
+            virtual void
+            PackTile(TileMetadata aMetadata, T* aData, const kernels::RunContext &aContext) = 0;
+
+            virtual void UpdateMetadata(TileMetadata aMetadata) = 0;
+
+            [[nodiscard]] size_t GetLeadingDim() const {
+                return mLeadingDim;
+            }
+
+            [[nodiscard]] size_t GetTileRank() const {
+                return mRank;
+            }
+
+            [[nodiscard]] virtual
+            bool isDense() const = 0;
+
+            [[nodiscard]] virtual
+            bool isCompressed() const = 0;
+
+            [[nodiscard]] virtual
+            int64_t GetNumOfSubMatrices() const = 0;
+
+            void Print(std::ostream &aOutStream) {
+                if (mpDataArray != nullptr) {
+                    mpDataArray->Print(aOutStream);
+                }
+                aOutStream << "mLayout : " << (char)mLayout << std::endl;
+                aOutStream << "mLeadingDim : " << mLeadingDim << std::endl;
+                aOutStream << "mNumOfRows : " << mNumOfRows << std::endl;
+                aOutStream << "mNumOfCols : " << mNumOfCols << std::endl;
+                aOutStream << "mRank : " << mRank << std::endl;
+                aOutStream << "mMaxRank : " << mMaxRank << std::endl;
+                std::string limiter(20, '=');
+                aOutStream << limiter << std::endl;
+            }
+
+            /**
+             * @brief
+             * Getter for type of tile object
+             *
+             * @return
+             * Type of tile object
+             */
+            virtual TileType
+            GetTileType() = 0;
+
+            virtual void
+            ReadjustTileRank(size_t aRank, const kernels::RunContext &aContext) = 0;
 
         protected:
             // Matrix physical layout -> column major or row major.
             blas::Layout mLayout;
             // Leading dimension of the tile.
-            int64_t mLeadingDim;
+            size_t mLeadingDim;
+            /** vector of references to data arrays representing the Dense tile. */
+            dataunits::DataHolder<T>* mpDataArray = nullptr;
+            /** number of rows */
+            size_t mNumOfRows;
+            /** number of cols */
+            size_t mNumOfCols;
+            /** Rank of Tile */
+            size_t mRank;
+
+            size_t mMaxRank;
         };
 
     }

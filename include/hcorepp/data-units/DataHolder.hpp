@@ -6,9 +6,12 @@
 #ifndef HCOREPP_DATA_UNITS_DATA_HOLDER_HPP
 #define HCOREPP_DATA_UNITS_DATA_HOLDER_HPP
 
+#include <functional>
 #include <iostream>
 #include <cstddef>
 #include <hcorepp/common/Definitions.hpp>
+#include <hcorepp/kernels/RunContext.hpp>
+#include <hcorepp/helpers/DebuggingTimer.hpp>
 
 namespace hcorepp {
     namespace dataunits {
@@ -40,9 +43,14 @@ namespace hcorepp {
              * pointer to a data array that can be null pointer,
              * if a non null pointer was passed then data is copied to an allocated internal buffer
              * of size = aRows * aLeadingDim * sizeof<T> assuming Row major format.
-             *
+             * @param[in] aContext
+             * The context used to manage the data holder.
+             * @param[in] aMemoryOwnership
+             * Avoid new allocation if apData != nullptr by setting this flag.
+             * apData should be at least of size aRows * aCols * sizeof(T)
              */
-            DataHolder(size_t aRows, size_t aCols, size_t aLeadingDim, T *apData = nullptr);
+            DataHolder(size_t aRows, size_t aCols, size_t aLeadingDim, T *apData,
+                       const hcorepp::kernels::RunContext &aContext, bool aMemoryOwnership = true);
 
             /**
              * @brief
@@ -121,7 +129,7 @@ namespace hcorepp {
              * @brief
              * Prints the data holder to the console in a readable format, useful for debugging purposes.
              */
-            void Print(std::ostream &aOutStream) const;
+            void Print(std::ostream &aOutStream);
 
         private:
             /** pointer to data array */
@@ -132,6 +140,10 @@ namespace hcorepp {
             size_t mNumOfCols;
             /** leading dimension */
             size_t mLeadingDimension;
+            /** Run context used for the data holder */
+            const hcorepp::kernels::RunContext &mRunContext;
+            /** Memory ownership flag */
+            bool mMemoryOwnership;
         };
     }
 }

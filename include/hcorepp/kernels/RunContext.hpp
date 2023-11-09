@@ -8,8 +8,12 @@
 
 #include <blas.hh>
 
-#ifdef BLAS_HAVE_CUBLAS
+/** TODO Add Thread Safety across all technologies for singleton Context **/
+
+#ifdef USE_CUDA
 #include "cuda/RunContext.hpp"
+#elif defined(USE_SYCL)
+#include "sycl/RunContext.hpp"
 #else
 #include "cpu/RunContext.hpp"
 #endif

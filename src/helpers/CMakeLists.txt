@@ -1,3 +1,5 @@
+add_subdirectory(debugging-timer)
+
 set(SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/MatrixHelpers.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/RawMatrix.cpp

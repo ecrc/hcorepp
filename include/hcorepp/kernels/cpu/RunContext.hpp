@@ -20,11 +20,16 @@ namespace hcorepp {
              */
             RunContext() = default;
 
+            RunContext ForkChildContext() {
+                RunContext context;
+                return context;
+            }
+
             /**
              * @brief
              * Synchronizes the kernel stream.
              */
-            void Sync() {
+            void Sync() const {
                 //No need for synchronization on cpu contexts for now.
             }
 
@@ -33,6 +38,16 @@ namespace hcorepp {
              * Default destructor.
              */
             ~RunContext() = default;
+
+            /**
+             * @brief
+             * Check if Context supports OMP Parallelization
+             */
+             [[nodiscard]] bool SupportsOMP() const {
+                 return true;
+             }
+
+
         };
     }//namespace kernels
 }//namespace hcorepp

@@ -13,37 +13,35 @@ namespace hcorepp {
     namespace memory {
 
         template<typename T>
-        T *AllocateArray(int64_t aNumElements) {
+        T *AllocateArray(size_t aNumElements, const hcorepp::kernels::RunContext &aContext) {
             T *array;
             GPU_ERROR_CHECK(cudaMalloc((void **) &array, aNumElements * sizeof(T)));
             return array;
         }
 
         template<typename T>
-        void DestroyArray(T *apArray) {
+        void DestroyArray(T *apArray, const hcorepp::kernels::RunContext &aContext) {
             if (apArray != nullptr) {
                 GPU_ERROR_CHECK(cudaFree(apArray));
             }
         }
 
         template<typename T>
-        void Memcpy(T *apDestination, const T *apSrcDataArray, int64_t aNumOfElements,
-                    MemoryTransfer aTransferType) {
-            GPU_ERROR_CHECK(cudaMemcpy(apDestination, apSrcDataArray, aNumOfElements * sizeof(T),
-                                       cudaMemcpyDefault));
-        }
-
-        template<typename T>
-        void Memcpy(T *apDestination, const T *apSrcDataArray, int64_t aNumOfElements,
-                    hcorepp::kernels::RunContext &aContext, MemoryTransfer aTransferType) {
+        void Memcpy(T *apDestination, const T *apSrcDataArray, size_t aNumOfElements,
+                    const hcorepp::kernels::RunContext &aContext, MemoryTransfer aTransferType, bool aBlocking) {
             GPU_ERROR_CHECK(cudaMemcpyAsync(apDestination, apSrcDataArray, aNumOfElements * sizeof(T),
-                                       cudaMemcpyDefault, aContext.GetStream()));
+                                            cudaMemcpyDefault, aContext.GetStream()));
+            if (aBlocking) {
+                cudaStreamSynchronize(aContext.GetStream());
+            }
         }
 
         template<typename T>
-        void Memset(T *apDestination, char aValue, int64_t aNumOfElements) {
-            GPU_ERROR_CHECK(cudaMemset(apDestination, aValue, aNumOfElements * sizeof(T)));
+        void Memset(T *apDestination, char aValue, size_t aNumOfElements,
+                    const hcorepp::kernels::RunContext &aContext) {
+            GPU_ERROR_CHECK(cudaMemsetAsync(apDestination, aValue, aNumOfElements * sizeof(T), aContext.GetStream()))
         }
+
 
     }//namespace memory
 }//namespace hcorepp

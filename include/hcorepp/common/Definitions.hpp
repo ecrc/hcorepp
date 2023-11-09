@@ -9,6 +9,8 @@
 // Macro definition to instantiate the HCore template classes with supported types.
 #define HCOREPP_INSTANTIATE_CLASS(TEMPLATE_CLASS)   template class TEMPLATE_CLASS<float>;  \
                                                     template class TEMPLATE_CLASS<double>;
+//                                                    template class TEMPLATE_CLASS<complex<double>>; \
+//                                                    template class TEMPLATE_CLASS<complex<float>>;
 
 namespace hcorepp {
     namespace common {
@@ -49,6 +51,20 @@ namespace hcorepp {
          * Enum denoting the job type for some lapack API calls following their interface.
          */
         enum class Job {
+#ifdef USE_SYCL
+            NoVec = 0,
+            Vec = 'V',  // geev, syev, ...
+            UpdateVec = 'U',  // gghrd#, hbtrd, hgeqz#, hseqr#, ... (many compq or compz)
+
+            AllVec = 1,  // gesvd, gesdd, gejsv#
+            SomeVec = 3,  // gesvd, gesdd, gejsv#, gesvj#
+            OverwriteVec = 2,  // gesvd, gesdd
+
+            CompactVec = 'P',  // bdsdc
+            SomeVecTol = 'C',  // gesvj
+            VecJacobi = 'J',  // gejsv
+            Workspace = 'W',  // gejsv
+#else
             NoVec = 'N',
             Vec = 'V',  // geev, syev, ...
             UpdateVec = 'U',  // gghrd#, hbtrd, hgeqz#, hseqr#, ... (many compq or compz)
@@ -61,6 +77,7 @@ namespace hcorepp {
             SomeVecTol = 'C',  // gesvj
             VecJacobi = 'J',  // gejsv
             Workspace = 'W',  // gejsv
+#endif
         };
 
         /**
@@ -84,6 +101,15 @@ namespace hcorepp {
         enum CompressionType {
             LAPACK_GESVD,
             LAPACK_GESDD
+        };
+
+        /**
+         * @brief
+         * The supported memory allocation strategies.
+         */
+        enum class MemoryHandlerStrategy {
+            ONDEMAND,
+            POOL
         };
 
 

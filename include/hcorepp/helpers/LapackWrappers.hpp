@@ -21,7 +21,6 @@
 #include <openblas/lapack.h>
 #undef LAPACK_FORTRAN_STRLEN_END
 #else
-
 #include <lapack/fortran.h>
 
 #endif
@@ -239,7 +238,7 @@ blas::real_type<T> lapack_lange_core(hcorepp::common::Norm aNorm, int64_t m, int
     lapack_int m_ = (lapack_int) m;
     lapack_int n_ = (lapack_int) n;
     lapack_int lda_ = (lapack_int) lda;
-    lapack_int lwork = std::max(1, m_);
+    lapack_int lwork = std::max((lapack_int)1, m_);
     std::vector<blas::real_type<T>> t(lwork);
     if constexpr(is_complex<C>()) {
         if constexpr(is_double<T>()) {

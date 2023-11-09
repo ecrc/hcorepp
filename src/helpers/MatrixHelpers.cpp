@@ -4,9 +4,11 @@
  */
 
 #include <cstring>
-#include <hcorepp/helpers/MatrixHelpers.hpp>
 #include <iostream>
+
+#include <hcorepp/helpers/MatrixHelpers.hpp>
 #include "hcorepp/helpers//LapackWrappers.hpp"
+#include <hcorepp/kernels/kernels.hpp>
 #if __has_include("openblas/lapack.h")
 #include <openblas/lapack.h>
 #else
@@ -54,7 +56,8 @@ namespace hcorepp {
 
                 T *a_temp = (T *) malloc(m * n * sizeof(T));
                 memcpy((void *) a_temp, (void *) A, m * n * sizeof(T));
-                lapack_gesvd(common::Job::SomeVec, common::Job::SomeVec, m, n, a_temp, lda, Sigma, U, lda, VT,
+                auto job = static_cast<common::Job>('S');
+                lapack_gesvd(job, job, m, n, a_temp, lda, Sigma, U, lda, VT,
                               min_m_n);
 
                 rk = 0;
